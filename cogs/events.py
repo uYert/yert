@@ -20,23 +20,27 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-""" 
+"""
 
+<<<<<<< HEAD
 #==events.py==#
 #imports
 import config
 import discord
+=======
+from datetime import datetime
+>>>>>>> events: added typehints, reoredered imports and docstrings
 import traceback
 import typing
 
-#from imports
-from datetime import datetime
 from discord import Message
 from discord.ext import commands
 from inspect import signature
 
 
+
 class Events(commands.Cog):
+<<<<<<< HEAD
     def __init__(self, bot):
         self.bot = bot
 
@@ -181,11 +185,48 @@ class Events(commands.Cog):
             message = "```{0}```".format(message)
             return await ctx.webhook_send(message, webhook=self.WEBHOOK)
 
+=======
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
 
+    def fmt(self, dt: datetime):
+        return dt.strftime("%Y %b %d: %H:%M:%S:%f")
 
+    @commands.Cog.listener()
+    async def on_ready(self):
+        pass
+
+    @commands.Cog.listener()
+    async def on_message(self, message: Message):
+        pass
+
+    @commands.Cog.listener()
+    async def on_command(self, ctx: commands.Context):
+        pass
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx: commands.Context, error: Exception):
+        if hasattr(ctx.command, 'on_error'):
+            return
+        error = getattr(error, 'original', error)
+        if isinstance(error, commands.MissingPermissions):
+            pass
+>>>>>>> events: added typehints, reoredered imports and docstrings
+
+    @commands.Cog.listener()
+    async def on_command_completion(self, ctx: commands.Context):
+        pass
+
+<<<<<<< HEAD
     @commands.Cog.listener()
     async def on_command_completion(self, ctx: commands.Context):
         pass
 
 def setup(bot):
     bot.add_cog(Events(bot))
+=======
+
+def setup(bot):
+    """ Cog entrypoint. """
+    bot.add_cog(Events(bot))
+>>>>>>> events: added typehints, reoredered imports and docstrings

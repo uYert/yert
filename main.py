@@ -27,6 +27,7 @@ import config
 from typing import Optional
 from discord.ext import commands
 
+<<<<<<< HEAD
 class CustomContext(commands.Context):
     """Custom context for extra functions"""
 
@@ -39,12 +40,15 @@ class CustomContext(commands.Context):
         if not skip_wh:
             await webhook.send("{0} was sent to {1.guild.name}:{1.channel.name} attempting to invoke {1.invoked_with}".format(content, self))
         
+=======
+>>>>>>> Fix naming of config constants
 
 class Bot(commands.Bot):
     def __init__(self, **options):
         super().__init__(**options)
-        
+
         for file in pathlib.Path('extensions').glob('**/*.py'):
+<<<<<<< HEAD
             *tree, _ = file.parts 
             self.load_extension('.'.join(tree) + '.' + file.stem)  # fstrings would be ugly there 
         
@@ -55,3 +59,12 @@ class Bot(commands.Bot):
             
 if __name__ == '__main__':
     Bot(command_prefix='yoink ').run(config.BOT_TOKEN, owner_ids=[273035520840564736, 361158149371199488, 155863164544614402])
+=======
+            *tree, _ = file.parts
+            # fstrings would be ugly there
+            self.load_extension('.'.join(tree) + '.' + file.stem)
+
+
+if __name__ == '__main__':
+    Bot(command_prefix='yoink ').run(config.BOT_TOKEN)
+>>>>>>> Fix naming of config constants

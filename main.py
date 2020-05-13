@@ -27,13 +27,16 @@ import config
 
 from discord.ext import commands
 
+
 class Bot(commands.Bot):
     def __init__(self, **options):
         super().__init__(**options)
-        
+
         for file in pathlib.Path('extensions').glob('**/*.py'):
-            *tree, _ = file.parts 
-            self.load_extension('.'.join(tree) + '.' + file.stem)  # fstrings would be ugly there 
-            
+            *tree, _ = file.parts
+            # fstrings would be ugly there
+            self.load_extension('.'.join(tree) + '.' + file.stem)
+
+
 if __name__ == '__main__':
-    Bot(command_prefix='yoink ').run(config.DISCORD_TOKEN)
+    Bot(command_prefix='yoink ').run(config.BOT_TOKEN)

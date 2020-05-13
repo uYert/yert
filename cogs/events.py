@@ -57,7 +57,16 @@ class Events(commands.Cog):
 			return
 		error = getattr(error, 'original', error)
 		if isinstance(error, commands.MissingPermissions):
-			pass
+			return await ctx.send("{0.mention}, you're missing the following persissions to use that command; {1.missing_perms}".format(ctx.author, error))
+		
+		if isinstance(error, commands.BotMissingPermissions):
+			return await ctx.send("{0.mention}, I'm missing permissions for that command; {1.missing_perms}".format(ctx.author, error))
+		
+		if isinstance(error, commands.CommandOnCooldown):
+			return await ctx.send("{0.mention}, that command is on cooldown for another {1.retry_after}s".format(ctx.author, error))
+
+		pass
+			
 
 
 	@commands.Cog.listener()

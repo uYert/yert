@@ -20,49 +20,47 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-""" 
+"""
 
-#==events.py==#
-#imports
+from datetime import datetime
 import traceback
 
-#from imports
-from datetime import datetime
 from discord import Message
 from discord.ext import commands
 
+
 class Events(commands.Cog):
-	def __init__(self, bot):
-		self.bot = bot
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
 
-	def fmt(self, dt: datetime):
-		return dt.strftime("%Y %b %d: %H:%M:%S:%f")
+    def fmt(self, dt: datetime):
+        return dt.strftime("%Y %b %d: %H:%M:%S:%f")
 
+    @commands.Cog.listener()
+    async def on_ready(self):
+        pass
 
-	@commands.Cog.listener()
-	async def on_ready(self):
-		pass
-	
-	@commands.Cog.listener()
-	async def on_message(self, message: Message):
-		pass
+    @commands.Cog.listener()
+    async def on_message(self, message: Message):
+        pass
 
-	@commands.Cog.listener()
-	async def on_command(self, ctx: commands.Context):
-		pass
+    @commands.Cog.listener()
+    async def on_command(self, ctx: commands.Context):
+        pass
 
-	@commands.Cog.listener()
-	async def on_command_error(self, ctx: commands.Context, error: Exception):
-		if hasattr(ctx.command, 'on_error'):
-			return
-		error = getattr(error, 'original', error)
-		if isinstance(error, commands.MissingPermissions):
-			pass
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx: commands.Context, error: Exception):
+        if hasattr(ctx.command, 'on_error'):
+            return
+        error = getattr(error, 'original', error)
+        if isinstance(error, commands.MissingPermissions):
+            pass
 
+    @commands.Cog.listener()
+    async def on_command_completion(self, ctx: commands.Context):
+        pass
 
-	@commands.Cog.listener()
-	async def on_command_completion(self, ctx: commands.Context):
-		pass
 
 def setup(bot):
-	bot.add_cog(Events(bot))
+    """ Cog entrypoint. """
+    bot.add_cog(Events(bot))

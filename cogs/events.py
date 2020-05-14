@@ -48,7 +48,7 @@ class Events(commands.Cog):
 		hook = discord.Webhook.partial(id=wh_id, token=wh_token, adapter=discord.AsyncWebhookAdapter(self.bot.session))
 		return hook
 
-	def fmt(self, dt: datetime):
+	def fmt(self, dt: datetime):  # humanize might be good there
 		return dt.strftime("%Y %b %d: %H:%M:%S:%f")
 
 	async def any_role_converter(self, ctx: commands.Context, args: typing.Sequence[typing.Union[int, str]]) -> typing.Sequence[str]:

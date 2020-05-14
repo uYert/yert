@@ -59,29 +59,39 @@ class Events(commands.Cog):
                 args[idx] = await commands.RoleConverter().convert(ctx, str(item))
         return args
 
-    @commands.command()
+    @commands.group(invoke_without_command=True)
     @commands.is_owner()
-    async def edit_ignored(self, ctx: commands.Context, mode: str, *args: typing.Sequence[str]) -> None:
+    async def ignored(self, ctx: commands.Context) -> None:
         """Adds or removes an exception from the list of exceptions to ignore, if you want to add or remove commands.MissingRole, be sure to exclude the 'commands.'"""
-        assert mode in ['add', 'remove'], "You entered an invalid mode."
-        for arg in args:
-            if hasattr(commands, arg):
-
-                if mode == 'add':
-                    if getattr(commands, arg) not in self.IGNORED:
-                        self.IGNORED.append(getattr(commands, arg))
-                    else:
-                        await ctx.webhook_send("commands.{0} is already in the list of ignored exceptions".format(arg))
-
-                elif mode == 'remove':
-                    try:
-                        self.IGNORED.pop(self.IGNORED.index(
-                            getattr(commands, arg)))
-                    except ValueError:
-                        await ctx.webhook_send("{0} not in the ignored list of exceptions".format(arg))
+        await ctx.send(", ".join([exc.__name__ for exc in self.IGNORED]))
+    
+    @ignored.command()
+    @commands.is_owner()
+    async def add(self, ctx: commands.Context, exc: str):
+        """Adds an exception to the list of ingored exceptions"""
+        if hasattr(commands, exc):
+            if getattr(commands, exc) not in self.IGNORED:
+                self.IGNORED.append(getattr(commands, exc))
             else:
-                raise AttributeError(
-                    "commands module has no attribute {0}, command aborted".format(arg))
+                await ctx.webhook_send("commands.{0} is already in the list of ignored exceptions".format(exc))
+        else:
+            raise AttributeError(
+                "commands module has no attribute {0}, command aborted".format(exc))
+
+    @ignored.command()
+    @commands.is_owner()
+    async def remove(self, ctx: commands.Context, exc: str):
+        """Removes an exception from the list of ingored exceptions"""
+        if hasattr(commands, exc):
+            try:
+                self.IGNORED.pop(self.IGNORED.index(
+                    getattr(commands, exc)))
+            except ValueError:
+                await ctx.webhook_send("{0} not in the ignored list of exceptions".format(exc))
+        else:
+            raise AttributeError(
+                "commands module has no attribute {0}, command aborted".format(exc))
+
 
     @commands.Cog.listener()
     async def on_ready(self):

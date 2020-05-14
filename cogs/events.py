@@ -41,6 +41,9 @@ class Events(commands.Cog):
         self.WEBHOOK = self.webhook()
         self.IGNORED = [commands.CommandNotFound, ]
 
+    async def bot_check_once(self, ctx):
+        return await self.bot.is_owner(ctx.author)
+
     def webhook(self) -> discord.Webhook:
         wh_id, wh_token = config.WEBHOOK
         hook = discord.Webhook.partial(

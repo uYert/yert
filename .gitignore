@@ -1,5 +1,3 @@
 config.py
 __pycache__/
 config/__init__.py
-Pipfile.lock
-pm2.config.json

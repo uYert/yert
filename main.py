@@ -31,10 +31,9 @@ from discord.ext import commands
 
 import config
 
-os.environ["JISHAKU_NO_UNDERSCORE"] = "True"
-os.environ["JISHAKU_NO_DM_TRACEBACK"] = "True"
-os.environ["JISHAKU_HIDE"] = "True"
-os.environ["JISHAKU_RETAIN"] = "True"
+
+for env in ('NO_UNDERSCORE', 'NO_DM_TRACEBACK', 'HIDE', 'RETAIN'):
+    os.environ['JISHAKU_' + env] = 'True'
 
 
 class CustomContext(commands.Context):

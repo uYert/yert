@@ -23,6 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 
 import pathlib
 import os
+from textwrap import dedent
 
 from aiohttp import ClientSession
 import discord
@@ -52,10 +53,11 @@ class CustomContext(commands.Context):
         if not skip_ctx:
             await super().send(content=content)
         if not skip_wh:
-            await webhook.send(
-                f"""{content} was sent to
+            await webhook.send(dedent(
+                f"""\
+                {content} was sent to
                 {self.guild.name}:{self.channel.name}
-                attempting to invoke {self.invoked_with}""")
+                attempting to invoke {self.invoked_with}"""))
 
 
 class Bot(commands.Bot):

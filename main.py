@@ -22,32 +22,48 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 """
 
 import pathlib
-from typing import Optional
+import os
 
+from aiohttp import ClientSession
 import discord
 from discord.ext import commands
 
 import config
 
+os.environ["JISHAKU_NO_UNDERSCORE"] = "True"
+os.environ["JISHAKU_NO_DM_TRACEBACK"] = "True"
+os.environ["JISHAKU_HIDE"] = "True"
+os.environ["JISHAKU_RETAIN"] = "True"
+
 
 class CustomContext(commands.Context):
     """Custom context for extra functions"""
 
-    def __init__(self, **attrs):
-        super().__init__(**attrs)
+    # def __init__(self, **attrs):
+    #     super().__init__(**attrs)
 
-    async def webhook_send(self, content: str, *, webhook: discord.Webhook, skip_wh: bool = False, skip_ctx: bool = False) -> None:
+    async def webhook_send(self,
+                           content: str,
+                           *,
+                           webhook: discord.Webhook,
+                           skip_wh: bool = False,
+                           skip_ctx: bool = False) -> None:
+        """ This is a custom ctx addon for sending to the webhook and/or the ctx.channel. """
         if not skip_ctx:
             await super().send(content=content)
         if not skip_wh:
-            await webhook.send(f"{content} was sent to {self.guild.name}:{self.channel.name} attempting to invoke {self.invoked_with}")
+            await webhook.send(
+                f"""{content} was sent to
+                {self.guild.name}:{self.channel.name}
+                attempting to invoke {self.invoked_with}""")
 
 
 class Bot(commands.Bot):
     def __init__(self, **options):
         super().__init__(**options)
+        self.session = ClientSession(loop=self.loop)
 
-        for file in pathlib.Path('extensions').glob('**/*.py'):
+        for file in pathlib.Path('cogs').glob('**/*.py'):
             *tree, _ = file.parts
             # fstrings would be ugly there
             self.load_extension('.'.join(tree) + '.' + file.stem)

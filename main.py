@@ -28,6 +28,7 @@ from typing import Optional
 from discord.ext import commands
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 class CustomContext(commands.Context):
     """Custom context for extra functions"""
 
@@ -42,12 +43,15 @@ class CustomContext(commands.Context):
         
 =======
 >>>>>>> Fix naming of config constants
+=======
+>>>>>>> 65e984fcaa91d3b596b5157a788904350afd56e2
 
 class Bot(commands.Bot):
     def __init__(self, **options):
         super().__init__(**options)
 
         for file in pathlib.Path('extensions').glob('**/*.py'):
+<<<<<<< HEAD
 <<<<<<< HEAD
             *tree, _ = file.parts 
             self.load_extension('.'.join(tree) + '.' + file.stem)  # fstrings would be ugly there 
@@ -68,3 +72,12 @@ if __name__ == '__main__':
 if __name__ == '__main__':
     Bot(command_prefix='yoink ').run(config.BOT_TOKEN)
 >>>>>>> Fix naming of config constants
+=======
+            *tree, _ = file.parts
+            # fstrings would be ugly there
+            self.load_extension('.'.join(tree) + '.' + file.stem)
+
+
+if __name__ == '__main__':
+    Bot(command_prefix='yoink ').run(config.BOT_TOKEN)
+>>>>>>> 65e984fcaa91d3b596b5157a788904350afd56e2

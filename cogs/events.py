@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 #==events.py==#
 #imports
 import config
@@ -30,6 +31,9 @@ import discord
 =======
 from datetime import datetime
 >>>>>>> events: added typehints, reoredered imports and docstrings
+=======
+from datetime import datetime
+>>>>>>> 65e984fcaa91d3b596b5157a788904350afd56e2
 import traceback
 import typing
 
@@ -39,7 +43,9 @@ from inspect import signature
 
 
 
+
 class Events(commands.Cog):
+<<<<<<< HEAD
 <<<<<<< HEAD
     def __init__(self, bot):
         self.bot = bot
@@ -225,8 +231,43 @@ class Events(commands.Cog):
 def setup(bot):
     bot.add_cog(Events(bot))
 =======
+=======
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
+
+    def fmt(self, dt: datetime):
+        return dt.strftime("%Y %b %d: %H:%M:%S:%f")
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        pass
+
+    @commands.Cog.listener()
+    async def on_message(self, message: Message):
+        pass
+
+    @commands.Cog.listener()
+    async def on_command(self, ctx: commands.Context):
+        pass
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx: commands.Context, error: Exception):
+        if hasattr(ctx.command, 'on_error'):
+            return
+        error = getattr(error, 'original', error)
+        if isinstance(error, commands.MissingPermissions):
+            pass
+
+    @commands.Cog.listener()
+    async def on_command_completion(self, ctx: commands.Context):
+        pass
+
+>>>>>>> 65e984fcaa91d3b596b5157a788904350afd56e2
 
 def setup(bot):
     """ Cog entrypoint. """
     bot.add_cog(Events(bot))
+<<<<<<< HEAD
 >>>>>>> events: added typehints, reoredered imports and docstrings
+=======
+>>>>>>> 65e984fcaa91d3b596b5157a788904350afd56e2

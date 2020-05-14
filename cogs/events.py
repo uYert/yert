@@ -58,27 +58,25 @@ class Events(commands.Cog):
 
     @commands.command()
     @commands.is_owner()
-    async def edit_ignored(self, ctx: commands.Context, mode: str, *args: typing.Sequence[str]) -> None:
+    async def edit_ignored(self, ctx: commands.Context, mode: str, args: str) -> None:
         """Adds or removes an exception from the list of exceptions to ignore, if you want to add or remove commands.MissingRole, be sure to exclude the 'commands.'"""
         assert mode in ['add', 'remove'], "You entered an invalid mode."
-        for arg in args:
-            if hasattr(commands, arg):
+        if hasattr(commands, args):
+            if mode == 'add':
+                if getattr(commands, args) not in self.IGNORED:
+                    self.IGNORED.append(getattr(commands, args))
+                else:
+                    await ctx.webhook_send("commands.{0} is already in the list of ignored exceptions".format(args))
 
-                if mode == 'add':
-                    if getattr(commands, arg) not in self.IGNORED:
-                        self.IGNORED.append(getattr(commands, arg))
-                    else:
-                        await ctx.webhook_send("commands.{0} is already in the list of ignored exceptions".format(arg))
-
-                elif mode == 'remove':
-                    try:
-                        self.IGNORED.pop(self.IGNORED.index(
-                            getattr(commands, arg)))
-                    except ValueError:
-                        await ctx.webhook_send("{0} not in the ignored list of exceptions".format(arg))
-            else:
-                raise AttributeError(
-                    "commands module has no attribute {0}, command aborted".format(arg))
+            elif mode == 'remove':
+                try:
+                    self.IGNORED.pop(self.IGNORED.index(
+                        getattr(commands, args)))
+                except ValueError:
+                    await ctx.webhook_send("{0} not in the ignored list of exceptions".format(args))
+        else:
+            raise AttributeError(
+                "commands module has no attribute {0}, command aborted".format(args))
 
     @commands.Cog.listener()
     async def on_ready(self):

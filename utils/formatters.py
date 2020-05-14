@@ -25,7 +25,7 @@ SOFTWARE.
 from collections import namedtuple
 from math import ceil
 from random import random, uniform
-from typing import Iterator, Tuple
+from typing import Any, Iterator, Tuple
 
 from discord import Color, Embed
 

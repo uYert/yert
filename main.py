@@ -57,6 +57,5 @@ class Bot(commands.Bot):
 
 
 if __name__ == '__main__':
-    bot = Bot(command_prefix='yoink ')
-    bot.owner_ids = config.OWNER_IDS
-    bot.run(config.BOT_TOKEN)
+    Bot(command_prefix='yoink ', owner_ids=config.OWNER_IDS).run(
+        config.BOT_TOKEN)

@@ -80,7 +80,7 @@ class Images(commands.Cog):
         new_bytes = self.bot.loop.run_in_executor(None, self._shifter, attachment_bytes, file_size, filename)
         end_time = time.time()
 
-        new_image = File(new_bytes, filename)
+        new_image = File(BytesIO(new_bytes), filename)
 
         embed = Embed(title="", colour=randint(0, 0xffffff))
         embed.set_footer(text=f"Shifting that image took : {end_time-start_time}")

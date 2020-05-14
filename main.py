@@ -51,6 +51,7 @@ class CustomContext(commands.Context):
         """ This is a custom ctx addon for sending to the webhook and/or the ctx.channel. """
         if not skip_ctx:
             await super().send(content=content)
+            
         if not skip_wh:
             await webhook.send(dedent(
                 f"""\

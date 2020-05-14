@@ -62,7 +62,11 @@ class Events(commands.Cog):
     @commands.group(invoke_without_command=True)
     @commands.is_owner()
     async def ignored(self, ctx: commands.Context) -> None:
-        """Adds or removes an exception from the list of exceptions to ignore, if you want to add or remove commands.MissingRole, be sure to exclude the 'commands.'"""
+        """
+        Adds or removes an exception from the list of exceptions to ignore, 
+        if you want to add or remove commands.MissingRole, 
+        be sure to exclude the 'commands.'
+        """
         await ctx.send(", ".join([exc.__name__ for exc in self.IGNORED]))
     
     @ignored.command()
@@ -114,6 +118,7 @@ class Events(commands.Cog):
             return
 
         error = getattr(error, 'original', error)
+        
         if isinstance(error, commands.MissingPermissions):
             message = "{0.mention}, you're missing the following persissions to use that command; {1.missing_perms}".format(
                 ctx.author, error)
@@ -166,7 +171,7 @@ class Events(commands.Cog):
             return await ctx.webhook_send(message, webhook=self.WEBHOOK)
 
         if isinstance(error, commands.BotMissingRole):
-            if isinstance(error.role):
+            if isinstance(error.role): #! what 
                 role_name = commands.RoleConverter().convert(ctx, str(error.missing_role))
             else:
                 role_name = error.missing_role

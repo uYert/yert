@@ -52,6 +52,9 @@ class Bot(commands.Bot):
             # fstrings would be ugly there
             self.load_extension('.'.join(tree) + '.' + file.stem)
 
+        # Jishaku load
+        self.load_extension("jishaku")
+
     async def get_context(self, message: discord.Message, *, cls=None):
         return await super().get_context(message, cls=cls or CustomContext)
 

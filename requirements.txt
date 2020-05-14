@@ -4,3 +4,9 @@ discord.py
 git+https://github.com/Rapptz/discord-ext-menus@master#egg=discord-ext-menus
 git+https://github.com/XuaTheGrate/Flag-Parsing@master#egg=discord-flags
 jishaku
+
+# Others
+fuzzywuzzy
+numpy
+pillow
+uwuify

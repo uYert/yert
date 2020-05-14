@@ -112,7 +112,7 @@ class Events(commands.Cog):
         
         if isinstance(error, commands.CommandOnCooldown):
             message = "{0.mention}, that command is on cooldown for another {1.retry_after}s".format(ctx.author, error)
-            return await ctx.webhook_send(message, webhook=self.WEBHOOK)
+            return await ctx.webhook_send(message, webhook=self.WEBHOOK, skip_ctx=True)
 
         if isinstance(error, commands.MissingRequiredArgument):
             message = "{0.mention}, you were missing at least one argument from that command; {1.param}".format(ctx.author, error)

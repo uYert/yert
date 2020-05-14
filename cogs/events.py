@@ -171,7 +171,7 @@ class Events(commands.Cog):
             return await ctx.webhook_send(message, webhook=self.WEBHOOK)
 
         if isinstance(error, commands.BotMissingRole):
-            if isinstance(error.role): #! what 
+            if isinstance(error.role, int): #! what 
                 role_name = commands.RoleConverter().convert(ctx, str(error.missing_role))
             else:
                 role_name = error.missing_role

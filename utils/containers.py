@@ -105,11 +105,3 @@ class NestedNamespace(SimpleNamespace):  # Thanks, cy
 
     def to_dict(self) -> MappingProxyType:
         return MappingProxyType(self.__attrs)
-
-
-def get_index(indexable, index: int, default=None) -> Any:
-    """Tries to get an item using it's index, returns the default is not found"""
-    try:
-        return indexable[index]
-    except IndexError:
-        return default

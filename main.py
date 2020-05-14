@@ -24,8 +24,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 import discord
 import pathlib
 import config
-
+from typing import Optional
 from discord.ext import commands
+
+class CustomContext(commands.Context):
+    """Custom context for extra functions"""
+
+    def __init__(self, **attrs):
+        super().__init__(**attrs)
+
+    async def webhook_send(self, content: str, *, webhook: discord.Webhook, skip_wh: bool = False, skip_ctx: bool = False) -> None:
+        if not skip_ctx:
+            await super().send(content=content)
+        if not skip_wh:
+            await webhook.send("{0} was sent to {1.guild.name}:{1.channel.name} attempting to invoke {1.invoked_with}".format(content, self))
+        
 
 class Bot(commands.Bot):
     def __init__(self, **options):
@@ -34,6 +47,11 @@ class Bot(commands.Bot):
         for file in pathlib.Path('extensions').glob('**/*.py'):
             *tree, _ = file.parts 
             self.load_extension('.'.join(tree) + '.' + file.stem)  # fstrings would be ugly there 
+        
+    async def get_context(self, message: discord.Message, *, cls=None):
+        return await super().get_context(message, cls=cls or CustomContext)
+
+    
             
 if __name__ == '__main__':
-    Bot(command_prefix='yoink ').run(config.DISCORD_TOKEN)
+    Bot(command_prefix='yoink ').run(config.BOT_TOKEN)

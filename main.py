@@ -21,11 +21,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 """
 
-import discord
 import pathlib
-import config
 from typing import Optional
+
+import discord
 from discord.ext import commands
+
+import config
+
 
 class CustomContext(commands.Context):
     """Custom context for extra functions"""
@@ -37,21 +40,22 @@ class CustomContext(commands.Context):
         if not skip_ctx:
             await super().send(content=content)
         if not skip_wh:
-            await webhook.send("{0} was sent to {1.guild.name}:{1.channel.name} attempting to invoke {1.invoked_with}".format(content, self))
-        
+            await webhook.send(f"{content} was sent to {self.guild.name}:{self.channel.name} attempting to invoke {self.invoked_with}")
+
 
 class Bot(commands.Bot):
     def __init__(self, **options):
         super().__init__(**options)
-        
+
         for file in pathlib.Path('extensions').glob('**/*.py'):
-            *tree, _ = file.parts 
-            self.load_extension('.'.join(tree) + '.' + file.stem)  # fstrings would be ugly there 
-        
+            *tree, _ = file.parts
+            # fstrings would be ugly there
+            self.load_extension('.'.join(tree) + '.' + file.stem)
+
     async def get_context(self, message: discord.Message, *, cls=None):
         return await super().get_context(message, cls=cls or CustomContext)
 
-    
-            
+
 if __name__ == '__main__':
-    Bot(command_prefix='yoink ').run(config.BOT_TOKEN, owner_ids=[273035520840564736, 361158149371199488, 155863164544614402])
+    Bot(command_prefix='yoink ').run(
+        config.BOT_TOKEN, owner_ids=config.OWNER_IDS)

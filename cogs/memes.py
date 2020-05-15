@@ -110,14 +110,12 @@ class Memes(commands.Cog):
 
         base_url = "https://www.reddit.com/r/{}/{}.json".format(sub, method)
 
-        async with self.bot.session() as ses:
-            async with ses.get(base_url) as res:
-                page_json = await res.text()
+        async with self.bot.session.get(base_url) as res:
+            page_json = await res.json()
 
         for counter in range(amount):
             try:
-                post_data = json.loads(
-                    page_json['data']['children'][counter]['data'])
+                post_data = page_json['data']['children'][counter]['data']
 
                 nsfw = post_data['over_18']
                 title = post_data['title'] if len(
@@ -125,10 +123,9 @@ class Memes(commands.Cog):
                 self_text = post_data['selftext']
                 url = "https://www.reddit.com{}".format(post_data['permalink'])
                 author = post_data['author']
-                image_link = post_data['secure_media']['oembed']['thumbnail_url'] or post_data['thumbnail']
                 try:
                     image_link = post_data['secure_media']['oembed']['thumbnail_url']
-                except json.decoder.JSONDecodeError:
+                except TypeError:
                     image_link = post_data['thumbnail']
                 video_link = post_data['url']
                 upvotes = post_data['score']

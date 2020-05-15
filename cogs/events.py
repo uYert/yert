@@ -143,7 +143,7 @@ class Events(commands.Cog):
             bad_argument = list(ctx.command.clean_params)[len(
                 ctx.args[2:] if ctx.command.cog else ctx.args[1:])]
             bad_typehint = signature(
-                ctx.command.__call__).parameters[bad_argument].annotation
+                ctx.command.callback).parameters[bad_argument].annotation
             message = "{0.mention}, argument {1} was expecting {2}".format(
                 ctx.author, bad_argument, bad_typehint)
             return await ctx.webhook_send(message, webhook=self.WEBHOOK)

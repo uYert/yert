@@ -21,10 +21,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import json
-import random
 from collections import namedtuple
 from datetime import datetime
+import json
+import random
 from typing import Any, List
 
 from discord import AsyncWebhookAdapter, Embed, Webhook
@@ -33,6 +33,7 @@ from discord.ext import commands, menus
 import config
 
 random.seed(datetime.utcnow())
+
 
 class RedditSource(menus.ListPageSource):
     def __init__(self, data, embeds):
@@ -64,7 +65,7 @@ class Memes(commands.Cog):
                 continue
 
             embed = Embed(
-                title=item.post_title,
+                title=item.title,
                 description=item.self_text,
                 colour=random.randint(0, 0xffffff),
                 url=item.url
@@ -86,13 +87,15 @@ class Memes(commands.Cog):
             embed.add_field(
                 name="Total comments", value=item.comment_count, inline=True
             )
-            page_counter = "Result {0} of {1}".format(iterable.index(item), len(iterable) - 1)
+            page_counter = "Result {0} of {1}".format(
+                iterable.index(item), len(iterable) - 1)
             embed.set_footer(
-                text="{0} | {1.subreddit} | Requested by {2}".format(page_counter, item, requester)
+                text="{0} | {1.subreddit} | Requested by {2}".format(
+                    page_counter, item, requester)
             )
 
             embeds.append(embed)
-        
+
         return embeds
 
     @commands.command()
@@ -100,48 +103,53 @@ class Memes(commands.Cog):
     async def reddit(self, ctx: commands.Context, sub: str = 'memes', method: str = 'hot', amount: int = 5):
         """Gets the <sub>reddits <amount> of posts sorted by <method>"""
 
-        PostObj = namedtuple('PostObj', ['nsfw', 'title', 'self_text', 'url', 'author', 'image_link', 'video_link', 'upvotes', 'comment_count', 'subreddit'])
+        PostObj = namedtuple('PostObj', ['nsfw', 'title', 'self_text', 'url', 'author',
+                                         'image_link', 'video_link', 'upvotes', 'comment_count', 'subreddit'])
 
         posts = set()
 
         base_url = "https://www.reddit.com/r/{}/{}.json".format(sub, method)
 
-        async with self.bot.session() as ses:
-            async with ses.get(base_url) as res:
-                page_json = await res.text()
+        async with self.bot.session.get(base_url) as res:
+            page_json = await res.json()
 
         for counter in range(amount):
             try:
-                post_data = json.loads(page_json['data']['children'][counter]['data'])
+                post_data = page_json['data']['children'][counter]['data']
 
                 nsfw = post_data['over_18']
-                title = post_data['title'] if len(post_data) <= 250 else post_data['title'][:200] + '...'
+                title = post_data['title'] if len(
+                    post_data) <= 250 else post_data['title'][:200] + '...'
                 self_text = post_data['selftext']
                 url = "https://www.reddit.com{}".format(post_data['permalink'])
                 author = post_data['author']
-                image_link = post_data['secure_media']['oembed']['thumbnail_url'] or post_data['thumbnail']
                 try:
                     image_link = post_data['secure_media']['oembed']['thumbnail_url']
-                except json.decoder.JSONDecodeError:
+                except TypeError:
                     image_link = post_data['thumbnail']
                 video_link = post_data['url']
                 upvotes = post_data['score']
                 comment_count = post_data['num_comments']
                 subreddit = post_data['subreddit']
 
-                PostObj = PostObj(nsfw=nsfw, title=title, self_text=self_text,
+                _post = PostObj(nsfw=nsfw, title=title, self_text=self_text,
                                 url=url, author=author, image_link=image_link,
                                 video_link=video_link, upvotes=upvotes,
                                 comment_count=comment_count, subreddit=subreddit
                                 )
 
-                posts.add(PostObj)
+                posts.add(_post)
             except json.decoder.JSONDecodeError:
                 await ctx.webhook_send(
-                    "json decode error in {0.mention} trying item {1} of {2}".format(ctx.channel, counter, amount),
+                    "json decode error in {0.mention} trying item {1} of {2}".format(
+                        ctx.channel, counter, amount),
                     webhook=self.WEBHOOK, skip_ctx=True
                 )
         embeds = self._gen_embeds(ctx.author, posts, ctx.channel.is_nsfw())
         pages = menus.MenuPages(source=RedditSource(None, embeds))
         await pages.start(ctx)
 
+
+def setup(bot):
+    """ Cog Entrypoint. """
+    bot.add_cog(Memes(bot))

@@ -23,7 +23,6 @@ SOFTWARE.
 """
 from collections import namedtuple
 from datetime import datetime
-import json
 import random
 from typing import Any, List
 
@@ -124,8 +123,10 @@ class Memes(commands.Cog):
                 url = "https://www.reddit.com{}".format(post_data['permalink'])
                 author = post_data['author']
                 try:
-                    image_link = post_data['secure_media']['oembed']['thumbnail_url']
-                except TypeError:
+                    if media: = post_data['secure_media']:
+                        if oembed: = media['oembed']:
+                            image_link = oembed['thumbnail_url']
+                except KeyError:
                     image_link = post_data['thumbnail']
                 video_link = post_data['url']
                 upvotes = post_data['score']
@@ -139,13 +140,13 @@ class Memes(commands.Cog):
                                 )
 
                 posts.add(_post)
-            except json.decoder.JSONDecodeError:
+            except Exception as e:
                 await ctx.webhook_send(
-                    "json decode error in {0.mention} trying item {1} of {2}".format(
-                        ctx.channel, counter, amount),
+                    "{0} in {1.mention} trying item {2} of {3}".format(
+                        e.__name__, ctx.channel, counter, amount),
                     webhook=self.WEBHOOK, skip_ctx=True
                 )
-        embeds = self._gen_embeds(ctx.author, posts, ctx.channel.is_nsfw())
+        embeds = self._gen_embeds(ctx.author, list(posts), ctx.channel.is_nsfw())
         pages = menus.MenuPages(source=RedditSource(None, embeds))
         await pages.start(ctx)
 

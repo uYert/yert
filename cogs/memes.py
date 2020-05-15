@@ -65,7 +65,7 @@ class Memes(commands.Cog):
                 continue
 
             embed = Embed(
-                title=item.post_title,
+                title=item.title,
                 description=item.self_text,
                 colour=random.randint(0, 0xffffff),
                 url=item.url
@@ -132,13 +132,13 @@ class Memes(commands.Cog):
                 comment_count = post_data['num_comments']
                 subreddit = post_data['subreddit']
 
-                PostObj = PostObj(nsfw=nsfw, title=title, self_text=self_text,
-                                  url=url, author=author, image_link=image_link,
-                                  video_link=video_link, upvotes=upvotes,
-                                  comment_count=comment_count, subreddit=subreddit
-                                  )
+                _post = PostObj(nsfw=nsfw, title=title, self_text=self_text,
+                                url=url, author=author, image_link=image_link,
+                                video_link=video_link, upvotes=upvotes,
+                                comment_count=comment_count, subreddit=subreddit
+                                )
 
-                posts.add(PostObj)
+                posts.add(_post)
             except json.decoder.JSONDecodeError:
                 await ctx.webhook_send(
                     "json decode error in {0.mention} trying item {1} of {2}".format(

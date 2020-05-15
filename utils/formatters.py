@@ -68,3 +68,60 @@ class BetterEmbed(Embed):
         for field in fields:
             self.add_field(name=field[0], value=field[1], inline=get_index(field, 2, True))
         return self
+
+class Flags():
+    def __init__(self, value: int):
+        self.value = value
+
+    @property
+    def employee(self):
+        return self.value >> 0
+
+    @property
+    def partner(self):
+        return self.value >> 1
+
+    @property
+    def hypesquad_events(self):
+        return self.value >> 2
+
+    @property
+    def bug_hunter_one(self):
+        return self.value >> 3
+
+    @property
+    def house_bravery(self):
+        return self.value >> 6
+
+    @property
+    def house_brilliance(self):
+        return self.value >> 7
+
+    @property
+    def house_balance(self):
+        return self.value >> 8
+
+    @property
+    def early_supporter(self):
+        return self.value >> 9
+
+    @property
+    def team_user(self):
+        return self.value >> 10
+
+    @property
+    def system_user(self):
+        return self.value >> 12
+
+    @property
+    def bug_hunter_two(self):
+        return self.value >> 14
+
+    @property
+    def verified_bot(self):
+        return self.value >> 16
+
+    @property
+    def verified_user(self):
+        return self.value >> 17
+    

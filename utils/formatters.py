@@ -27,11 +27,11 @@ from math import ceil
 from random import random, uniform
 from typing import Any, Iterator, Tuple
 
-from discord import Color, Embed
+from discord import Colour, Embed
 
-def random_color() -> Color:
-    """Returns a random pastel color"""
-    return Color.from_hsv(random(), uniform(0.75, 0.95), 1)
+def random_colour() -> Colour:
+    """Returns a random pastel colour"""
+    return Colour.from_hsv(random(), uniform(0.75, 0.95), 1)
 
 
 def chunker(to_chunk: list, chunk_size: int = 5) -> Iterator:
@@ -50,7 +50,7 @@ class BetterEmbed(Embed):
     """Haha yes"""
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.color = random_color()
+        self.color = random_colour()
 
     def fill_fields(self) -> 'ColoredEmbed':                
         """Fill the remaining fields so they are lined up properly"""

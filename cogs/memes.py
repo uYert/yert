@@ -33,16 +33,14 @@ from discord.ext import commands, menus
 random.seed(datetime.utcnow())
 
 
-class RedditSource(menus.ListPageSource):
-    """ Quick dpy Menu. """
-
-    def __init__(self, data, embeds):
-        self.data = data
+class PagedEmbedMenu(menus.ListPageSource):
+    """ Quick ListPageSource to allow for the creation of menus via lists of embeds """
+    def __init__(self, embeds: List[Embed]):
         self.embeds = embeds
-        super().__init__(data, per_page=1)
+        super().__init__([*range(len(embeds))], per_page=1)
 
-    async def format_page(self, menu, entries):
-        return self.embeds[entries]
+    async def format_page(self, menu, page):
+        return self.embeds[page]
 
 
 class Memes(commands.Cog):
@@ -100,7 +98,7 @@ class Memes(commands.Cog):
                      sort: str = 'hot',
                      amount: int = 5):
         """Gets the <sub>reddits <amount> of posts sorted by <method>"""
-        if sort.lower() not in ("top", "hot", "best", "controversial"):
+        if sort.lower() not in ("top", "hot", "best", "controversial", "new", "rising"):
             return await ctx.send("Not a valid sort-by type.")
 
         PostObj = namedtuple('PostObj', ['nsfw', 'title', 'self_text', 'url', 'author',
@@ -150,7 +148,7 @@ class Memes(commands.Cog):
                 )
         embeds = self._gen_embeds(
             ctx.author, list(posts), ctx.channel.is_nsfw())
-        pages = menus.MenuPages(source=RedditSource(None, embeds))
+        pages = menus.MenuPages(source=PagedEmbedMenu(embeds))
         await pages.start(ctx)
 
 

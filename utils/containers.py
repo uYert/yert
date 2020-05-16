@@ -80,7 +80,7 @@ class TimedCache(MutableMapping):
     def __repr__(self) -> repr: return repr(self.storage)
     def __str__(self) -> str: return str(self.storage)
 
-        
+
 class NestedNamespace(SimpleNamespace):  # Thanks, cy 
     """
     A class that transforms a dictionnary into an object with the same attributes
@@ -96,8 +96,20 @@ class NestedNamespace(SimpleNamespace):  # Thanks, cy
             if isinstance(v, dict):
                 attrs[k] = self.__class__(**v)
             if isinstance(v, list):
-                v = [self.__class__(**item) for item in v]
-        return attrs
+                counter = 1
+                for item in v:
+                    if isinstance(item, dict):
+                        if counter == 1:
+                            _k = list(item.keys())[0]
+                            _v = list(item.values())[0]
+                            attrs[k] = self.__class__(**{str(_k): str(_v)})
+                            counter += 1
+                        else:
+                            _k = list(item.keys())[0]
+                            _v = list(item.values())[0]
+                            setattr(attrs[k], _k, _v)
+        _attrs = attrs  #do this to avoid changing the size of the dict whilst iterating
+        return _attrs
 
     def __repr__(self) -> repr:
         attrs = ' '.join(f'{k}={v}' for k, v in self.__dict__.items() if not k.startswith('_'))

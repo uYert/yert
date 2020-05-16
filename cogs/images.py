@@ -28,7 +28,7 @@ import time
 from discord import Embed, File
 from discord.ext import commands
 from PIL import Image
-
+from utils import to_run_in_executor
 
 class Images(commands.Cog):
     """ Image cog. Time for manipulation. """
@@ -36,7 +36,8 @@ class Images(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def _shifter(self, attachment_bytes: bytes, size: tuple):
+    @to_run_in_executor(loop=None, executor=None)  # I don't remember if those were working properly
+    def _shifter(self, attachment_bytes: bytes, size: tuple, filename: str):
         image_obj = Image.frombytes('RGB', size, attachment_bytes)
 
         bands = image_obj.split()
@@ -46,10 +47,9 @@ class Images(commands.Cog):
         blue_data = list(bands[2].getdata())
 
         for i in [red_data, green_data, blue_data]:
-            random_num = randint(0, len(i))
-            i[random_num // 3:random_num // 2], i[random_num // 2:random_num //
-                                                  3] = i[random_num // 4:random_num // 5], i[random_num // 5:random_num // 4]
-
+            random_num = randint(0, len(i))  # scary
+            i[random_num // 3:random_num // 2], i[random_num // 2:random_num // 3] = i[random_num // 4:random_num // 5], i[random_num // 5:random_num // 4]
+        
         new_red = Image.new('L', size)
         new_red.putdata(red_data)
 
@@ -68,7 +68,7 @@ class Images(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
     async def shift(self, ctx: commands.Context):
         """Shifts the RGB bands in an attached image or the author's profile picture"""
-        if len(ctx.message.attachments) == 0:
+        if not ctx.message.attachments:
             attachment_bytes = await ctx.author.avatar_url_as(size=1024, format='PNG').read()
             filename = ctx.author.display_name + '.png'
             file_size = (1024, 1024)
@@ -80,8 +80,9 @@ class Images(commands.Cog):
             file_size = (target.width, target.height)
 
         start_time = time.time()
-        new_bytes = self.bot.loop.run_in_executor(
-            None, self._shifter, attachment_bytes, file_size, filename)
+
+        new_bytes = await self._shifter(attachment_bytes, file_size, filename)
+
         end_time = time.time()
 
         new_image = File(BytesIO(new_bytes), filename)

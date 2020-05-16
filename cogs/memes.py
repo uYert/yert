@@ -123,8 +123,8 @@ class Memes(commands.Cog):
                 url = "https://www.reddit.com{}".format(post_data['permalink'])
                 author = post_data['author']
                 try:
-                    if media: = post_data['secure_media']:
-                        if oembed: = media['oembed']:
+                    if media := post_data['secure_media']:
+                        if oembed := media['oembed']:
                             image_link = oembed['thumbnail_url']
                 except KeyError:
                     image_link = post_data['thumbnail']

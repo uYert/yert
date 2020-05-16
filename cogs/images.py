@@ -25,16 +25,18 @@ from io import BytesIO
 from random import randint
 import time
 
-from discord import Colour, Embed, File
+from discord import Embed, File
 from discord.ext import commands
 from PIL import Image
 
 
 class Images(commands.Cog):
+    """ Image cog. Time for manipulation. """
+
     def __init__(self, bot):
         self.bot = bot
 
-    def _shifter(self, attachment_bytes: bytes, size: tuple, filename: str):
+    def _shifter(self, attachment_bytes: bytes, size: tuple):
         image_obj = Image.frombytes('RGB', size, attachment_bytes)
 
         bands = image_obj.split()
@@ -93,4 +95,5 @@ class Images(commands.Cog):
 
 
 def setup(bot):
+    """ Cog entrypoint. """
     bot.add_cog(Images(bot))

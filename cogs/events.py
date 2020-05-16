@@ -219,7 +219,6 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_command_completion(self, ctx: commands.Context):
         """ On command completion. """
-        pass
 
 
 def setup(bot):

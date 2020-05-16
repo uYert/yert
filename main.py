@@ -51,13 +51,14 @@ class CustomContext(commands.Context):
         """ This is a custom ctx addon for sending to the webhook and/or the ctx.channel. """
         if not skip_ctx:
             await super().send(content=content)
-            
+
         if not skip_wh:
             await webhook.send(dedent(
                 f"""\
                 {content} was sent to
                 {self.guild.name}:{self.channel.name}
-                attempting to invoke {self.invoked_with}"""))
+                attempting to invoke {self.invoked_with}
+                """))
 
 
 class Bot(commands.Bot):

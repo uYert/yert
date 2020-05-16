@@ -62,6 +62,8 @@ class CustomContext(commands.Context):
 
 
 class Bot(commands.Bot):
+    """ Our main bot-ty bot. """
+
     def __init__(self, **options):
         super().__init__(**options)
         self.session = ClientSession(loop=self.loop)

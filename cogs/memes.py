@@ -25,6 +25,7 @@ from collections import namedtuple
 from datetime import datetime
 import random
 from typing import Any, List
+from textwrap import shorten
 
 from discord import Embed
 from discord.ext import commands, menus
@@ -120,8 +121,7 @@ class Memes(commands.Cog):
                 nsfw = post_data['over_18']
                 if nsfw and not ctx.channel.nsfw():
                     continue
-                title = post_data['title'] if len(
-                    post_data) <= 250 else post_data['title'][:200] + '...'
+                title = shorten(post_data['title'], width=250)
                 self_text = post_data['selftext']
                 url = "https://www.reddit.com{}".format(post_data['permalink'])
                 author = post_data['author']

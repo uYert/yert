@@ -26,15 +26,15 @@ from datetime import datetime
 import random
 from typing import Any, List
 
-from discord import AsyncWebhookAdapter, Embed, Webhook
+from discord import Embed
 from discord.ext import commands, menus
-
-import config
 
 random.seed(datetime.utcnow())
 
 
 class RedditSource(menus.ListPageSource):
+    """ Quick dpy Menu. """
+
     def __init__(self, data, embeds):
         self.data = data
         self.embeds = embeds
@@ -45,16 +45,11 @@ class RedditSource(menus.ListPageSource):
 
 
 class Memes(commands.Cog):
+    """ Memes cog. Probably gonna be loaded with dumb commands. """
+
     def __init__(self, bot):
         self.bot = bot
-
-        self.WEBHOOK = self._webhook()
-
-    def _webhook(self) -> Webhook:
-        wh_id, wh_token = config.WEBHOOK
-        hook = Webhook.partial(
-            id=wh_id, token=wh_token, adapter=AsyncWebhookAdapter(self.bot.session))
-        return hook
+        self.webhook = bot.get_cog("Events").webhook
 
     def _gen_embeds(self, requester: str, iterable: List[Any], nsfw_channel: bool) -> List[Embed]:
         embeds = []
@@ -99,15 +94,21 @@ class Memes(commands.Cog):
 
     @commands.command()
     @commands.max_concurrency(1, commands.BucketType.channel, wait=False)
-    async def reddit(self, ctx: commands.Context, sub: str = 'memes', method: str = 'hot', amount: int = 5):
+    async def reddit(self, ctx: commands.Context,
+                     sub: str = 'memes',
+                     sort: str = 'hot',
+                     amount: int = 5):
         """Gets the <sub>reddits <amount> of posts sorted by <method>"""
+        if sort.lower() not in ("top", "hot", "best", "controversial"):
+            return await ctx.send("Not a valid sort-by type.")
 
         PostObj = namedtuple('PostObj', ['nsfw', 'title', 'self_text', 'url', 'author',
-                                         'image_link', 'video_link', 'upvotes', 'comment_count', 'subreddit'])
+                                         'image_link', 'video_link', 'upvotes',
+                                         'comment_count', 'subreddit'])
 
         posts = set()
 
-        base_url = "https://www.reddit.com/r/{}/{}.json".format(sub, method)
+        base_url = f"https://www.reddit.com/r/{sub}/{sort}.json"
 
         async with self.bot.session.get(base_url) as res:
             page_json = await res.json()
@@ -117,6 +118,8 @@ class Memes(commands.Cog):
                 post_data = page_json['data']['children'][counter]['data']
 
                 nsfw = post_data['over_18']
+                if nsfw and not ctx.channel.nsfw():
+                    continue
                 title = post_data['title'] if len(
                     post_data) <= 250 else post_data['title'][:200] + '...'
                 self_text = post_data['selftext']
@@ -140,13 +143,13 @@ class Memes(commands.Cog):
                                 )
 
                 posts.add(_post)
-            except Exception as e:
+            except Exception as err:
                 await ctx.webhook_send(
-                    "{0} in {1.mention} trying item {2} of {3}".format(
-                        e.__name__, ctx.channel, counter, amount),
-                    webhook=self.WEBHOOK, skip_ctx=True
+                    f"{err} in {ctx.channel.mention} trying item {counter} of {amount}",
+                    webhook=self.webhook, skip_ctx=True
                 )
-        embeds = self._gen_embeds(ctx.author, list(posts), ctx.channel.is_nsfw())
+        embeds = self._gen_embeds(
+            ctx.author, list(posts), ctx.channel.is_nsfw())
         pages = menus.MenuPages(source=RedditSource(None, embeds))
         await pages.start(ctx)
 

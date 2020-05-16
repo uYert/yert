@@ -67,7 +67,7 @@ class EmbeddedHelpCommand(commands.HelpCommand):
         def key(c):
             return c.cog_name or '\u200bUncategorized'
         bot = self.context.bot
-        embed = BetterEmbed(title=f'{bot.user.name} Help', color=discord.Color.main)
+        embed = BetterEmbed(title=f'{bot.user.name} Help')
         description = f'Use `{self.clean_prefix}help <command/category>` for more help\n\n'
         entries = await self.filter_commands(bot.commands, sort=True, key=key)
         for cog, cmds in itertools.groupby(entries, key=key):
@@ -77,7 +77,7 @@ class EmbeddedHelpCommand(commands.HelpCommand):
         await self.context.send(embed=embed)
 
     async def send_cog_help(self, cog):
-        embed = BetterEmbed(title=f'{cog.qualified_name} Category', color=discord.Color.main)\
+        embed = BetterEmbed(title=f'{cog.qualified_name} Category')\
             .set_footer(text='⇶ indicates subcommands')
         description = f'{cog.description or ""}\n\n'
         entries = await self.filter_commands(cog.get_commands(), sort=True)
@@ -87,7 +87,7 @@ class EmbeddedHelpCommand(commands.HelpCommand):
         await self.context.send(embed=embed)
 
     async def send_command_help(self, command):
-        embed = BetterEmbed(title=self.get_command_signature(command), color=discord.Color.main)
+        embed = BetterEmbed(title=self.get_command_signature(command))
         description = f'{command.help or "No description provided"}\n\n'
         embed.description = description
         if c := retrieve_checks(command):
@@ -95,7 +95,7 @@ class EmbeddedHelpCommand(commands.HelpCommand):
         await self.context.send(embed=embed)
 
     async def send_group_help(self, group):
-        embed = BetterEmbed(title=self.get_command_signature(group), color=discord.Color.main)
+        embed = BetterEmbed(title=self.get_command_signature(group))
         description = f'{group.help or "No description provided"}\n\n'
         entries = await self.filter_commands(group.commands, sort=True)
         description += "\n".join([f'{"⇶" if isinstance(c, commands.Group) else "⇾"} **{c.name}** -'

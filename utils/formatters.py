@@ -21,10 +21,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
+from datetime import datetime
 from math import ceil
 from random import random, uniform
-from typing import Any, Iterator, Tuple
+from typing import Any, Iterator, Tuple, Optional, Union
 
 from discord import Colour, Embed
 
@@ -46,6 +46,13 @@ def get_index(indexable, index: int, default=None) -> Any:
         return indexable[index]
     except IndexError:
         return default
+
+def fmt(daytee: Union[datetime, int], stringform: Optional[str]):
+    """ Quick datetime formatter from timestamp or datetime object. """
+    if isinstance(daytee, int):
+        daytee = datetime.fromtimestamp(daytee)
+    stringform = stringform or "%Y %b %d: %H:%M"
+    return daytee.strftime(stringform)
 
 
 class BetterEmbed(Embed):
@@ -109,7 +116,7 @@ class Flags():
 
     @property
     def house_brilliance(self):
-        """ House of brilliance. """
+        """ House of Brilliance. """
         return self.value >> 7
 
     @property
@@ -144,5 +151,5 @@ class Flags():
 
     @property
     def verified_user(self):
-        """ Verified bot dev, I think. """
+        """ Verified bot dev. """
         return self.value >> 17

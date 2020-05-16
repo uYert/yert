@@ -100,11 +100,13 @@ class NestedNamespace(SimpleNamespace):  # Thanks, cy
                 for item in v:
                     if isinstance(item, dict):
                         if counter == 1:
-                            _k = list(item.keys())[0]; _v = list(item.values())[0]
+                            _k = list(item.keys())[0]
+                            _v = list(item.values())[0]
                             attrs[k] = self.__class__(**{str(_k): str(_v)})
                             counter += 1
                         else:
-                            _k = list(item.keys())[0]; _v = list(item.values())[0]
+                            _k = list(item.keys())[0]
+                            _v = list(item.values())[0]
                             setattr(attrs[k], _k, _v)
         _attrs = attrs  #do this to avoid changing the size of the dict whilst iterating
         return _attrs

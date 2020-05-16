@@ -1,3 +1,4 @@
 config.py
 __pycache__/
 config/__init__.py
+.vscode/

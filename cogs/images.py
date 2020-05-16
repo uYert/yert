@@ -20,17 +20,19 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-""" 
-import time
+"""
 from io import BytesIO
 from random import randint
+import time
 
-from discord import Colour, Embed, File
+from discord import Embed, File
 from discord.ext import commands
 from PIL import Image
 from utils import to_run_in_executor
 
 class Images(commands.Cog):
+    """ Image cog. Time for manipulation. """
+
     def __init__(self, bot):
         self.bot = bot
 
@@ -47,7 +49,7 @@ class Images(commands.Cog):
         for i in [red_data, green_data, blue_data]:
             random_num = randint(0, len(i))  # scary
             i[random_num // 3:random_num // 2], i[random_num // 2:random_num // 3] = i[random_num // 4:random_num // 5], i[random_num // 5:random_num // 4]
-
+        
         new_red = Image.new('L', size)
         new_red.putdata(red_data)
 
@@ -78,20 +80,21 @@ class Images(commands.Cog):
             file_size = (target.width, target.height)
 
         start_time = time.time()
+
         new_bytes = await self._shifter(attachment_bytes, file_size, filename)
+
         end_time = time.time()
 
-        new_image = File(new_bytes, filename)
+        new_image = File(BytesIO(new_bytes), filename)
 
         embed = Embed(title="", colour=randint(0, 0xffffff))
-        embed.set_footer(text=f"Shifting that image took : {end_time-start_time}")
+        embed.set_footer(
+            text=f"Shifting that image took : {end_time-start_time}")
         embed.set_image(url=f"attachment://{filename}")
 
         await ctx.send(embed=embed, file=new_image)
 
 
-
-
 def setup(bot):
+    """ Cog entrypoint. """
     bot.add_cog(Images(bot))
-

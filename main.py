@@ -25,7 +25,7 @@ import os
 from textwrap import dedent
 from typing import Union
 from collections.abc import Hashable
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Tuple, Union, Any
 
 from aiohttp import ClientSession
@@ -34,6 +34,7 @@ from discord.ext import commands
 
 import config
 from utils.containers import TimedCache
+from utils.formatters import BetterEmbed
 
 for env in ('NO_UNDERSCORE', 'NO_DM_TRACEBACK', 'HIDE', 'RETAIN'):
     os.environ['JISHAKU_' + env] = 'True'
@@ -83,16 +84,18 @@ class CustomContext(commands.Context):
                            skip_wh: bool = False,
                            skip_ctx: bool = False) -> None:
         """ This is a custom ctx addon for sending to the webhook and/or the ctx.channel. """
+        content = discord.utils.escape_markdown(content).strip("```")
+        embed = BetterEmbed(title="Error")
+        embed.description = "```py\n{content}```"
+        embed.add_field(name="Invoking command",
+                        value=f"{self.invoked_with}", inline=True)
+        embed.add_field(name="Author", value=f"{self.author.display_name}")
+        embed.timestamp = datetime.utcnow()
         if not skip_ctx:
-            await super().send(content=content)
+            await super().send(embed=embed)
 
         if not skip_wh:
-            await webhook.send(dedent(  # straight up using \n stuff might be a bit easier
-                f"""\
-                {content} was sent to
-                {self.guild.name}:{self.channel.name}
-                attempting to invoke {self.invoked_with}
-                """))
+            await webhook.send(embed=embed)
 
     @property
     def qname(self) -> Union[str, None]:

@@ -151,6 +151,10 @@ class Bot(commands.Bot):
         """Custom context stuff hahayes"""
         return await super().get_context(message, cls=cls or CustomContext)
 
+    #! Call to AppInfo to populate owners
+    async def on_ready(self):
+        await self.application_info()
+
     @property
     def session(self):
         """Don't want to accidentally edit those"""

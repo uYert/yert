@@ -151,16 +151,21 @@ class Bot(commands.Bot):
         """Custom context stuff hahayes"""
         return await super().get_context(message, cls=cls or CustomContext)
 
-    @property
+    #! Call to AppInfo to populate owners
+    async def on_ready(self):
+        if not getattr(self, "owner_ids", []):
+            await self.application_info()
+
+    @ property
     def session(self):
         """Don't want to accidentally edit those"""
         return self._session
 
-    @property
+    @ property
     def cache(self):
         return self._cache
 
 
 if __name__ == '__main__':
-    Bot(command_prefix='yoink ', owner_ids=config.OWNER_IDS).run(
+    Bot(command_prefix='yoink ').run(
         config.BOT_TOKEN)

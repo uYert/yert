@@ -29,7 +29,8 @@ from textwrap import dedent
 import discord
 from discord.ext import commands
 
-from utils.formatters import BetterEmbed
+from utils.formatters import BetterEmbed, Flags
+from utils.converters import BetterUserConverter
 
 checked_perms = ['is_owner', 'guild_only', 'dm_only', 'is_nsfw']
 checked_perms.extend([p[0] for p in discord.Permissions()])
@@ -147,6 +148,13 @@ class Meta(commands.Cog):
         embed.add_field(name="Total fleshy people being memed",
                         value=len(uniq_mem_count))
         await ctx.send(embed=embed)
+
+    @commands.command()
+    async def userinfo(self, ctx, *, user=None):
+        user = await BetterUserConverter().convert(ctx, user)
+        flags = Flags(user.http_dict['public_flags']).flags
+        user = user.obj
+        await ctx.send(embed=BetterEmbed(title=user.display_name, description=flags))
 
 
 def setup(bot):

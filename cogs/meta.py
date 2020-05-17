@@ -154,7 +154,7 @@ class Meta(commands.Cog):
         user = await BetterUserConverter().convert(ctx, user)
         flags = Flags(user.http_dict['public_flags']).flags
         user = user.obj
-        await ctx.send(embed=BetterEmbed(title=user.display_name, description=flags))
+        await ctx.send(embed=BetterEmbed(title=user.display_name, description=', '.join(flags)))
 
 
 def setup(bot):

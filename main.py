@@ -40,6 +40,7 @@ for env in ('NO_UNDERSCORE', 'NO_DM_TRACEBACK', 'HIDE', 'RETAIN'):
 COGS = (
     "jishaku",
     "cogs.events",
+    "cogs.fun",
     "cogs.games",
     "cogs.images",
     "cogs.memes",
@@ -157,7 +158,7 @@ class Bot(commands.Bot):
         if not getattr(self, "owner_ids", []):
             await self.application_info()
 
-    @ property
+    @property
     def session(self):
         """Don't want to accidentally edit those"""
         return self._session
@@ -168,5 +169,5 @@ class Bot(commands.Bot):
 
 
 if __name__ == '__main__':
-    Bot(command_prefix='yoink ').run(
+    Bot(command_prefix='devyoink ').run(
         config.BOT_TOKEN)

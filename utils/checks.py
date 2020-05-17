@@ -24,5 +24,5 @@ SOFTWARE.
 from typing import Iterable
 
 
-def check_length(item: Iterable, min: int, max: int, error_msg: str):
-    return min <= len(item) <= map
+def check_length(item: Iterable, min: int, max: int):
+    return min <= len(item) <= max

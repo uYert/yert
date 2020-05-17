@@ -65,7 +65,7 @@ class TimedCache(MutableMapping):
             old_val[1].cancel()
 
         task = self._timed_del(key, timeout=self._convert_delay(timeout))
-        self.storage[key] = (value, self.loop.create_task(task))
+        self.storage[key] = (value, self.loop.create_task(task, name=f'Timed deletion : {key}'))
 
     def __delitem__(self, key: Hashable) -> None:
         self.storage[key][1].cancel()

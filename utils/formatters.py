@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020 - Sudosnok, AbstractUmbra, Saphielle-Akiyama
+Copyright (c) 2020 - Sudosnok, AbstractUmbra, Saphielle-Akiyama, nickofolas
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -47,6 +47,7 @@ def get_index(indexable, index: int, default=None) -> Any:
     except IndexError:
         return default
 
+
 def fmt(daytee: Union[datetime, int], stringform: Optional[str]):
     """ Quick datetime formatter from timestamp or datetime object. """
     if isinstance(daytee, int):
@@ -88,10 +89,10 @@ class Flags():
 
     def __init__(self, value: int):
         self.value = value
-    
+
         self.flag_names = ('employee', 'partner', 'hypesquad_events', 'bug_hunter_one',
-            'house_bravery', 'house_brilliance', 'house_balance', 'early_supporter',
-            'team_user', 'system_user', 'bug_hunter_two', 'verified_bot', 'verified_user')
+                           'house_bravery', 'house_brilliance', 'house_balance', 'early_supporter',
+                           'team_user', 'system_user', 'bug_hunter_two', 'verified_bot', 'verified_user')
 
     def __repr__(self) -> str:
         return f"<Flags value={self.value} \

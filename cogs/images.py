@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020 - Sudosnok, AbstractUmbra, Saphielle-Akiyama
+Copyright (c) 2020 - Sudosnok, AbstractUmbra, Saphielle-Akiyama, nickofolas
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -80,8 +80,8 @@ class Images(commands.Cog):
             file_size = (target.width, target.height)
 
         start_time = time.time()
-        new_bytes = self.bot.loop.run_in_executor(
-            None, self._shifter, attachment_bytes, file_size, filename)
+        new_bytes = await self.bot.loop.run_in_executor(
+            None, self._shifter, attachment_bytes, file_size)
         end_time = time.time()
 
         new_image = File(BytesIO(new_bytes), filename)

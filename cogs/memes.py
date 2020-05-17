@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020 - Sudosnok, AbstractUmbra, Saphielle-Akiyama
+Copyright (c) 2020 - Sudosnok, AbstractUmbra, Saphielle-Akiyama, nickofolas
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,7 @@ random.seed(datetime.utcnow())
 
 class PagedEmbedMenu(menus.ListPageSource):
     """ Quick ListPageSource to allow for the creation of menus via lists of embeds """
+
     def __init__(self, embeds: List[Embed]):
         self.embeds = embeds
         super().__init__([*range(len(embeds))], per_page=1)

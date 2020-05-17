@@ -2,3 +2,7 @@ config.py
 __pycache__/
 config/__init__.py
 .vscode/
+Pipfile.lock
+
+## Umbra ignores
+shitpostbot.pm2config.json

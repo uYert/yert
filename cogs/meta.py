@@ -24,6 +24,7 @@ SOFTWARE.
 import inspect
 import itertools
 from contextlib import suppress
+from textwrap import dedent
 
 import discord
 from discord.ext import commands
@@ -98,12 +99,12 @@ class EmbeddedHelpCommand(commands.HelpCommand):
         embed = BetterEmbed(title=self.get_command_signature(group))
         description = f'{group.help or "No description provided"}\n\n'
         entries = await self.filter_commands(group.commands, sort=True)
-        description += "\n".join([f'{"⇶" if isinstance(c, commands.Group) else "⇾"} **{c.name}** -'
-                                  f' {c.short_doc or "No description"}' for c in entries])
+        description += "\n".join([f'{"⇶" if isinstance(command, commands.Group) else "⇾"} **{command.name}** -'
+                                  f' {command.short_doc or "No description"}' for command in entries])
         embed.description = description
         footer_text = '⇶ indicates subcommands'
-        if c := retrieve_checks(group):
-            footer_text += f' | Checks: {c}'
+        if checks := retrieve_checks(group):
+            footer_text += f' | Checks: {checks}'
         embed.set_footer(text=footer_text)
         await self.context.send(embed=embed)
 
@@ -119,6 +120,30 @@ class Meta(commands.Cog):
 
     def cog_unload(self):
         self.bot.help_command = self.old_help
+
+    @commands.command()
+    async def about(self, ctx):
+        """ This is the 'about the bot' command. """
+        description = dedent("""\
+                             A ~~shit~~ fun bot that was thrown together by a team of complete nincompoops.
+                             In definitely no particular order:\n
+                             『 Moogs 』#2009, MrSnek#3442, nickofolas#0066 and Umbra#0009
+                             """)
+        # uniq_mem_count = set(
+        #     member for member in guild.members if not member.bot for guild in self.bot.guilds) #! TODO fix set comp
+        uniq_mem_count = set()
+        for guild in self.bot.guilds:
+            for member in guild.members:
+                if not member.bot:
+                    uniq_mem_count.add(member)
+        embed = BetterEmbed(title=f"About {ctx.guild.me.display_name}")
+        embed.description = description
+        embed.set_author(name=ctx.me.display_name, icon_url=ctx.me.avatar_url)
+        embed.add_field(name="Current guilds", value=len(
+            self.bot.guilds), inline=True)
+        embed.add_field(name="Total fleshy people being memed",
+                        value=len(uniq_mem_count))
+        await ctx.send(embed=embed)
 
 
 def setup(bot):

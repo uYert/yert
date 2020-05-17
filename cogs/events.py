@@ -208,7 +208,7 @@ class Events(commands.Cog):
         else:
             tracy_beaker = traceback.format_exception(
                 type(error), error, error.__traceback__)
-            tracy_beaker = [bork.split('\n')[-2] for bork in tracy_beaker]
+            tracy_beaker = [bork.replace('/home/moogs', '', 1) for bork in tracy_beaker]
             message = "\n".join(tracy_beaker)
             idx = 0
             while len(message) >= 1990:

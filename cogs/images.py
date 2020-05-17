@@ -126,8 +126,8 @@ class Images(commands.Cog):
             raise commands.BadArgument("severity parameter must be between 5 and 95 inclusive")
         severity = 100 - severity
 
-        if not(1 <= loopyloops <= 10):
-            raise commands.BadArgument("loopyloop parameter must be between 1 and 10 inclusive")
+        if not(1 <= loopyloops <= 100):
+            raise commands.BadArgument("loopyloop parameter must be between 1 and 100 inclusive")
 
         if loopyloops == 1:
             start_time = time.time()

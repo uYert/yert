@@ -43,8 +43,10 @@ class TimedCache(MutableMapping):
         if isinstance(delay, timedelta):
             return delay.total_seconds()
         if isinstance(delay, datetime):
-            return (datetime.now(tz=timezone.utc) - delay).total_seconds()
-
+            try:  # accepts both offset aware and naive timestamps
+                return (datetime.now(tz=timezone.utc) - delay).total_seconds()
+            except ValueError:
+                return (datetime.utcnow - delay).total_seconds()
         return delay or self.timeout
 
     def __init__(self, *,
@@ -129,7 +131,8 @@ class NestedNamespace(SimpleNamespace):  # Thanks, cy
 
     def __repr__(self) -> repr:
         attrs = ' '.join(
-            f'{k}={v}' for k, v in self.__dict__.items() if not k.startswith('_'))
+            f'{k}={v}' for k, v in self.__dict__.items() if not k.startswith('_')
+            )
         return f'<{self.__class__.__name__} {attrs}>'
 
     def to_dict(self) -> MappingProxyType:

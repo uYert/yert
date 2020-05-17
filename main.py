@@ -23,6 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 
 import os
 from textwrap import dedent
+from typing import Union
 
 from aiohttp import ClientSession
 import discord
@@ -47,6 +48,29 @@ COGS = (
 
 class CustomContext(commands.Context):
     """Custom context for extra functions"""
+    def __init__(self, **attrs):  # typehinted copypaste of the default init
+        self.message: Union[discord.Message, None] = attrs.pop('message', None)
+        self.bot: Union[Bot, None] = attrs.pop('bot', None)
+
+        self.args: list = attrs.pop('args', [])
+        self.kwargs: dict = attrs.pop('kwargs', {})
+        self.prefix: str = attrs.pop('prefix')
+        self.command: Union[commands.Command, None] = attrs.pop('command', None)
+
+        self.view = attrs.pop('view', None)  # no idea about what that is
+
+        self.invoked_with: str = attrs.pop('invoked_with', None)
+        self.invoked_subcommand: commands.Command = attrs.pop('invoked_subcommand', None)
+        self.subcommand_passed: Union[str, None] = attrs.pop('subcommand_passed', None)
+        self.command_failed: bool = attrs.pop('command_failed', False)
+
+        self._state = self.message._state
+
+        self._altered_cache_key = None
+        
+        super().__init__()
+
+
 
     async def webhook_send(self,
                            content: str,
@@ -59,7 +83,7 @@ class CustomContext(commands.Context):
             await super().send(content=content)
 
         if not skip_wh:
-            await webhook.send(dedent(
+            await webhook.send(dedent(  # straight up using \n stuff might be a bit easier
                 f"""\
                 {content} was sent to
                 {self.guild.name}:{self.channel.name}
@@ -79,6 +103,7 @@ class Bot(commands.Bot):
             self.load_extension(extension)
 
     async def get_context(self, message: discord.Message, *, cls=None):
+        """Custom context stuff hahayes"""
         return await super().get_context(message, cls=cls or CustomContext)
 
 

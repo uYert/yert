@@ -153,15 +153,15 @@ class Bot(commands.Bot):
 
     #! Call to AppInfo to populate owners
     async def on_ready(self):
-        if not hasattr(self, "owner_ids"):
+        if not getattr(self, "owner_ids", []):
             await self.application_info()
 
-    @property
+    @ property
     def session(self):
         """Don't want to accidentally edit those"""
         return self._session
 
-    @property
+    @ property
     def cache(self):
         return self._cache
 

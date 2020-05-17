@@ -86,12 +86,12 @@ class Images(commands.Cog):
 
         return attachment_bytes, filename, filesize
 
-    async def loop_jpeg(self, severity, filename, loopyloops):
+    def loop_jpeg(self, severity, filename, loopyloops):
         for _ in range(loopyloops):
             image = Image.open(filename)
             image.save(filename, format='jpeg', quality=severity)
             image.close()
-            await asyncio.sleep(0.25)
+
 
 
 
@@ -126,8 +126,8 @@ class Images(commands.Cog):
             raise commands.BadArgument("severity parameter must be between 5 and 95 inclusive")
         severity = 100 - severity
 
-        if not(1 <= loopyloops <= 10):
-            raise commands.BadArgument("loopyloop parameter must be between 1 and 10 inclusive")
+        if not(1 <= loopyloops <= 100):
+            raise commands.BadArgument("loopyloop parameter must be between 1 and 100 inclusive")
 
         if loopyloops == 1:
             start_time = time.time()

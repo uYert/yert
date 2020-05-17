@@ -30,7 +30,7 @@ import discord
 from discord.ext import commands
 
 import config
-
+from utils.containers import TimedCache
 
 for env in ('NO_UNDERSCORE', 'NO_DM_TRACEBACK', 'HIDE', 'RETAIN'):
     os.environ['JISHAKU_' + env] = 'True'
@@ -68,10 +68,6 @@ class CustomContext(commands.Context):
 
         self._altered_cache_key = None
         
-        super().__init__()
-
-
-
     async def webhook_send(self,
                            content: str,
                            *,
@@ -90,22 +86,73 @@ class CustomContext(commands.Context):
                 attempting to invoke {self.invoked_with}
                 """))
 
+    @property
+    def qname(self) -> Union[str, None]:
+        """Shortcut to get the command's qualified name"""
+        return self.command.qualified_name if self.command else None
+
+    @property
+    def all_args(self) -> list:
+        """Retrieves a list of all args and kwargs passed into the command"""  # ctx.args returns self too
+        args = [arg for arg in self.args if not isinstance(arg, (commands.Cog, commands.Context))]
+        kwargs = [val for val in self.kwargs.values()]  # there should be only one
+        return args + kwargs
+
+    @property
+    def cache_key(self) -> tuple:
+        """Returns the key used to access the cache"""
+        return self._altered_cache_key or tuple([self.qname] + self.all_args)
+
+    @cache_key.setter
+    def cache_key(self, key: Hashable) -> None:
+        """Sets another key to use for this Context"""
+        self._altered_cache_key = key
+
+    @property
+    def cache(self) -> TimedCache:
+        """Returns the cache tied to the bot"""
+        return self.bot.cache
+
+    @property
+    def cached_data(self) -> Union[Any, None]:
+        """Tries to retrieve cached data"""
+        return self.cache.get(key=self.cache_key)
+
+    def add_to_cache(self, *, value: Any, timeout: Union[int, timedelta] = None, 
+                     key: Hashable = None) -> Any:
+        """Sets an item into the cache using the the provided keys"""
+        return self.cache.set(key=key or self.cache_key, value=value, timeout=timeout)
 
 class Bot(commands.Bot):
     """ Our main bot-ty bot. """
 
     def __init__(self, **options):
         super().__init__(**options)
-        self.session = ClientSession(loop=self.loop)
+        self.loop.create_task(self._make_session())
+        self._cache = TimedCache(loop=self.loop)
 
         # Extension load
         for extension in COGS:
             self.load_extension(extension)
 
+
+    #! Discord stuff
     async def get_context(self, message: discord.Message, *, cls=None):
         """Custom context stuff hahayes"""
         return await super().get_context(message, cls=cls or CustomContext)
 
+    async def _make_session(self):
+        """Avoiding depreciation warnings"""
+        self._session = ClientSession(loop=self.loop)
+    
+    @property
+    def session(self):
+        """Don't want to accidentally edit those"""
+        return self._session
+
+    @property
+    def cache(self):
+        return self._cache
 
 if __name__ == '__main__':
     Bot(command_prefix='yoink ', owner_ids=config.OWNER_IDS).run(

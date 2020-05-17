@@ -124,7 +124,6 @@ class AioWeather:
         sys = res.sys
         wind = res.wind
 
-        nf = lambda obj, attr: getattr(obj, attr, '[NF]')  # -> Any
         from_timestamp = lambda ts: naturaltime(dt.now(tz.utc) - dt.fromtimestamp(ts, tz=tz.utc))  # -> str
         from_kelvin = lambda kt: f"{kt - 273.15:.1f}°C | {(kt * 9/5 - 459.67):.1f}°F"  # -> str
 

@@ -71,7 +71,7 @@ class Images(commands.Cog):
     async def shift(self, ctx: commands.Context):
         """Shifts the RGB bands in an attached image or the author's profile picture"""
         if len(ctx.message.attachments) == 0:
-            attachment_bytes = await ctx.author.avatar_url_as(size=1024, format='PNG').read()
+            attachment_bytes = await ctx.author.avatar_url_as(size=1024, format='png').read()
             filename = ctx.author.display_name + '.png'
             file_size = (1024, 1024)
 

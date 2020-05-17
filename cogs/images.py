@@ -23,7 +23,6 @@ SOFTWARE.
 """
 
 from io import BytesIO
-import os
 from random import randint
 import time
 
@@ -38,7 +37,7 @@ class Images(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def _shifter(self, attachment_bytes: bytes, size: tuple, filename: str):
+    def _shifter(self, attachment_bytes: bytes, size: tuple):
         image_obj = Image.open(BytesIO(attachment_bytes))
 
         bands = image_obj.split()
@@ -63,8 +62,11 @@ class Images(commands.Cog):
 
         new_image = Image.merge('RGB', (new_red, new_green, new_blue))
 
-        new_image.save(fp=filename)
-        return
+        output = BytesIO()
+        new_image.save(output, format="png")
+        output.seek(0)
+        
+        return output
 
     @commands.command()
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -73,27 +75,24 @@ class Images(commands.Cog):
         """Shifts the RGB bands in an attached image or the author's profile picture"""
         if len(ctx.message.attachments) == 0:
             attachment_bytes = await ctx.author.avatar_url_as(size=1024, format='png').read()
-            filename = ctx.author.display_name + '.png'
             file_size = (1024, 1024)
 
         else:
             target = ctx.message.attachments[0]
             attachment_bytes = await target.read()
-            filename = target.filename
             file_size = (target.width, target.height)
 
         start_time = time.time()
-        await self.bot.loop.run_in_executor(
-            None, self._shifter, attachment_bytes, file_size, filename)
+        file = await self.bot.loop.run_in_executor(
+            None, self._shifter, attachment_bytes, file_size)
         end_time = time.time()
 
-        new_image = File(fp=filename)
-        os.remove(filename)
+        new_image = File(file, filename=f"file.png")
 
         embed = Embed(title="", colour=randint(0, 0xffffff))
         embed.set_footer(
             text=f"Shifting that image took : {end_time-start_time}")
-        embed.set_image(url=f"attachment://{filename}")
+        embed.set_image(url=f"attachment://file.png")
 
         await ctx.send(embed=embed, file=new_image)
 

@@ -130,9 +130,7 @@ class NestedNamespace(SimpleNamespace):  # Thanks, cy
         return _attrs
 
     def __repr__(self) -> repr:
-        attrs = ' '.join(
-            f'{k}={v}' for k, v in self.__dict__.items() if not k.startswith('_')
-            )
+        attrs = ' '.join(f'{k}={v}' for k, v in self.__dict__.items() if not k.startswith('_'))
         return f'<{self.__class__.__name__} {attrs}>'
 
     def to_dict(self) -> MappingProxyType:

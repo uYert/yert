@@ -125,6 +125,7 @@ class Memes(commands.Cog):
                 self_text = post_data['selftext']
                 url = "https://www.reddit.com{}".format(post_data['permalink'])
                 author = post_data['author']
+                image_link = None
                 try:
                     if media := post_data['secure_media']:
                         if oembed := media['oembed']:

@@ -23,7 +23,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 
 import os
 from collections.abc import Hashable
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Union
 
 from aiohttp import ClientSession
@@ -84,12 +84,11 @@ class NewCtx(commands.Context):
                            skip_ctx: bool = False) -> None:
         """ This is a custom ctx addon for sending to the webhook and/or the ctx.channel. """
         content = content.strip("```")
-        embed = BetterEmbed(title="Error")
-        embed.description = f"```py\n{content}```"  # test
+        embed = BetterEmbed(title="Error", description=f"```py\n{content}```",
+                            timestamp=datetime.now(tz=timezone.utc))
         embed.add_field(name="Invoking command",
                         value=f"{self.prefix}{self.invoked_with}", inline=True)
         embed.add_field(name="Author", value=f"{str(self.author)}")
-        embed.timestamp = datetime.utcnow()
         if not skip_ctx:
             await super().send(embed=embed)
 

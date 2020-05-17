@@ -154,5 +154,5 @@ class Bot(commands.Bot):
         return self._cache
 
 if __name__ == '__main__':
-    Bot(command_prefix='devyoink ', owner_ids=config.OWNER_IDS).run(
+    Bot(command_prefix='yoink ', owner_ids=config.OWNER_IDS).run(
         config.BOT_TOKEN)

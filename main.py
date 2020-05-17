@@ -166,5 +166,5 @@ class Bot(commands.Bot):
 
 
 if __name__ == '__main__':
-    Bot(command_prefix='yoink ', owner_ids=config.OWNER_IDS).run(
+    Bot(command_prefix='yoink ').run(
         config.BOT_TOKEN)

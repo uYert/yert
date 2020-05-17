@@ -82,6 +82,10 @@ class TimedCache(MutableMapping):
         self.__setitem__(key, value, timeout=self._convert_delay(timeout))
         return value
 
+    def refresh(self, key: Hashable):
+        pass
+    
+
     def __getitem__(self, key: Hashable) -> Any:
         return self.storage[key][0]
 

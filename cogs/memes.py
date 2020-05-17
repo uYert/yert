@@ -119,12 +119,13 @@ class Memes(commands.Cog):
                 post_data = page_json['data']['children'][counter]['data']
 
                 nsfw = post_data['over_18']
-                if nsfw and not ctx.channel.nsfw():
+                if nsfw and not ctx.channel.nsfw:
                     continue
                 title = shorten(post_data['title'], width=250)
                 self_text = post_data['selftext']
                 url = "https://www.reddit.com{}".format(post_data['permalink'])
                 author = post_data['author']
+                image_link = None
                 try:
                     if media := post_data['secure_media']:
                         if oembed := media['oembed']:

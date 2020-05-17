@@ -141,7 +141,7 @@ class Images(commands.Cog):
             with open(filename, 'wb') as written_bible:
                 written_bible.write(achtung_bottem)
 
-            await self.loop_jpeg(severity, filename, loopyloops)
+            self.loop_jpeg(severity, filename, loopyloops)
             end_time = time.time()
 
 

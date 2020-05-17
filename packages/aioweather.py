@@ -135,7 +135,7 @@ class AioWeather:
 
             ('Pressure', f"{main.pressure} hPA"),
             ('Humidity', f"{main.humidity}%"),
-            ('Visibility', f"{((res.visibility or 0) / 1000):.1f} meters"),
+            ('Visibility', f"{((res.visibility or 0) / 1000):.1f} kilometers"),
 
             ('Wind speed', f"{wind.speed} km/h"),
             ('Wind direction', f"{wind.deg} degrees"),

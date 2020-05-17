@@ -22,6 +22,31 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from datetime import timedelta
+
 import discord
 from discord.ext import commands
 
+from config import WEATHER_TOKEN
+from packages.aioweather import AioWeather
+from collections.abc import Hashable
+
+class Practical(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.aioweather = AioWeather(session=bot.session, 
+                                     api_key=WEATHER_TOKEN)
+    
+    @commands.command(name='weather')
+    async def weather(self, ctx, *, city: str):
+        """Tells you the weather at a particular location"""
+        if not (embed := ctx.cached_data):
+
+            res = await self.aioweather.fetch_weather(city)
+            embed = self.aioweather.format_weather(res)
+            ctx.add_to_cache(value=embed, timeout=timedelta(minutes=10))
+
+        await ctx.send(embed=embed)
+
+def setup(bot):
+    bot.add_cog(Practical(bot))

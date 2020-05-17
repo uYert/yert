@@ -24,6 +24,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 import os
 from textwrap import dedent
 from typing import Union
+from collections.abc import Hashable
+from datetime import timedelta
+from typing import Tuple, Union, Any
 
 from aiohttp import ClientSession
 import discord
@@ -42,7 +45,8 @@ COGS = (
     "cogs.images",
     "cogs.memes",
     "cogs.meta",
-    "cogs.moderation"
+    "cogs.moderation",
+    "cogs.practical"
 )
 
 
@@ -128,22 +132,17 @@ class Bot(commands.Bot):
 
     def __init__(self, **options):
         super().__init__(**options)
-        self.loop.create_task(self._make_session())
+        self._session = ClientSession(loop=self.loop)
         self._cache = TimedCache(loop=self.loop)
 
         # Extension load
         for extension in COGS:
             self.load_extension(extension)
 
-
     #! Discord stuff
     async def get_context(self, message: discord.Message, *, cls=None):
         """Custom context stuff hahayes"""
         return await super().get_context(message, cls=cls or CustomContext)
-
-    async def _make_session(self):
-        """Avoiding depreciation warnings"""
-        self._session = ClientSession(loop=self.loop)
     
     @property
     def session(self):
@@ -155,5 +154,5 @@ class Bot(commands.Bot):
         return self._cache
 
 if __name__ == '__main__':
-    Bot(command_prefix='yoink ', owner_ids=config.OWNER_IDS).run(
+    Bot(command_prefix='devyoink ', owner_ids=config.OWNER_IDS).run(
         config.BOT_TOKEN)

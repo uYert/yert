@@ -104,7 +104,7 @@ class AioWeather:
         self.session = session
         self.api_key = api_key
 
-    async def fetch_weather(self, city: str) -> WeatherResponse:
+    async def fetch_weather(self, city: str, /) -> WeatherResponse:
         """Fetches weather using openweather's api"""
 
         link = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={self.api_key}"

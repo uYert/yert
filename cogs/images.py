@@ -25,11 +25,14 @@ SOFTWARE.
 from io import BytesIO
 from random import randint
 import time
+from typing import Optional
 
 from discord import Embed, File
 from discord.ext import commands
 from PIL import Image
 
+from main import NewCtx
+from utils.formatters import BetterEmbed
 
 class Images(commands.Cog):
     """ Image cog. Time for manipulation. """
@@ -68,23 +71,30 @@ class Images(commands.Cog):
         
         return output
 
-    @commands.command()
-    @commands.cooldown(1, 10, commands.BucketType.user)
-    @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
-    async def shift(self, ctx: commands.Context):
-        """Shifts the RGB bands in an attached image or the author's profile picture"""
-        if len(ctx.message.attachments) == 0:
-            attachment_bytes = await ctx.author.avatar_url_as(size=1024, format='png').read()
-            file_size = (1024, 1024)
 
+    async def _get_image(self, ctx: NewCtx) -> tuple:
+        if not ctx.message.attachments:
+            attachment_bytes = await ctx.author.avatar_url_as(size=1024, format='jpg').read()
+            filename = ctx.author.display_name + '.jpg'
+            filesize = (1024, 1024)
         else:
             target = ctx.message.attachments[0]
             attachment_bytes = await target.read()
-            file_size = (target.width, target.height)
+            filename = target.filename
+            filesize = (target.width, target.height)
+
+        return attachment_bytes, filename, filesize
+
+    @commands.command()
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
+    async def shift(self, ctx: NewCtx):
+        """Shifts the RGB bands in an attached image or the author's profile picture"""
+        attachment_bytes, filename, filesize= await self._get_image(ctx)
 
         start_time = time.time()
         file = await self.bot.loop.run_in_executor(
-            None, self._shifter, attachment_bytes, file_size)
+            None, self._shifter, attachment_bytes, filesize)
         end_time = time.time()
 
         new_image = File(file, filename=f"file.png")
@@ -92,9 +102,32 @@ class Images(commands.Cog):
         embed = Embed(title="", colour=randint(0, 0xffffff))
         embed.set_footer(
             text=f"Shifting that image took : {end_time-start_time}")
-        embed.set_image(url=f"attachment://file.png")
+        embed.set_image(url="attachment://file.png")
 
         await ctx.send(embed=embed, file=new_image)
+
+
+    @commands.command(name='needs more jpeg', aliases=['jpeg', 'jpegify', 'more'])
+    async def _more(self, ctx: NewCtx, severity: int = 15):
+        """Adds jpeg compression proportional to severity to an uploaded image or the author's profile picture"""
+        achtung_bottem, filename, filesize = await self._get_image(ctx)
+
+        if not (5 <= severity <= 95):
+            raise commands.BadArgument("severity parameter must be between 5 and 95 inclusive")
+        severity = 100 - severity
+
+        start_time = time.time()
+        image_obj = Image.open(BytesIO(achtung_bottem))
+        image_obj.save(filename,format='jpeg', quality=severity)
+        end_time = time.time()
+
+        fileout = File(filename, 'file.jpg')
+        embed = BetterEmbed(title='jpegifying done.')
+        embed.set_footer(text=f"That took {end_time-start_time:.2f}s")
+        embed.set_image(url="attachment://file.jpg")
+
+        await ctx.send(embed=embed, file=fileout)
+
 
 
 def setup(bot):

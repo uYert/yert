@@ -24,3 +24,36 @@ SOFTWARE.
 
 import discord
 from discord.ext import commands
+from packages.aiocleverbot import AioCleverbot
+from config import TRAVITIA_TOKEN
+from main import NewCtx
+
+
+class Fun(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.aiocleverbot = AioCleverbot(api_key=TRAVITIA_TOKEN, 
+                                         session=bot.session)
+        
+    @commands.Cog.listener('on_message')
+    async def cb_listener(self, msg: discord.Message):
+        """the infamous cleverbot"""
+        ctx: NewCtx = await self.bot.get_context(msg)
+        if not (txt := self.aiocleverbot.check_valid_message(ctx)):
+            return
+        
+        ctx.cache_key = ('cleverbot', ctx.author.id)
+        emotion = self.aiocleverbot.update_emotion(ctx)
+        
+        await ctx.trigger_typing()
+        response = await self.aiocleverbot.ask(query=txt,
+                                               id_=msg.author.id,
+                                               emotion=emotion)
+            
+        await ctx.send(self.aiocleverbot.format_response(msg=msg,
+                                                         response=response, 
+                                                         clean_txt=txt))
+        
+        
+def setup(bot):
+    bot.add_cog(Fun(bot))

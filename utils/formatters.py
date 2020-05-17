@@ -88,68 +88,78 @@ class Flags():
 
     def __init__(self, value: int):
         self.value = value
+    
+        self.flag_names = ('employee', 'partner', 'hypesquad_events', 'bug_hunter_one',
+            'house_bravery', 'house_brilliance', 'house_balance', 'early_supporter',
+            'team_user', 'system_user', 'bug_hunter_two', 'verified_bot', 'verified_user')
+
+    def __repr__(self) -> str:
+        return ", ".join([flag_name
+                        for flag_name in self.flag_names
+                        if getattr(self, flag_name)
+                        ])
 
     @property
     def employee(self):
         """ Discord Employee. """
-        return self.value >> 0
+        return (self.value & 1) == 1
 
     @property
     def partner(self):
         """ Discord partner. """
-        return self.value >> 1
+        return (self.value & 2) == 2
 
     @property
     def hypesquad_events(self):
         """ Hypesqud events organizer. """
-        return self.value >> 2
+        return (self.value & 4) == 4
 
     @property
     def bug_hunter_one(self):
         """ Bug hunter tier 1. """
-        return self.value >> 3
+        return (self.value & 8) == 8
 
     @property
     def house_bravery(self):
         """ House of Bravery. """
-        return self.value >> 6
+        return (self.value & 64) == 64
 
     @property
     def house_brilliance(self):
         """ House of Brilliance. """
-        return self.value >> 7
+        return (self.value & 128) == 128
 
     @property
     def house_balance(self):
         """ House of Balance. """
-        return self.value >> 8
+        return (self.value & 256) == 256
 
     @property
     def early_supporter(self):
         """ Early supporter. """
-        return self.value >> 9
+        return (self.value & 512) == 512
 
     @property
     def team_user(self):
         """ Uses discord Teams. """
-        return self.value >> 10
+        return (self.value & 1024) == 1024
 
     @property
     def system_user(self):
         """ System User, e.g. Clyde. """
-        return self.value >> 12
+        return (self.value & 4028) == 4028
 
     @property
     def bug_hunter_two(self):
         """ Bug hunter tier 2. """
-        return self.value >> 14
+        return (self.value & 16384) == 16384
 
     @property
     def verified_bot(self):
         """ Verified Bot. """
-        return self.value >> 16
+        return (self.value & 32678) == 32678
 
     @property
     def verified_user(self):
         """ Verified bot dev. """
-        return self.value >> 17
+        return (self.value & 131072) == 131072

@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020 - Sudosnok, AbstractUmbra, Saphielle-Akiyama, nickofolas
+Copyright (c) 2020 - µYert
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from io import BytesIO
+import os
 from random import randint
 import time
 
@@ -36,8 +37,8 @@ class Images(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def _shifter(self, attachment_bytes: bytes, size: tuple):
-        image_obj = Image.frombytes('RGB', size, attachment_bytes)
+    def _shifter(self, attachment_bytes: bytes, size: tuple, filename: str):
+        image_obj = Image.open(BytesIO(attachment_bytes))
 
         bands = image_obj.split()
 
@@ -61,7 +62,8 @@ class Images(commands.Cog):
 
         new_image = Image.merge('RGB', (new_red, new_green, new_blue))
 
-        return new_image.tobytes()
+        new_image.save(fp=filename)
+        return
 
     @commands.command()
     @commands.cooldown(1, 10, commands.BucketType.user)
@@ -69,7 +71,7 @@ class Images(commands.Cog):
     async def shift(self, ctx: commands.Context):
         """Shifts the RGB bands in an attached image or the author's profile picture"""
         if len(ctx.message.attachments) == 0:
-            attachment_bytes = await ctx.author.avatar_url_as(size=1024, format='PNG').read()
+            attachment_bytes = await ctx.author.avatar_url_as(size=1024, format='png').read()
             filename = ctx.author.display_name + '.png'
             file_size = (1024, 1024)
 
@@ -80,11 +82,12 @@ class Images(commands.Cog):
             file_size = (target.width, target.height)
 
         start_time = time.time()
-        new_bytes = await self.bot.loop.run_in_executor(
-            None, self._shifter, attachment_bytes, file_size)
+        await self.bot.loop.run_in_executor(
+            None, self._shifter, attachment_bytes, file_size, filename)
         end_time = time.time()
 
-        new_image = File(BytesIO(new_bytes), filename)
+        new_image = File(fp=filename)
+        os.remove(filename)
 
         embed = Embed(title="", colour=randint(0, 0xffffff))
         embed.set_footer(
@@ -95,5 +98,5 @@ class Images(commands.Cog):
 
 
 def setup(bot):
-    """ Cog entrypoint. """
+    """ Cog entry point. """
     bot.add_cog(Images(bot))

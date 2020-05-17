@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020 - Sudosnok, AbstractUmbra, Saphielle-Akiyama, nickofolas
+Copyright (c) 2020 - µYert
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -84,81 +84,88 @@ class BetterEmbed(Embed):
         return self
 
 
-class Flags():
-    """ User profile flags. """
-
-    def __init__(self, value: int):
+class Flags:
+    def __init__(self, value):
         self.value = value
+        self.flags = [*self.__iter__()]
 
-        self.flag_names = ('employee', 'partner', 'hypesquad_events', 'bug_hunter_one',
-                           'house_bravery', 'house_brilliance', 'house_balance', 'early_supporter',
-                           'team_user', 'system_user', 'bug_hunter_two', 'verified_bot', 'verified_user')
+    def __iter__(self):
+        for k, v in self.__class__.__dict__.items():
+            if not isinstance(v, property):
+                continue
+            if self.has_flag(getattr(self, k)):
+                yield k
 
-    def __repr__(self) -> str:
-        return f"<Flags value={self.value} \
-            flags = [{[flag_n for flag_n in self.flag_names if getattr(self, flag_n)]}] "
+    def __repr__(self):
+        return f"<{self.__class__.__name__} value={self.value} flags={self.flags}>"
 
-    @property
-    def employee(self):
-        """ Discord Employee. """
-        return (self.value & 1) == 1
-
-    @property
-    def partner(self):
-        """ Discord partner. """
-        return (self.value & 2) == 2
+    def has_flag(self, v):
+        return (self.value & v) == v
 
     @property
-    def hypesquad_events(self):
-        """ Hypesqud events organizer. """
-        return (self.value & 4) == 4
+    def discord_employee(self):
+        return 1 << 0
 
     @property
-    def bug_hunter_one(self):
-        """ Bug hunter tier 1. """
-        return (self.value & 8) == 8
+    def discord_partner(self):
+        return 1 << 1
 
     @property
-    def house_bravery(self):
-        """ House of Bravery. """
-        return (self.value & 64) == 64
+    def hs_events(self):
+        return 1 << 2
 
     @property
-    def house_brilliance(self):
-        """ House of Brilliance. """
-        return (self.value & 128) == 128
+    def bug_hunter_lvl1(self):
+        return 1 << 3
 
     @property
-    def house_balance(self):
-        """ House of Balance. """
-        return (self.value & 256) == 256
+    def mfa_sms(self):
+        return 1 << 4
+
+    @property
+    def premium_promo_dismissed(self):
+        return 1 << 5
+
+    @property
+    def hs_bravery(self):
+        return 1 << 6
+
+    @property
+    def hs_brilliance(self):
+        return 1 << 7
+
+    @property
+    def hs_balance(self):
+        return 1 << 8
 
     @property
     def early_supporter(self):
-        """ Early supporter. """
-        return (self.value & 512) == 512
+        return 1 << 9
 
     @property
     def team_user(self):
-        """ Uses discord Teams. """
-        return (self.value & 1024) == 1024
+        return 1 << 10
 
     @property
-    def system_user(self):
-        """ System User, e.g. Clyde. """
-        return (self.value & 4028) == 4028
+    def system(self):
+        return 1 << 12
 
     @property
-    def bug_hunter_two(self):
-        """ Bug hunter tier 2. """
-        return (self.value & 16384) == 16384
+    def unread_sys_msg(self):
+        return 1 << 13
+
+    @property
+    def bug_hunter_lvl2(self):
+        return 1 << 14
+
+    @property
+    def underage_deleted(self):
+        return 1 << 15
 
     @property
     def verified_bot(self):
-        """ Verified Bot. """
-        return (self.value & 32678) == 32678
+        return 1 << 16
 
     @property
-    def verified_user(self):
-        """ Verified bot dev. """
-        return (self.value & 131072) == 131072
+    def verified_dev(self):
+        return 1 << 17

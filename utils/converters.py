@@ -21,18 +21,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from collections import namedtuple
+from contextlib import suppress
 
 import discord
 from discord.ext import commands
 
 
-class Games(commands.Cog):
-    """ Games cog! """
-
-    def __init__(self, bot: commands.Bot):
-        self.bot = bot
+BetterUser = namedtuple('BetterUser', ['obj', 'http_dict'])
+u_conv = commands.UserConverter()
+m_conv = commands.MemberConverter()
 
 
-def setup(bot):
-    """ Cog entrypoint. """
-    bot.add_cog(Games(bot))
+class BetterUserConverter(commands.Converter):
+    async def convert(self, ctx, argument):
+        out = ctx.author if not argument else None
+        for converter in (m_conv, u_conv):
+            if out:
+                break
+            with suppress(Exception):
+                out = await converter.convert(ctx, argument)
+        if out is None:
+            try:
+                out = await ctx.bot.fetch_user(argument)
+            except discord.HTTPException:
+                raise commands.CommandError("Invalid user provided")
+        http_dict = await ctx.bot.http.get_user(out.id)
+        return BetterUser(obj=out, http_dict=http_dict)

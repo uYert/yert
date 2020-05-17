@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020 - Sudosnok, AbstractUmbra, Saphielle-Akiyama, nickofolas
+Copyright (c) 2020 - µYert
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,11 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 """
 
 import os
-from textwrap import dedent
 from typing import Union
 from collections.abc import Hashable
-from datetime import timedelta
-from typing import Tuple, Union, Any
+from datetime import datetime, timedelta
+from typing import Any
 
 from aiohttp import ClientSession
 import discord
@@ -34,6 +33,7 @@ from discord.ext import commands
 
 import config
 from utils.containers import TimedCache
+from utils.formatters import BetterEmbed
 
 for env in ('NO_UNDERSCORE', 'NO_DM_TRACEBACK', 'HIDE', 'RETAIN'):
     os.environ['JISHAKU_' + env] = 'True'
@@ -52,6 +52,7 @@ COGS = (
 
 class NewCtx(commands.Context):
     """Custom context for extra functions"""
+
     def __init__(self, **attrs):  # typehinted copypaste of the default init
         self.message: Union[discord.Message, None] = attrs.pop('message', None)
         self.bot: Union[Bot, None] = attrs.pop('bot', None)
@@ -59,19 +60,22 @@ class NewCtx(commands.Context):
         self.args: list = attrs.pop('args', [])
         self.kwargs: dict = attrs.pop('kwargs', {})
         self.prefix: str = attrs.pop('prefix')
-        self.command: Union[commands.Command, None] = attrs.pop('command', None)
+        self.command: Union[commands.Command,
+                            None] = attrs.pop('command', None)
 
         self.view = attrs.pop('view', None)  # no idea about what that is
 
         self.invoked_with: str = attrs.pop('invoked_with', None)
-        self.invoked_subcommand: commands.Command = attrs.pop('invoked_subcommand', None)
-        self.subcommand_passed: Union[str, None] = attrs.pop('subcommand_passed', None)
+        self.invoked_subcommand: commands.Command = attrs.pop(
+            'invoked_subcommand', None)
+        self.subcommand_passed: Union[str, None] = attrs.pop(
+            'subcommand_passed', None)
         self.command_failed: bool = attrs.pop('command_failed', False)
 
         self._state = self.message._state
 
         self._altered_cache_key = None
-        
+
     async def webhook_send(self,
                            content: str,
                            *,
@@ -79,16 +83,18 @@ class NewCtx(commands.Context):
                            skip_wh: bool = False,
                            skip_ctx: bool = False) -> None:
         """ This is a custom ctx addon for sending to the webhook and/or the ctx.channel. """
+        content = content.strip("```")
+        embed = BetterEmbed(title="Error")
+        embed.description = f"```py\n{content}```"
+        embed.add_field(name="Invoking command",
+                        value=f"{self.invoked_with}", inline=True)
+        embed.add_field(name="Author", value=f"{self.author.display_name}")
+        embed.timestamp = datetime.utcnow()
         if not skip_ctx:
-            await super().send(content=content)
+            await super().send(embed=embed)
 
         if not skip_wh:
-            await webhook.send(dedent(  # straight up using \n stuff might be a bit easier
-                f"""\
-                {content} was sent to
-                {self.guild.name}:{self.channel.name}
-                attempting to invoke {self.invoked_with}
-                """))
+            await webhook.send(embed=embed)
 
     @property
     def qname(self) -> Union[str, None]:
@@ -98,8 +104,10 @@ class NewCtx(commands.Context):
     @property
     def all_args(self) -> list:
         """Retrieves a list of all args and kwargs passed into the command"""  # ctx.args returns self too
-        args = [arg for arg in self.args if not isinstance(arg, (commands.Cog, commands.Context))]
-        kwargs = [val for val in self.kwargs.values()]  # there should be only one
+        args = [arg for arg in self.args if not isinstance(
+            arg, (commands.Cog, commands.Context))]
+        # there should be only one
+        kwargs = [val for val in self.kwargs.values()]
         return args + kwargs
 
     @property
@@ -122,10 +130,11 @@ class NewCtx(commands.Context):
         """Tries to retrieve cached data"""
         return self.cache.get(key=self.cache_key)
 
-    def add_to_cache(self, *, value: Any, timeout: Union[int, timedelta] = None, 
+    def add_to_cache(self, *, value: Any, timeout: Union[int, timedelta] = None,
                      key: Hashable = None) -> Any:
         """Sets an item into the cache using the the provided keys"""
         return self.cache.set(key=key or self.cache_key, value=value, timeout=timeout)
+
 
 class Bot(commands.Bot):
     """ Our main bot-ty bot. """
@@ -143,16 +152,22 @@ class Bot(commands.Bot):
     async def get_context(self, message: discord.Message, *, cls=None):
         """Custom context stuff hahayes"""
         return await super().get_context(message, cls=cls or NewCtx)
-    
-    @property
+
+    #! Call to AppInfo to populate owners
+    async def on_ready(self):
+        if not getattr(self, "owner_ids", []):
+            await self.application_info()
+
+    @ property
     def session(self):
         """Don't want to accidentally edit those"""
         return self._session
 
-    @property
+    @ property
     def cache(self):
         return self._cache
 
+
 if __name__ == '__main__':
-    Bot(command_prefix='yoink ', owner_ids=config.OWNER_IDS).run(
+    Bot(command_prefix='yoink ').run(
         config.BOT_TOKEN)

@@ -22,10 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 """
 
 import os
-from typing import Union
 from collections.abc import Hashable
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Union
 
 from aiohttp import ClientSession
 import discord
@@ -53,7 +52,8 @@ COGS = (
 class NewCtx(commands.Context):
     """Custom context for extra functions"""
 
-    def __init__(self, **attrs):  # typehinted copypaste of the default init
+    # typehinted copypaste of the default init ## pylint: disable=super-init-not-called
+    def __init__(self, **attrs):
         self.message: Union[discord.Message, None] = attrs.pop('message', None)
         self.bot: Union[Bot, None] = attrs.pop('bot', None)
 
@@ -84,12 +84,12 @@ class NewCtx(commands.Context):
                            skip_ctx: bool = False) -> None:
         """ This is a custom ctx addon for sending to the webhook and/or the ctx.channel. """
         content = content.strip("```")
-        embed = BetterEmbed(title="Error", 
-                            timestamp=datetime.utcnow(),
-                            description=f"```py\n{content}```")
+        embed = BetterEmbed(title="Error")
+        embed.description = f"```py\n{content}```"
         embed.add_field(name="Invoking command",
-                        value=f"{self.invoked_with}", inline=True)
-        embed.add_field(name="Author", value=f"{self.author.display_name}")
+                        value=f"{self.prefix}{self.invoked_with}", inline=True)
+        embed.add_field(name="Author", value=f"{str(self.author)}")
+        embed.timestamp = datetime.utcnow()
         if not skip_ctx:
             await super().send(embed=embed)
 
@@ -104,8 +104,9 @@ class NewCtx(commands.Context):
     @property
     def all_args(self) -> list:
         """Retrieves a list of all args and kwargs passed into the command"""  # ctx.args returns self too
-        args = self.args[2:] if self.command.cog else self.args[1:]
-        # there should be only one, but converting it to a tuple is ugly
+        args = [arg for arg in self.args if not isinstance(
+            arg, (commands.Cog, commands.Context))]
+        # there should be only one
         kwargs = [val for val in self.kwargs.values()]
         return args + kwargs
 

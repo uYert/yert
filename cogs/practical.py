@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020 - Sudosnok, AbstractUmbra, Saphielle-Akiyama, nickofolas
+Copyright (c) 2020 - µYert
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -37,10 +37,10 @@ from packages.aiotranslator import to_language, check_length, AioTranslator
 class Practical(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.aioweather = AioWeather(session=bot.session, 
+        self.aioweather = AioWeather(session=bot.session,
                                      api_key=WEATHER_TOKEN)
         self.aiotranslator = AioTranslator(session=bot.session)
-    
+
     @commands.command(name='weather')
     @commands.cooldown(1, 30, type=commands.BucketType.channel)
     async def weather(self, ctx, *, city: str):

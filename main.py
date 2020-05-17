@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020 - Sudosnok, AbstractUmbra, Saphielle-Akiyama, nickofolas
+Copyright (c) 2020 - µYert
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -52,6 +52,7 @@ COGS = (
 
 class CustomContext(commands.Context):
     """Custom context for extra functions"""
+
     def __init__(self, **attrs):  # typehinted copypaste of the default init
         self.message: Union[discord.Message, None] = attrs.pop('message', None)
         self.bot: Union[Bot, None] = attrs.pop('bot', None)
@@ -59,19 +60,22 @@ class CustomContext(commands.Context):
         self.args: list = attrs.pop('args', [])
         self.kwargs: dict = attrs.pop('kwargs', {})
         self.prefix: str = attrs.pop('prefix')
-        self.command: Union[commands.Command, None] = attrs.pop('command', None)
+        self.command: Union[commands.Command,
+                            None] = attrs.pop('command', None)
 
         self.view = attrs.pop('view', None)  # no idea about what that is
 
         self.invoked_with: str = attrs.pop('invoked_with', None)
-        self.invoked_subcommand: commands.Command = attrs.pop('invoked_subcommand', None)
-        self.subcommand_passed: Union[str, None] = attrs.pop('subcommand_passed', None)
+        self.invoked_subcommand: commands.Command = attrs.pop(
+            'invoked_subcommand', None)
+        self.subcommand_passed: Union[str, None] = attrs.pop(
+            'subcommand_passed', None)
         self.command_failed: bool = attrs.pop('command_failed', False)
 
         self._state = self.message._state
 
         self._altered_cache_key = None
-        
+
     async def webhook_send(self,
                            content: str,
                            *,
@@ -98,8 +102,10 @@ class CustomContext(commands.Context):
     @property
     def all_args(self) -> list:
         """Retrieves a list of all args and kwargs passed into the command"""  # ctx.args returns self too
-        args = [arg for arg in self.args if not isinstance(arg, (commands.Cog, commands.Context))]
-        kwargs = [val for val in self.kwargs.values()]  # there should be only one
+        args = [arg for arg in self.args if not isinstance(
+            arg, (commands.Cog, commands.Context))]
+        # there should be only one
+        kwargs = [val for val in self.kwargs.values()]
         return args + kwargs
 
     @property
@@ -122,10 +128,11 @@ class CustomContext(commands.Context):
         """Tries to retrieve cached data"""
         return self.cache.get(key=self.cache_key)
 
-    def add_to_cache(self, *, value: Any, timeout: Union[int, timedelta] = None, 
+    def add_to_cache(self, *, value: Any, timeout: Union[int, timedelta] = None,
                      key: Hashable = None) -> Any:
         """Sets an item into the cache using the the provided keys"""
         return self.cache.set(key=key or self.cache_key, value=value, timeout=timeout)
+
 
 class Bot(commands.Bot):
     """ Our main bot-ty bot. """
@@ -143,7 +150,7 @@ class Bot(commands.Bot):
     async def get_context(self, message: discord.Message, *, cls=None):
         """Custom context stuff hahayes"""
         return await super().get_context(message, cls=cls or CustomContext)
-    
+
     @property
     def session(self):
         """Don't want to accidentally edit those"""
@@ -152,6 +159,7 @@ class Bot(commands.Bot):
     @property
     def cache(self):
         return self._cache
+
 
 if __name__ == '__main__':
     Bot(command_prefix='yoink ', owner_ids=config.OWNER_IDS).run(

@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020 - Sudosnok, AbstractUmbra, Saphielle-Akiyama, nickofolas
+Copyright (c) 2020 - µYert
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,18 +33,21 @@ from discord.ext.commands import BadArgument
 from utils.formatters import BetterEmbed
 
 
-def to_language(arg: str) -> Union[str, None]:  # outside of the class to use it as a converter
+# outside of the class to use it as a converter
+def to_language(arg: str) -> Union[str, None]:
     """Converts a string into a valid google trans language"""
-    if (low:= arg.lower()) in LANGUAGES:
+    if (low := arg.lower()) in LANGUAGES:
         return low
     elif res := LANGCODES.get(low):
         return res
     raise BadArgument(message=f"Couldn't find the language {arg}")
 
+
 def check_length(arg: str) -> str:
     """Checks the initial text and returns it"""
     if len(arg) > 200:
-        raise BadArgument(message=f"Cannot translate texts longer than 200 characters")
+        raise BadArgument(
+            message=f"Cannot translate texts longer than 200 characters")
     return arg
 
 

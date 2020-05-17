@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020 - Sudosnok, AbstractUmbra, Saphielle-Akiyama, nickofolas
+Copyright (c) 2020 - µYert
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -130,7 +130,8 @@ class NestedNamespace(SimpleNamespace):  # Thanks, cy
         return _attrs
 
     def __repr__(self) -> repr:
-        attrs = ' '.join(f'{k}={v}' for k, v in self.__dict__.items() if not k.startswith('_'))
+        attrs = ' '.join(
+            f'{k}={v}' for k, v in self.__dict__.items() if not k.startswith('_'))
         return f'<{self.__class__.__name__} {attrs}>'
 
     def to_dict(self) -> MappingProxyType:

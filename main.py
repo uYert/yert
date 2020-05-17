@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020 - Sudosnok, AbstractUmbra, Saphielle-Akiyama
+Copyright (c) 2020 - Sudosnok, AbstractUmbra, Saphielle-Akiyama, nickofolas
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 """
 
-import pathlib
 import os
 from textwrap import dedent
 
@@ -35,12 +34,19 @@ import config
 for env in ('NO_UNDERSCORE', 'NO_DM_TRACEBACK', 'HIDE', 'RETAIN'):
     os.environ['JISHAKU_' + env] = 'True'
 
+COGS = (
+    "jishaku",
+    "cogs.events",
+    "cogs.games",
+    "cogs.images",
+    "cogs.memes",
+    "cogs.meta",
+    "cogs.moderation"
+)
+
 
 class CustomContext(commands.Context):
     """Custom context for extra functions"""
-
-    # def __init__(self, **attrs):
-    #     super().__init__(**attrs)
 
     async def webhook_send(self,
                            content: str,
@@ -68,13 +74,9 @@ class Bot(commands.Bot):
         super().__init__(**options)
         self.session = ClientSession(loop=self.loop)
 
-        for file in pathlib.Path('cogs').glob('**/*.py'):
-            *tree, _ = file.parts
-            # fstrings would be ugly there
-            self.load_extension('.'.join(tree) + '.' + file.stem)
-
-        # Jishaku load
-        self.load_extension("jishaku")
+        # Extension load
+        for extension in COGS:
+            self.load_extension(extension)
 
     async def get_context(self, message: discord.Message, *, cls=None):
         return await super().get_context(message, cls=cls or CustomContext)

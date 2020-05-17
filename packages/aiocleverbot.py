@@ -76,3 +76,4 @@ class AioCleverbot(ac.Cleverbot):
         if msg.guild is None:
             return response.text
         return f"> {clean_txt}\n{msg.author.mention} {response.text}"
+

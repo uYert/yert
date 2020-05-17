@@ -95,8 +95,7 @@ class Flags():
                            'team_user', 'system_user', 'bug_hunter_two', 'verified_bot', 'verified_user')
 
     def __repr__(self) -> str:
-        return f"<Flags value={self.value} \
-            flags = [{[flag_n for flag_n in self.flag_names if getattr(self, flag_n)]}] "
+        return f"<Flags value={self.value} flags = {[flag_n for flag_n in self.flag_names if getattr(self, flag_n)]}>"
 
     @property
     def employee(self):
@@ -110,7 +109,7 @@ class Flags():
 
     @property
     def hypesquad_events(self):
-        """ Hypesqud events organizer. """
+        """ Hypesquad events organizer. """
         return (self.value & 4) == 4
 
     @property

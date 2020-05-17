@@ -50,7 +50,7 @@ COGS = (
 )
 
 
-class CustomContext(commands.Context):
+class NewCtx(commands.Context):
     """Custom context for extra functions"""
 
     def __init__(self, **attrs):  # typehinted copypaste of the default init
@@ -151,7 +151,7 @@ class Bot(commands.Bot):
     #! Discord stuff
     async def get_context(self, message: discord.Message, *, cls=None):
         """Custom context stuff hahayes"""
-        return await super().get_context(message, cls=cls or CustomContext)
+        return await super().get_context(message, cls=cls or NewCtx)
 
     #! Call to AppInfo to populate owners
     async def on_ready(self):

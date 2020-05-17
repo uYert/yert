@@ -30,6 +30,7 @@ import discord
 from discord.ext import commands
 
 from config import WEATHER_TOKEN
+from main import NewCtx
 from packages.aioweather import AioWeather
 from packages.aiotranslator import to_language, check_length, AioTranslator
 
@@ -43,7 +44,7 @@ class Practical(commands.Cog):
 
     @commands.command(name='weather')
     @commands.cooldown(1, 30, type=commands.BucketType.channel)
-    async def weather(self, ctx, *, city: str):
+    async def weather(self, ctx: NewCtx, *, city: str):
         """Displays the weather at a particular location"""
         if not (embed := ctx.cached_data):
 
@@ -54,7 +55,7 @@ class Practical(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.group(name='translate', invoke_without_command=True)
-    async def translate(self, ctx, language: Optional[to_language] = 'auto', *, text: check_length):
+    async def translate(self, ctx: NewCtx, language: Optional[to_language] = 'auto', *, text: str):
         """Translates from another language"""
         if not (embed := ctx.cached_data):
             # the embed is implicitely cached there, since it's used by both subcommnands
@@ -63,7 +64,7 @@ class Practical(commands.Cog):
         await ctx.send(embed=embed)
 
     @translate.command(name='to')
-    async def translate_to(self, ctx, language: to_language, *, text: check_length):
+    async def translate_to(self, ctx: NewCtx, language: to_language, *, text: str):
         """Translate something to another language"""
         if not (embed := ctx.cached_data):
             embed = await self.aiotranslator.do_translation(ctx=ctx, text=text,

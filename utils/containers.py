@@ -42,7 +42,7 @@ class TimedCache(MutableMapping):
         """converts a delay into seconds"""
         if isinstance(delay, timedelta):
             return delay.total_seconds()
-        if isinstance(delay, datetime):
+        elif isinstance(delay, datetime):
             try:  # accepts both offset aware and naive timestamps
                 return (datetime.now(tz=timezone.utc) - delay).total_seconds()
             except ValueError:
@@ -85,8 +85,8 @@ class TimedCache(MutableMapping):
     def __getitem__(self, key: Hashable) -> Any:
         return self.storage[key][0]
 
-    def __iter__(
-        self) -> iter: return iter({k: v[0] for k, v in self.storage.items()})
+    def __iter__(self) -> iter: 
+        return iter({k: v[0] for k, v in self.storage.items()})
 
     def __len__(self) -> int:
         return len(self.storage)

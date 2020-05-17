@@ -22,11 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 """
 
 import os
-from textwrap import dedent
 from typing import Union
 from collections.abc import Hashable
 from datetime import datetime, timedelta
-from typing import Tuple, Union, Any
+from typing import Any
 
 from aiohttp import ClientSession
 import discord
@@ -86,7 +85,7 @@ class CustomContext(commands.Context):
         """ This is a custom ctx addon for sending to the webhook and/or the ctx.channel. """
         content = discord.utils.escape_markdown(content).strip("```")
         embed = BetterEmbed(title="Error")
-        embed.description = "```py\n{content}```"
+        embed.description = f"```py\n{content}```"
         embed.add_field(name="Invoking command",
                         value=f"{self.invoked_with}", inline=True)
         embed.add_field(name="Author", value=f"{self.author.display_name}")

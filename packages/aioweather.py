@@ -77,7 +77,7 @@ class Sys:
 class WeatherResponse:
    def __init__(self, data: dict):
       self.coord = Coordinates(**data.pop('coord', None))
-      self.weather = [Weather(**w) for w in data.pop('weather', (None,))]
+      self.weather = [Weather(**w) for w in data.pop('weather', {'id': None})]
       self.main = Main(**data.pop('main', None))
       self.wind = Wind(**data.pop('wind', None))
       self.clouds = Clouds(**data.pop('clouds', None))
@@ -112,7 +112,7 @@ class AioWeather:
         async with self.session.get(link) as r:
            return WeatherResponse(await r.json())
 
-    def format_weather(self, res: WeatherResponse) -> BetterEmbed:
+    def format_weather(self, res: WeatherResponse, /) -> BetterEmbed:
         """Returns a formatted embed from the data received by the api"""
 
         embed = BetterEmbed(title=f"Weather in {res.name} ({res.sys.country})",

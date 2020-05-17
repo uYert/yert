@@ -85,7 +85,7 @@ class NewCtx(commands.Context):
         """ This is a custom ctx addon for sending to the webhook and/or the ctx.channel. """
         content = content.strip("```")
         embed = BetterEmbed(title="Error")
-        embed.description = f"```py\n{content}```"
+        embed.description = f"```py\n{content}```"  # test
         embed.add_field(name="Invoking command",
                         value=f"{self.prefix}{self.invoked_with}", inline=True)
         embed.add_field(name="Author", value=f"{str(self.author)}")

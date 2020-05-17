@@ -146,7 +146,11 @@ class Bot(commands.Bot):
 
         # Extension load
         for extension in COGS:
-            self.load_extension(extension)
+            try:
+                self.load_extension(extension)
+            except Exception as e:
+                pass #todo : webhook that
+            
 
     #! Discord stuff
     async def get_context(self, message: discord.Message, *, cls=None):

@@ -87,8 +87,8 @@ class NewCtx(commands.Context):
         embed = BetterEmbed(title="Error")
         embed.description = f"```py\n{content}```"
         embed.add_field(name="Invoking command",
-                        value=f"{self.invoked_with}", inline=True)
-        embed.add_field(name="Author", value=f"{self.author.display_name}")
+                        value=f"{self.prefix}{self.invoked_with}", inline=True)
+        embed.add_field(name="Author", value=f"{str(self.author)}")
         embed.timestamp = datetime.utcnow()
         if not skip_ctx:
             await super().send(embed=embed)

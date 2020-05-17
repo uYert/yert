@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 from io import BytesIO
+import os
 from random import randint
 import time
 from typing import Optional
@@ -85,6 +86,13 @@ class Images(commands.Cog):
 
         return attachment_bytes, filename, filesize
 
+    def loop_jpeg(self, severity, filename, loopyloops):
+        for _ in range(loopyloops):
+            image = Image.open(filename)
+            image.save(filename, format='jpeg', quality=severity)
+
+
+
     @commands.command()
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
@@ -107,8 +115,8 @@ class Images(commands.Cog):
         await ctx.send(embed=embed, file=new_image)
 
 
-    @commands.command(name='needs more jpeg', aliases=['jpeg', 'jpegify', 'more'])
-    async def _more(self, ctx: NewCtx, severity: int = 15):
+    @commands.command(name='morejpeg', aliases=['jpeg', 'jpegify', 'more'])
+    async def _more(self, ctx: NewCtx, severity: int = 15, loopyloops: int = 1):
         """Adds jpeg compression proportional to severity to an uploaded image or the author's profile picture"""
         achtung_bottem, filename, filesize = await self._get_image(ctx)
 
@@ -116,12 +124,29 @@ class Images(commands.Cog):
             raise commands.BadArgument("severity parameter must be between 5 and 95 inclusive")
         severity = 100 - severity
 
-        start_time = time.time()
-        image_obj = Image.open(BytesIO(achtung_bottem))
-        image_obj.save(filename,format='jpeg', quality=severity)
-        end_time = time.time()
+        if not(1 <= loopyloops <= 10):
+            raise commands.BadArgument("loopyloop parameter must be between 1 and 10 inclusive")
+
+        if loopyloops == 1:
+            start_time = time.time()
+            image_obj = Image.open(BytesIO(achtung_bottem))
+            image_obj.save(filename, format = 'jpeg', quality = severity)
+            end_time = time.time()
+
+        else:
+            start_time = time.time()
+
+            with open(filename, 'wb') as written_bible:
+                written_bible.write(achtung_bottem)
+
+            self.loop_jpeg(severity, filename, loopyloops)
+            end_time = time.time()
+
+
 
         fileout = File(filename, 'file.jpg')
+        os.remove(filename)
+
         embed = BetterEmbed(title='jpegifying done.')
         embed.set_footer(text=f"That took {end_time-start_time:.2f}s")
         embed.set_image(url="attachment://file.jpg")

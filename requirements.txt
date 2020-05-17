@@ -10,3 +10,4 @@ fuzzywuzzy
 numpy
 pillow
 uwuify
+async_cleverbot

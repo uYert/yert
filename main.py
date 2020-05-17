@@ -40,6 +40,7 @@ for env in ('NO_UNDERSCORE', 'NO_DM_TRACEBACK', 'HIDE', 'RETAIN'):
 COGS = (
     "jishaku",
     "cogs.events",
+    "cogs.fun",
     "cogs.games",
     "cogs.images",
     "cogs.memes",

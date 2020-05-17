@@ -83,7 +83,7 @@ class CustomContext(commands.Context):
                            skip_wh: bool = False,
                            skip_ctx: bool = False) -> None:
         """ This is a custom ctx addon for sending to the webhook and/or the ctx.channel. """
-        content = discord.utils.escape_markdown(content).strip("```")
+        content = content.strip("```")
         embed = BetterEmbed(title="Error")
         embed.description = f"```py\n{content}```"
         embed.add_field(name="Invoking command",

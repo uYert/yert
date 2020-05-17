@@ -149,7 +149,7 @@ class Memes(commands.Cog):
                 )
         embeds = self._gen_embeds(
             ctx.author, list(posts), ctx.channel.is_nsfw())
-        pages = menus.MenuPages(source=PagedEmbedMenu(embeds))
+        pages = menus.MenuPages(PagedEmbedMenu(embeds))
         await pages.start(ctx)
 
 

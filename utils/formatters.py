@@ -95,7 +95,7 @@ class Flags():
 
     def __repr__(self) -> str:
         return f"<Flags value={self.value} \
-            flags = [{*[flag_n for flag_n in self.flag_names if getattr(self, flag_n)]}] "
+            flags = [{[flag_n for flag_n in self.flag_names if getattr(self, flag_n)]}] "
 
     @property
     def employee(self):

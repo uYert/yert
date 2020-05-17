@@ -21,12 +21,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
+import asyncio
 from io import BytesIO
 import os
 from random import randint
 import time
-from typing import Optional
+
 
 from discord import Embed, File
 from discord.ext import commands
@@ -86,10 +86,12 @@ class Images(commands.Cog):
 
         return attachment_bytes, filename, filesize
 
-    def loop_jpeg(self, severity, filename, loopyloops):
+    async def loop_jpeg(self, severity, filename, loopyloops):
         for _ in range(loopyloops):
             image = Image.open(filename)
             image.save(filename, format='jpeg', quality=severity)
+            image.close()
+            await asyncio.sleep(0.25)
 
 
 

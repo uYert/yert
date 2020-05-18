@@ -23,6 +23,7 @@ fuzzywuzzy = "*"
 numpy = "*"
 pillow = "*"
 async-cleverbot = "*"
+aiogoogletrans = "*"
 
 [requires]
 python_version = "3.8"

@@ -77,8 +77,10 @@ class Other(commands.Cog):
 				crit_f += 1
 			counter.append(randomnum)
 
+		total = sum(counter)
+
 		embed = BetterEmbed()
-		embed.description = f"{dice} gave {', '.join(counter)} with {crit_s} crit successes and {crit_f} fails"
+		embed.description = f"{dice} gave {', '.join([str(die) for die in counter])} = {total} with {crit_s} crit successes and {crit_f} fails"
 
 		await ctx.send(embed=embed)
 
@@ -86,7 +88,7 @@ class Other(commands.Cog):
 	async def random_colour(self, ctx: NewCtx):
 		"""Generates a random colour, displaying its representation in Hex, RGB and HSV values"""
 		col = Colour.from_rgb(*[random.randint(0, 255) for _ in range(3)])
-		hex_v = col.value
+		hex_v = hex(col.value).replace('0x', '#')
 
 		r, g, b = col.r, col.g, col.b
 		h, s, v = colorsys.rgb_to_hsv(r, g, b)
@@ -95,14 +97,15 @@ class Other(commands.Cog):
 		s = round((s * 100))
 		v = round((h * 100))
 
-		image_obj = Image.new('RGB', (500, 500), (r, g, b))
+		image_obj = Image.new('RGB', (125, 125), (r, g, b))
 		new_obj = BytesIO()
 		image_obj.save(new_obj, format='png')
+		new_obj.seek(0)
 		fileout = File(new_obj, filename='file.png')
 
 
 		embed = Embed(colour = col, title = '`Random colour : `')
-		embed.description = f'Hex : {hex_v} / {hex(hex_v).replace("0x")}\nRGB : {r}, {g}, {b}\nHSV : {h}, {s}, {v//1000}'
+		embed.description = f'Hex : {hex_v} / {hex(col.value)}\nRGB : {r}, {g}, {b}\nHSV : {h}, {s}, {v//1000}'
 		embed.set_image(url="attachment://file.png")
 		embed.set_author(name = ctx.author.display_name, icon_url = ctx.author.avatar_url)
 

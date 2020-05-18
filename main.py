@@ -50,7 +50,8 @@ COGS = (
     "cogs.memes",
     "cogs.meta",
     "cogs.moderation",
-    "cogs.practical"
+    "cogs.practical",
+    "cogs.other"
 )
 
 

@@ -21,9 +21,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from collections import namedtuple
+
+from typing import Any
+from re import findall
 from contextlib import suppress
+from collections import namedtuple
 from io import BytesIO
+
 
 import discord
 from discord.ext import commands
@@ -50,6 +54,14 @@ class BetterUserConverter(commands.Converter):
         http_dict = await ctx.bot.http.get_user(out.id)
         return BetterUser(obj=out, http_dict=http_dict)
 
+def maybe_url(url: Any, /) -> str:
+    """Returns an hyperlink version of an url if one is found, else the text"""
+    url = str(url)
+    if match := findall(r'//([^/]+)', url):  # we get full urls, no need to go too overkill
+        return f"[{match[0]}]({url})"
+    else:
+        return url
+
 class LinkConverter(commands.Converter):
     def __init__(self):
         self.png_header = b'\x89PNG\r\n\x1a\n'
@@ -66,3 +78,4 @@ class LinkConverter(commands.Converter):
                 return img_bytes
         else:
             raise commands.BadArgument("Unable to verify the link was an png or jpg")
+

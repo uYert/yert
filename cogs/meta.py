@@ -26,9 +26,11 @@ import inspect
 import itertools
 from contextlib import suppress
 from textwrap import dedent
+from time import perf_counter
 
 import discord
 from discord.ext import commands
+import humanize
 
 from utils.formatters import BetterEmbed, Flags
 from utils.converters import BetterUserConverter
@@ -45,6 +47,33 @@ def retrieve_checks(command):
                 if permi in line and line.lstrip().startswith('@'):
                     req.append(permi)
     return ', '.join(req)
+
+
+badge_mapping = {
+    'discord_employee': '<:staff:711628736977567776>',
+    'discord_partner': '<:partner:711628720963715096>',
+    'hs_events': '<:events:711628678748045483>',
+    'hs_balance': '<:balance:711628592081272943>',
+    'hs_bravery': '<:bravery:711628626742870026>',
+    'hs_brilliance': '<:brilliance:711628635152318475>',
+    'bug_hunter_lvl1': '<:bug1:711628644518461540>',
+    'bug_hunter_lvl2': '<:bug2:711628652340707408>',
+    'verified_dev': '<:dev:711628661077573644>',
+    'early_supporter': '<:early:711628670032150568>'
+}
+
+
+class UserInfo:
+    def __init__(self, user):
+        self.user = user
+
+    @property
+    def is_nitro(self):
+        if isinstance(self.user, discord.Member) and self.user.premium_since:
+            return True
+        elif self.user.is_avatar_animated():
+            return True
+        return False
 
 
 class EmbeddedHelpCommand(commands.HelpCommand):
@@ -126,10 +155,10 @@ class Meta(commands.Cog):
     @commands.command()
     async def about(self, ctx):
         """ This is the 'about the bot' command. """
-        description = dedent("""\
+        description = dedent(f"""\
                              A ~~shit~~ fun bot that was thrown together by a team of complete nincompoops.
                              In definitely no particular order:\n
-                             『 Moogs 』#2009, MrSnek#3442, nickofolas#0066 and Umbra#0009
+                            {', '.join([self.bot.get_user(i).__str__() for i in self.bot.owner_ids])}
                              """)
         # uniq_mem_count = set(
         #     member for member in guild.members if not member.bot for guild in self.bot.guilds) #! TODO fix set comp
@@ -140,22 +169,39 @@ class Meta(commands.Cog):
                     uniq_mem_count.add(member)
         
         # {member for member in ctx.bot.get_all_members() if not member.bot}
-                    
+
         embed = BetterEmbed(title=f"About {ctx.guild.me.display_name}")
         embed.description = description
         embed.set_author(name=ctx.me.display_name, icon_url=ctx.me.avatar_url)
-        embed.add_field(name="Current guilds", value=len(
-            self.bot.guilds), inline=True)
+        embed.add_field(name="Current guilds",
+                        value=f'{len(self.bot.guilds):,}')
         embed.add_field(name="Total fleshy people being memed",
-                        value=len(uniq_mem_count))
+                        value=f'{len(uniq_mem_count):,}')
         await ctx.send(embed=embed)
+
+    @commands.command()
+    async def ping(self, ctx):
+        sabertooth_tiger = perf_counter()
+        m = await ctx.send('_ _')
+        endocrine_title = perf_counter()
+        await m.edit(embed=BetterEmbed(
+            description=f'**API** {endocrine_title-sabertooth_tiger:.2f}s\n**WS** {self.bot.latency:.2f}s'
+        ))
 
     @commands.command()
     async def userinfo(self, ctx, *, user=None):
         user = await BetterUserConverter().convert(ctx, user)
         flags = Flags(user.http_dict['public_flags']).flags
         user = user.obj
-        await ctx.send(embed=BetterEmbed(title=user.display_name, description=', '.join(flags)))
+        user_info = UserInfo(user)
+        badges = [badge_mapping.get(f) for f in flags]
+        if user_info.is_nitro:
+            badges.append('<:nitro:711628687455420497>')
+        embed = BetterEmbed(
+            title=user.__str__(), description=' '.join(badges))\
+            .set_thumbnail(url=user.avatar_url_as(static_format='png'))
+        embed.add_field(name='Info', value=f'Account Created: {humanize.naturaltime(user.created_at)}')
+        await ctx.send(embed=embed)
 
 
 def setup(bot):

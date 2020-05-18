@@ -39,13 +39,17 @@ class Anime(commands.Cog):
     
     @commands.command(name='saucenao')
     async def saucenao(self, ctx: NewCtx, target: Union[discord.User, discord.Message] = None):
+        image = await self.aiosaucenao.select_image(ctx=ctx, target=target)
+        
+        ctx.cache_key += (image,)
+        
         if not (source := ctx.cached_data):
-            image = await self.aiosaucenao.select_image(ctx=ctx, target=target)
+            
             response = await self.aiosaucenao.search(image)  #todo: check rate limit with the main header
             source = ctx.add_to_cache(value=SauceNaoSource(response.results),
                                       timeout=timedelta(minutes=5))
             
-        menu = menus.MenuPages(source, )
+        menu = menus.MenuPages(source, clear_reactions_after=True)
         await menu.start(ctx)
             
 def setup(bot):

@@ -11,4 +11,4 @@ numpy
 pillow
 uwuify
 async_cleverbot
-aiogoogletrans
+git+https://github.com/Fogapod/aiogoogletrans

@@ -21,19 +21,19 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import asyncio
 from io import BytesIO
-import os
 from random import randint
 import time
 
+from typing import Tuple
 
-from discord import Embed, File
+from discord import File
 from discord.ext import commands
 from PIL import Image
 
 from main import NewCtx
 from utils.formatters import BetterEmbed
+
 
 class Images(commands.Cog):
     """ Image cog. Time for manipulation. """
@@ -41,8 +41,8 @@ class Images(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def _shifter(self, attachment_bytes: bytes, size: tuple):
-        image_obj = Image.open(BytesIO(attachment_bytes))
+    def _shifter(self, attachment_file: BytesIO, size: tuple) -> BytesIO:
+        image_obj = Image.open(attachment_file)
 
         bands = image_obj.split()
 
@@ -66,95 +66,87 @@ class Images(commands.Cog):
 
         new_image = Image.merge('RGB', (new_red, new_green, new_blue))
 
-        output = BytesIO()
-        new_image.save(output, format="png")
-        output.seek(0)
-        
-        return output
+        out_file = BytesIO()
+        new_image.save(out_file, format='PNG')
+        out_file.seek(0)
+        return out_file
 
+    def _jpeg(self, attachment_file: BytesIO, severity: int) -> BytesIO:
+        image_obj = Image.open(attachment_file)
 
-    async def _get_image(self, ctx: NewCtx) -> tuple:
+        out_file = BytesIO()
+        image_obj.save(out_file, format='JPEG', quality=severity)
+        out_file.seek(0)
+        return out_file
+
+    def _loop_jpeg(self, attachment_file: BytesIO, severity: int, loops: int) -> BytesIO:
+        for _ in range(loops):
+            attachment_file = self._jpeg(attachment_file, severity)
+        return attachment_file
+
+    def _get_image(self, ctx: NewCtx) -> Tuple[BytesIO, str, Tuple[int, int]]:
+        attachment_file = BytesIO()
+
         if not ctx.message.attachments:
-            attachment_bytes = await ctx.author.avatar_url_as(size=1024, format='jpg').read()
-            filename = ctx.author.display_name + '.jpg'
-            filesize = (1024, 1024)
+            await ctx.author.avatar_url_as(size=1024, format='png').save(attachment_file)
+            filename = ctx.author.display_name + '.png'
+            file_size = (1024, 1024)
+
         else:
             target = ctx.message.attachments[0]
-            attachment_bytes = await target.read()
+            await target.save(attachment_file)
             filename = target.filename
-            filesize = (target.width, target.height)
+            file_size = (target.width, target.height)
 
-        return attachment_bytes, filename, filesize
-
-    def loop_jpeg(self, severity, filename, loopyloops):
-        for _ in range(loopyloops):
-            image = Image.open(filename)
-            image.save(filename, format='jpeg', quality=severity)
-            image.close()
-
-
-
+        return attachment_file, filename, file_size
 
     @commands.command()
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
     async def shift(self, ctx: NewCtx):
         """Shifts the RGB bands in an attached image or the author's profile picture"""
-        attachment_bytes, filename, filesize= await self._get_image(ctx)
+        attachment_file, _, file_size = await self._load_attachment(ctx.message)
 
         start_time = time.time()
-        file = await self.bot.loop.run_in_executor(
-            None, self._shifter, attachment_bytes, filesize)
+        new_file = await self.bot.loop.run_in_executor(
+            None, self._shifter, attachment_file, file_size)
         end_time = time.time()
 
-        new_image = File(file, filename=f"file.png")
+        fileout = File(new_file, "file.png")
 
-        embed = Embed(title="", colour=randint(0, 0xffffff))
-        embed.set_footer(
-            text=f"Shifting that image took : {end_time-start_time}")
-        embed.set_image(url="attachment://file.png")
-
-        await ctx.send(embed=embed, file=new_image)
-
-
-    @commands.command(name='morejpeg', aliases=['jpeg', 'jpegify', 'more'])
-    async def _more(self, ctx: NewCtx, severity: int = 15, loopyloops: int = 1):
-        """Adds jpeg compression proportional to severity to an uploaded image or the author's profile picture"""
-        achtung_bottem, filename, filesize = await self._get_image(ctx)
-
-        if not (5 <= severity <= 95):
-            raise commands.BadArgument("severity parameter must be between 5 and 95 inclusive")
-        severity = 100 - severity
-
-        if not(1 <= loopyloops <= 100):
-            raise commands.BadArgument("loopyloop parameter must be between 1 and 100 inclusive")
-
-        if loopyloops == 1:
-            start_time = time.time()
-            image_obj = Image.open(BytesIO(achtung_bottem))
-            image_obj.save(filename, format = 'jpeg', quality = severity)
-            end_time = time.time()
-
-        else:
-            start_time = time.time()
-
-            with open(filename, 'wb') as written_bible:
-                written_bible.write(achtung_bottem)
-
-            self.loop_jpeg(severity, filename, loopyloops)
-            end_time = time.time()
-
-
-
-        fileout = File(filename, 'file.jpg')
-        os.remove(filename)
-
-        embed = BetterEmbed(title='jpegifying done.')
-        embed.set_footer(text=f"That took {end_time-start_time:.2f}s")
-        embed.set_image(url="attachment://file.jpg")
+        embed = BetterEmbed(title='shifting done.').set_footer(
+            text=f"That took {end_time-start_time:.2f}s").set_image(url="attachment://file.png")
 
         await ctx.send(embed=embed, file=fileout)
 
+    @commands.command(name='morejpeg', aliases=['jpeg', 'jpegify', 'more'])
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
+    async def morejpeg(self, ctx: NewCtx, severity: int = 15, loopyloops: int = 1):
+        """Adds jpeg compression proportional to severity to an uploaded image or the author's profile picture"""
+
+        if not (5 <= severity <= 95):
+            raise commands.BadArgument(
+                "severity parameter must be between 5 and 95 inclusive")
+        severity = 100 - severity
+
+        if not(1 <= loopyloops <= 100):
+            raise commands.BadArgument(
+                "loopyloop parameter must be between 1 and 100 inclusive")
+
+        attachment_file, _, _ = await self._get_image(ctx)
+
+        start_time = time.time()
+        new_file = await self.bot.loop.run_in_executor(
+            None, self._loop_jpeg, attachment_file, severity, loopyloops)
+        end_time = time.time()
+
+        fileout = File(new_file, 'file.jpg')
+
+        embed = BetterEmbed(title='jpegifying done.').set_footer(
+            text=f"That took {end_time-start_time:.2f}s").set_image(url="attachment://file.jpg")
+
+        await ctx.send(embed=embed, file=fileout)
 
 
 def setup(bot):

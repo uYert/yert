@@ -74,8 +74,7 @@ class Result:
 class SaucenaoResponse:
     def __init__(self, data: dict, /):
         self.header = MainHeader(**data.pop('header'))
-        self.results = [Result(**result) for result in data.pop('results')]
-        
+        self.results = [Result(**result) for result in data.pop('results')]  
         self.extra_data = data  # keeping extra stuff there, in case the api updates
         
 class AioSaucenao:

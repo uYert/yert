@@ -24,7 +24,6 @@ SOFTWARE.
 from io import BytesIO
 from random import randint
 import time
-
 from typing import Tuple
 
 from discord import File
@@ -72,10 +71,10 @@ class Images(commands.Cog):
         return out_file
 
     def _jpeg(self, attachment_file: BytesIO, severity: int) -> BytesIO:
-        image_obj = Image.open(attachment_file)
+        image_obj = Image.open(attachment_file).convert('RGB')
 
         out_file = BytesIO()
-        image_obj.save(out_file, format='JPEG', quality=severity)
+        image_obj.save(out_file, format='jpeg', quality=severity)
         out_file.seek(0)
         return out_file
 
@@ -84,7 +83,7 @@ class Images(commands.Cog):
             attachment_file = self._jpeg(attachment_file, severity)
         return attachment_file
 
-    def _get_image(self, ctx: NewCtx) -> Tuple[BytesIO, str, Tuple[int, int]]:
+    async def _get_image(self, ctx: NewCtx) -> Tuple[BytesIO, str, Tuple[int, int]]:
         attachment_file = BytesIO()
 
         if not ctx.message.attachments:
@@ -101,11 +100,11 @@ class Images(commands.Cog):
         return attachment_file, filename, file_size
 
     @commands.command()
-    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
     async def shift(self, ctx: NewCtx):
         """Shifts the RGB bands in an attached image or the author's profile picture"""
-        attachment_file, _, file_size = await self._load_attachment(ctx.message)
+        attachment_file, _, file_size = await self._get_image(ctx)
 
         start_time = time.time()
         new_file = await self.bot.loop.run_in_executor(
@@ -120,19 +119,19 @@ class Images(commands.Cog):
         await ctx.send(embed=embed, file=fileout)
 
     @commands.command(name='morejpeg', aliases=['jpeg', 'jpegify', 'more'])
-    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
     async def morejpeg(self, ctx: NewCtx, severity: int = 15, loopyloops: int = 1):
         """Adds jpeg compression proportional to severity to an uploaded image or the author's profile picture"""
 
-        if not (5 <= severity <= 95):
+        if not (0 <= severity <= 100):
             raise commands.BadArgument(
-                "severity parameter must be between 5 and 95 inclusive")
-        severity = 100 - severity
+                "severity parameter must be between 0 and 100 inclusive")
+        severity = 101 - severity
 
-        if not(1 <= loopyloops <= 100):
+        if not(1 <= loopyloops <= 200):
             raise commands.BadArgument(
-                "loopyloop parameter must be between 1 and 100 inclusive")
+                "loopyloop parameter must be between 1 and 200 inclusive")
 
         attachment_file, _, _ = await self._get_image(ctx)
 

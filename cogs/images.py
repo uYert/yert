@@ -84,11 +84,11 @@ class Images(commands.Cog):
             attachment_file = self._jpeg(attachment_file, severity)
         return attachment_file
 
-    def _diff(self, file_a: BytesIO, file_b: BytesIO, size: Tuple[int, int]) -> BytesIO:
+    def _diff(self, file_a: BytesIO, file_b: BytesIO) -> BytesIO:
         image_obj_a = Image.open(file_a)
         image_obj_b = Image.open(file_b)
 
-        new_image = ImageChops(image_obj_a, image_obj_b)
+        new_image = ImageChops.difference(image_obj_a, image_obj_b)
 
         out_file = BytesIO()
         new_image.save(out_file, format='PNG')
@@ -175,7 +175,7 @@ class Images(commands.Cog):
 
         start_time = time.time()
         new_file = await self.bot.loop.run_in_executor(
-            None, self._diff, attachment_file_a, attachment_file_b, file_a_size)
+            None, self._diff, attachment_file_a, attachment_file_b)
         end_time = time.time()
 
         fileout = File(new_file, 'diff.png')

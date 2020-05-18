@@ -52,7 +52,8 @@ class Memes(commands.Cog):
         self.bot = bot
         self.webhook = bot.get_cog("Events").webhook
 
-    def _gen_embeds(self, requester: str, iterable: List[Any], nsfw_channel: bool) -> List[Embed]:
+    @staticmethod
+    def _gen_embeds(requester: str, iterable: List[Any], nsfw_channel: bool) -> List[Embed]:
         embeds = []
 
         for item in iterable:

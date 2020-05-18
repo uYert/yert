@@ -149,10 +149,10 @@ class Bot(commands.Bot):
         self._session = ClientSession(loop=self.loop)
         self._headers = {"Range" : "bytes=0-10"}
         self._cache = TimedCache(loop=self.loop)
-        if config.PSQL_DETAILS:
+        if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):
             self._pool = asyncio.get_event_loop().run_until_complete(
                 Table.create_pool(
-                    config.PSQL_DETAILS, command_timeout=60
+                    PSQL_DETAILS, command_timeout=60
                 ))
 
         # Extension load

@@ -24,11 +24,12 @@ SOFTWARE.
 from io import BytesIO
 from random import randint
 import time
+
 from typing import Tuple
 
 from discord import File
 from discord.ext import commands
-from PIL import Image
+from PIL import Image, ImageChops
 
 from main import NewCtx
 from utils.formatters import BetterEmbed
@@ -40,7 +41,7 @@ class Images(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def _shifter(self, attachment_file: BytesIO, size: tuple) -> BytesIO:
+    def _shifter(self, attachment_file: BytesIO, size: Tuple[int, int]) -> BytesIO:
         image_obj = Image.open(attachment_file)
 
         bands = image_obj.split()
@@ -83,7 +84,18 @@ class Images(commands.Cog):
             attachment_file = self._jpeg(attachment_file, severity)
         return attachment_file
 
-    async def _get_image(self, ctx: NewCtx) -> Tuple[BytesIO, str, Tuple[int, int]]:
+    def _diff(self, file_a: BytesIO, file_b: BytesIO, size: Tuple[int, int]) -> BytesIO:
+        image_obj_a = Image.open(file_a)
+        image_obj_b = Image.open(file_b)
+
+        new_image = ImageChops(image_obj_a, image_obj_b)
+
+        out_file = BytesIO()
+        new_image.save(out_file, format='PNG')
+        out_file.seek(0)
+        return out_file
+
+    async def _get_image(self, ctx: NewCtx, index: int = 0) -> Tuple[BytesIO, str, Tuple[int, int]]:
         attachment_file = BytesIO()
 
         if not ctx.message.attachments:
@@ -92,7 +104,7 @@ class Images(commands.Cog):
             file_size = (1024, 1024)
 
         else:
-            target = ctx.message.attachments[0]
+            target = ctx.message.attachments[index]
             await target.save(attachment_file)
             filename = target.filename
             file_size = (target.width, target.height)
@@ -146,6 +158,34 @@ class Images(commands.Cog):
             text=f"That took {end_time-start_time:.2f}s").set_image(url="attachment://file.jpg")
 
         await ctx.send(embed=embed, file=fileout)
+
+    @commands.command(name='diff')
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
+    async def diff(self, ctx: NewCtx):
+        """Returns the difference between two images"""
+        if len(ctx.message.attachments) < 2:
+            raise commands.BadArgument("Expected two attachments")
+
+        attachment_file_a, _, file_a_size = await self._get_image(ctx, 0)
+        attachment_file_b, _, file_b_size = await self._get_image(ctx, 1)
+
+        if file_a_size != file_b_size:
+            raise commands.BadArgument("Attachment images must be the same size")
+
+        start_time = time.time()
+        new_file = await self.bot.loop.run_in_executor(
+            None, self._diff, attachment_file_a, attachment_file_b, file_a_size)
+        end_time = time.time()
+
+        fileout = File(new_file, 'diff.png')
+
+        embed = BetterEmbed(title='diffing done.').set_footer(
+            text=f"That took {end_time-start_time:.2f}s").set_image(url="attachment://diff.png")
+
+        await ctx.send(embed=embed, file=fileout)
+
+
 
 
 def setup(bot):

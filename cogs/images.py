@@ -67,7 +67,7 @@ class Images(commands.Cog):
         new_image = Image.merge('RGB', (new_red, new_green, new_blue))
 
         out_file = BytesIO()
-        new_image.save(out_file)
+        new_image.save(out_file, format='PNG')
         out_file.seek(0)
         return out_file
 

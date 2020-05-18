@@ -45,7 +45,7 @@ COGS = ("jishaku",)
 
 for file in os.path.listdir("cogs'):
     (base, ext) = os.path.splitext(file)
-    if ext == ".py":
+    if ext == ".py" and not base.startswith("__"):
         COGS += (f"cogs.{base}",)
 
 class NewCtx(commands.Context):

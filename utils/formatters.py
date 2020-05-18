@@ -62,6 +62,8 @@ class BetterEmbed(Embed):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.color = random_colour()
+        self._empty_field = "**⚠️ MISSING FIELD ⚠️**"
+
 
     def fill_fields(self) -> 'ColoredEmbed':
         """Fill the remaining fields so they are lined up properly"""
@@ -75,6 +77,12 @@ class BetterEmbed(Embed):
     # def add_field(self, *, name, value, inline=True) -> 'ColoredEmbed':
     #     """Makes all field names bold, because I decided to"""
     #     return super().add_field(name=f"**{name}**", value=value, inline=inline)
+
+    def add_field(self, *, name, value, inline=True):
+        return super().add_field(name=name or self._empty_field,  # sends the embed anyways, but with a warn
+                                 value=value or self._empty_field,  # a bit clearer than the missing field error
+                                 inline=inline)
+
 
     def add_fields(self, fields: Iterator[Tuple[str, str, bool]]) -> 'ColoredEmbed':
         """Adds all fields at once"""

@@ -43,6 +43,7 @@ for env in ('NO_UNDERSCORE', 'NO_DM_TRACEBACK', 'HIDE', 'RETAIN'):
 
 COGS = (
     "jishaku",
+    "cogs.anime",
     "cogs.events",
     "cogs.fun",
     "cogs.games",
@@ -158,8 +159,8 @@ class Bot(commands.Bot):
         for extension in COGS:
             try:
                 self.load_extension(extension)
-            except Exception:
-                pass  # ! TODO: webhook the print_exc
+            except Exception as exc:
+                print(exc)  # ! TODO: webhook the print_exc
 
     #! Discord stuff
     async def get_context(self, message: discord.Message, *, cls=None):

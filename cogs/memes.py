@@ -53,13 +53,10 @@ class Memes(commands.Cog):
         self.webhook = bot.get_cog("Events").webhook
 
     @staticmethod
-    def _gen_embeds(requester: str, iterable: List[Any], nsfw_channel: bool) -> List[Embed]:
+    def _gen_embeds(self, requester: str, iterable: List[Any]) -> List[Embed]:
         embeds = []
 
         for item in iterable:
-            if item.nsfw and not nsfw_channel:
-                continue
-
             embed = Embed(
                 title=item.title,
                 description=item.self_text,
@@ -74,7 +71,7 @@ class Memes(commands.Cog):
             if item.video_link:
                 embed.add_field(
                     name="Vidya!",
-                    value="[Click here!]({0.video_link})".format(item),
+                    value=f"[Click here!]({item.video_link})",
                     inline=False
                 )
             embed.add_field(
@@ -83,77 +80,94 @@ class Memes(commands.Cog):
             embed.add_field(
                 name="Total comments", value=item.comment_count, inline=True
             )
-            page_counter = "Result {0} of {1}".format(
-                iterable.index(item), len(iterable) - 1)
+            page_counter = f"Result {iterable.index(item)+1} of {len(iterable)}"
             embed.set_footer(
-                text="{0} | {1.subreddit} | Requested by {2}".format(
-                    page_counter, item, requester)
-            )
+                text=f"{page_counter} | {item.subreddit} | Requested by {requester}")
 
             embeds.append(embed)
 
-        return embeds
+        return embeds[:15]
 
     @commands.command()
-    @commands.max_concurrency(1, commands.BucketType.channel, wait=False)
+    @commands.max_concurrency(3, commands.BucketType.channel, wait=False)
     async def reddit(self, ctx: commands.Context,
                      sub: str = 'memes',
-                     sort: str = 'hot',
-                     amount: int = 5):
+                     sort: str = 'hot'):
         """Gets the <sub>reddits <amount> of posts sorted by <method>"""
         if sort.lower() not in ("top", "hot", "best", "controversial", "new", "rising"):
             return await ctx.send("Not a valid sort-by type.")
 
-        PostObj = namedtuple('PostObj', ['nsfw', 'title', 'self_text', 'url', 'author',
+        PostObj = namedtuple('PostObj', ['title', 'self_text', 'url', 'author',
                                          'image_link', 'video_link', 'upvotes',
                                          'comment_count', 'subreddit'])
 
         posts = set()
 
+        subr_url = f"https://www.reddit.com/r/{sub}/about.json"
         base_url = f"https://www.reddit.com/r/{sub}/{sort}.json"
+
+        async with self.bot.session.get(subr_url, headers={"User-Agent": "Yoink discord bot"}) as subr_resp:
+            subr_deets = await subr_resp.json()
+
+        if 'data' not in subr_deets:
+            raise commands.BadArgument("Subreddit does not exist.")
+        if subr_deets['data'].get('over18', None) and not ctx.channel.is_nsfw():
+            raise commands.NSFWChannelRequired(ctx.channel)
 
         async with self.bot.session.get(base_url) as res:
             page_json = await res.json()
 
-        for counter in range(amount):
-            try:
-                post_data = page_json['data']['children'][counter]['data']
+        idx = 0
+        for post_data in page_json['data']['children']:
+            image_url = None
+            video_url = None
 
-                nsfw = post_data['over_18']
-                if nsfw and not ctx.channel.nsfw:
+            if idx == 20:
+                break
+
+            post = post_data['data']
+            if post['stickied'] or (post['over_18'] and not ctx.channel.is_nsfw()):
+                idx += 1
+                continue
+
+            title = shorten(post['title'], width=250)
+            self_text = shorten(post['selftext'], width=1500)
+            url = f"https://www.reddit.com{post['permalink']}"
+            author = post['author']
+            image_url = post['url'] if post['url'].endswith((
+                ".jpg", ".png", ".jpeg", ".gif", ".webp")) else None
+            if "v.redd.it" in post['url']:
+                image_url = post['thumbnail']
+                if post.get("media", None):
+                    video_url = post['url']
+                else:
                     continue
-                title = shorten(post_data['title'], width=250)
-                self_text = post_data['selftext']
-                url = "https://www.reddit.com{}".format(post_data['permalink'])
-                author = post_data['author']
-                image_link = None
-                try:
-                    if media := post_data['secure_media']:
-                        if oembed := media['oembed']:
-                            image_link = oembed['thumbnail_url']
-                except KeyError:
-                    image_link = post_data['thumbnail']
-                video_link = post_data['url']
-                upvotes = post_data['score']
-                comment_count = post_data['num_comments']
-                subreddit = post_data['subreddit']
+            upvotes = post['score']
+            comment_count = post['num_comments']
+            subreddit = post['subreddit']
 
-                _post = PostObj(nsfw=nsfw, title=title, self_text=self_text,
-                                url=url, author=author, image_link=image_link,
-                                video_link=video_link, upvotes=upvotes,
-                                comment_count=comment_count, subreddit=subreddit
-                                )
+            _post = PostObj(title=title, self_text=self_text,
+                            url=url, author=author, image_link=image_url,
+                            video_link=video_url, upvotes=upvotes,
+                            comment_count=comment_count, subreddit=subreddit
+                            )
 
-                posts.add(_post)
-            except Exception as err:
-                await ctx.webhook_send(
-                    f"{err} in {ctx.channel.mention} trying item {counter} of {amount}",
-                    webhook=self.webhook, skip_ctx=True
-                )
+            posts.add(_post)
         embeds = self._gen_embeds(
-            ctx.author, list(posts), ctx.channel.is_nsfw())
+            ctx.author, list(posts))
         pages = menus.MenuPages(PagedEmbedMenu(embeds))
         await pages.start(ctx)
+
+    @reddit.error
+    async def reddit_error(self, ctx, error):
+        """ Local Error handler for reddit command. """
+        error = getattr(error, "original", error)
+        if isinstance(error, commands.NSFWChannelRequired):
+            return await ctx.send("This ain't an NSFW channel.")
+        elif isinstance(error, commands.BadArgument):
+            msg = ("There seems to be no Reddit posts to show, common cases are:\n"
+                   "- Not a real subreddit.\n")
+            return await ctx.send(msg)
 
 
 def setup(bot):

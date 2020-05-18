@@ -1,5 +1,8 @@
+""" Config script for 'yert' """
 # ? Bot token
 BOT_TOKEN = "TOKEN HERE"
+PREFIX = "yoink "
+PSQL_DETAILS = "postgres://<user>:<password>@<IP/Addr>:<Port>/<database_name>"
 
 # ? Webhook tuple. Channel ID as int then secret as a string.
 WEBHOOK = (710260377199575072,

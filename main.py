@@ -21,9 +21,12 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 """
 
-import os
+import asyncio
 from collections.abc import Hashable
 from datetime import datetime, timedelta, timezone
+import os
+import sys
+import traceback
 from typing import Any, Union
 
 from aiohttp import ClientSession
@@ -32,6 +35,7 @@ from discord.ext import commands
 
 import config
 from utils.containers import TimedCache
+from utils.db import Table
 from utils.formatters import BetterEmbed
 
 for env in ('NO_UNDERSCORE', 'NO_DM_TRACEBACK', 'HIDE', 'RETAIN'):
@@ -143,35 +147,46 @@ class Bot(commands.Bot):
         super().__init__(**options)
         self._session = ClientSession(loop=self.loop)
         self._cache = TimedCache(loop=self.loop)
+        if config.PSQL_DETAILS:
+            self._pool = asyncio.get_event_loop().run_until_complete(
+                Table.create_pool(
+                    config.PSQL_DETAILS, command_timeout=60
+                ))
 
         # Extension load
         for extension in COGS:
             try:
                 self.load_extension(extension)
-            except Exception as e:
-                pass #todo : webhook that
-            
+            except Exception:
+                pass  # ! TODO: webhook the print_exc
 
     #! Discord stuff
     async def get_context(self, message: discord.Message, *, cls=None):
         """Custom context stuff hahayes"""
         return await super().get_context(message, cls=cls or NewCtx)
 
-    #! Call to AppInfo to populate owners
     async def on_ready(self):
-        if not getattr(self, "owner_ids", []):
-            await self.application_info()
+        """ We're online. """
+        print("yert is ready for memes.")
 
     @property
     def session(self):
         """Don't want to accidentally edit those"""
         return self._session
 
-    @ property
+    @property
     def cache(self):
+        """ Quick return of the cache. """
         return self._cache
+
+    @property
+    def pool(self):
+        """ Let's not rewrite internals... """
+        if self._pool:
+            return self._pool
+        return None
 
 
 if __name__ == '__main__':
-    Bot(command_prefix='devyoink ').run(
-        config.BOT_TOKEN)
+    bot = Bot(command_prefix=config.PREFIX)
+    bot.run(config.BOT_TOKEN)

@@ -128,6 +128,7 @@ class SauceNaoSource(ListPageSource):
 
         for key, value in data.items():
             if not isinstance(value, list):
-                embed.add_field(name=key, value=maybe_url(value))  # no idea about what it will return
+                if url := maybe_url(value):
+                    embed.add_field(name=key, value=url)  # no idea about what it will return
         
         return embed.fill_fields() 

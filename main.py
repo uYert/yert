@@ -174,12 +174,19 @@ class Bot(commands.Bot):
         """Don't want to accidentally edit those"""
         return self._session
 
-    @ property
+    @property
     def cache(self):
         """ Quick return of the cache. """
         return self._cache
 
+    @property
+    def pool(self):
+        """ Let's not rewrite internals... """
+        if self._pool:
+            return self._pool
+        return None
+
 
 if __name__ == '__main__':
-    bot = Bot(command_prefix='uyoink ')
+    bot = Bot(command_prefix=config.PREFIX)
     bot.run(config.BOT_TOKEN)

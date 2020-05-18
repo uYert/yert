@@ -28,23 +28,25 @@ import discord
 from discord.ext import commands, menus
 from packages.aiosaucenao import AioSaucenao, SauceNaoSource
 from config import SAUCENAO_TOKEN
-
+from main import NewCtx
+from datetime import timedelta
 
 class Anime(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.aiosaucenao = AioSaucenao(session=bot.session, 
                                        api_key=SAUCENAO_TOKEN)
-        
-        
+    
     @commands.command(name='saucenao')
-    async def saucenao(self, ctx, target: Union[discord.User, discord.Message] = None):
-        image = await self.aiosaucenao.select_image(ctx=ctx, target=target)
-        response = await self.aiosaucenao.search(image)  #todo: check rate limit with the main header
-        results = [res for res in response.results]
-        source = SauceNaoSource(results)
-        menu = menus.MenuPages(source)
+    async def saucenao(self, ctx: NewCtx, target: Union[discord.User, discord.Message] = None):
+        if not (source := ctx.cached_data):
+            image = await self.aiosaucenao.select_image(ctx=ctx, target=target)
+            response = await self.aiosaucenao.search(image)  #todo: check rate limit with the main header
+            source = ctx.add_to_cache(value=SauceNaoSource(response.results),
+                                      timeout=timedelta(minutes=5))
+            
+        menu = menus.MenuPages(source, )
         await menu.start(ctx)
-        
+            
 def setup(bot):
     bot.add_cog(Anime(bot))

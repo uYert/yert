@@ -41,19 +41,12 @@ from utils.formatters import BetterEmbed
 for env in ('NO_UNDERSCORE', 'NO_DM_TRACEBACK', 'HIDE', 'RETAIN'):
     os.environ['JISHAKU_' + env] = 'True'
 
-COGS = (
-    "jishaku",
-    "cogs.events",
-    "cogs.fun",
-    "cogs.games",
-    "cogs.images",
-    "cogs.memes",
-    "cogs.meta",
-    "cogs.moderation",
-    "cogs.practical",
-    "cogs.other"
-)
+COGS = ("jishaku",)
 
+for file in os.path.listdir("cogs'):
+    (base, ext) = os.path.splitext(file)
+    if ext == ".py":
+        COGS += (f"cogs.{base}",)
 
 class NewCtx(commands.Context):
     """Custom context for extra functions"""
@@ -161,6 +154,7 @@ class Bot(commands.Bot):
                 self.load_extension(extension)
             except Exception:
                 pass  # ! TODO: webhook the print_exc
+       
 
     #! Discord stuff
     async def get_context(self, message: discord.Message, *, cls=None):

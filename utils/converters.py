@@ -26,6 +26,7 @@ from typing import Any
 from re import findall
 from contextlib import suppress
 from collections import namedtuple
+from io import BytesIO
 
 
 import discord
@@ -60,3 +61,21 @@ def maybe_url(url: Any, /) -> str:
         return f"[{match[0]}]({url})"
     else:
         return url
+
+class LinkConverter(commands.Converter):
+    def __init__(self):
+        self.png_header = b'\x89PNG\r\n\x1a\n'
+        self.jpg_header = b'\xff\xd8\xff'
+
+    async def convert(self, ctx, argument: str) -> BytesIO:
+        argument = argument.replace('>', '').replace('<', '')
+        async with ctx.bot.session.get(argument, headers=ctx.bot._headers) as response:
+            raw_bytes = await response.read()
+
+        if raw_bytes.startswith(self.jpg_header) or raw_bytes.startswith(self.png_header):
+            async with ctx.bot.session.get(argument) as res:
+                img_bytes = BytesIO(await res.read())
+                return img_bytes
+        else:
+            raise commands.BadArgument("Unable to verify the link was an png or jpg")
+

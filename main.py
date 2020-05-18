@@ -148,6 +148,7 @@ class Bot(commands.Bot):
     def __init__(self, **options):
         super().__init__(**options)
         self._session = ClientSession(loop=self.loop)
+        self._headers = {"Range" : "bytes=0-10"}
         self._cache = TimedCache(loop=self.loop)
         if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):
             self._pool = asyncio.get_event_loop().run_until_complete(

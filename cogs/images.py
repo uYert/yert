@@ -41,6 +41,7 @@ class Images(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+
     def _shifter(self, attachment_file: BytesIO, size: Tuple[int, int]) -> BytesIO:
         image_obj = Image.open(attachment_file)
 
@@ -184,8 +185,6 @@ class Images(commands.Cog):
             text=f"That took {end_time-start_time:.2f}s").set_image(url="attachment://diff.png")
 
         await ctx.send(embed=embed, file=fileout)
-
-
 
 
 def setup(bot):

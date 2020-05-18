@@ -85,7 +85,7 @@ class Images(commands.Cog):
             attachment_file = self._jpeg(attachment_file, severity)
         return attachment_file
 
-    def _diff(self, image_obj_a: Image, image_obj_b: Image) -> BytesIO:
+    def _diff(self, image_obj_a, image_obj_b) -> BytesIO:
 
         new_image = ImageChops.difference(image_obj_a, image_obj_b)
 
@@ -118,7 +118,7 @@ class Images(commands.Cog):
         return img_bytes, file_size
 
     def _resize_avg(self, image_a: BytesIO, size_a: Tuple[int, int],
-                    image_b: BytesIO, size_b: Tuple[int, int]) -> Tuple[Image, Image]:
+                    image_b: BytesIO, size_b: Tuple[int, int]):
 
         new_width = (size_a[0] + size_b[0]) // 2
         new_height = (size_a[1] + size_b[1]) // 2

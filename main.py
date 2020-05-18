@@ -83,12 +83,8 @@ class NewCtx(commands.Context):
 
         self._altered_cache_key = None
 
-    async def webhook_send(self,
-                           content: str,
-                           *,
-                           webhook: discord.Webhook,
-                           skip_wh: bool = False,
-                           skip_ctx: bool = False) -> None:
+    async def webhook_send(self,content: str, *,webhook: discord.Webhook,  # more elegant
+                           skip_wh: bool = False, skip_ctx: bool = False) -> None:
         """ This is a custom ctx addon for sending to the webhook and/or the ctx.channel. """
         content = content.strip("```")
         embed = BetterEmbed(title="Error", description=f"```py\n{content}```",
@@ -150,6 +146,7 @@ class Bot(commands.Bot):
         self._session = ClientSession(loop=self.loop)
         self._headers = {"Range" : "bytes=0-10"}
         self._cache = TimedCache(loop=self.loop)
+        self._before_invoke = self.before_invoke
         if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):
             self._pool = asyncio.get_event_loop().run_until_complete(
                 Table.create_pool(
@@ -162,6 +159,10 @@ class Bot(commands.Bot):
                 self.load_extension(extension)
             except Exception as exc:
                 print(exc)  # ! TODO: webhook the print_exc
+
+    async def before_invoke(self, ctx):
+        """Nothing too important"""
+        await ctx.trigger_typing()
 
     #! Discord stuff
     async def get_context(self, message: discord.Message, *, cls=None):

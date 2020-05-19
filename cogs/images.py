@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from functools import lru_cache
 from io import BytesIO
 from random import randint
 import time
@@ -57,7 +58,7 @@ class Images(commands.Cog):
 
         await ctx.send(embed=embed, file=fileout)
 
-
+    @lru_cache(maxsize=15)
     def _shifter(self, attachment_file: BytesIO, size: Tuple[int, int]) -> BytesIO:
         image_obj = Image.open(attachment_file)
 
@@ -88,6 +89,7 @@ class Images(commands.Cog):
         out_file.seek(0)
         return out_file
 
+    @lru_cache(maxsize=15)
     def _jpeg(self, attachment_file: BytesIO, severity: int) -> BytesIO:
         image_obj = Image.open(attachment_file).convert('RGB')
 
@@ -101,6 +103,7 @@ class Images(commands.Cog):
             attachment_file = self._jpeg(attachment_file, severity)
         return attachment_file
 
+    @lru_cache(maxsize=15)
     def _diff(self, image_obj_a, image_obj_b) -> BytesIO:
 
         new_image = ImageChops.difference(image_obj_a, image_obj_b)
@@ -111,6 +114,7 @@ class Images(commands.Cog):
 
         return out_file
 
+    @lru_cache(maxsize=15)
     async def _get_image(self, ctx: NewCtx, index: int = 0) -> Tuple[BytesIO, str, Tuple[int, int]]:
         attachment_file = BytesIO()
 
@@ -127,11 +131,13 @@ class Images(commands.Cog):
 
         return attachment_file, filename, file_size
 
+    @lru_cache(maxsize=15)
     def _get_dimension(self, img_bytes: BytesIO) -> Tuple[BytesIO, int]:
         image_obj = Image.open(img_bytes)
         file_size = image_obj.size
         return img_bytes, file_size
 
+    @lru_cache(maxsize=15)
     def _resize_avg(self, image_a: BytesIO, size_a: Tuple[int, int],
                     image_b: BytesIO, size_b: Tuple[int, int]):
 
@@ -148,6 +154,7 @@ class Images(commands.Cog):
 
         return new_a, new_b
 
+    @lru_cache(maxsize=15)
     async def _image_ops_func(self, ctx: NewCtx, img_bytes: tuple):
         if len(ctx.message.attachments) == 1:
             file_a, _, file_size = await self._get_image(ctx, 0)

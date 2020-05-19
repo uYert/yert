@@ -90,7 +90,6 @@ class Games(commands.Cog):
         # Time to check if they're already in here
         duped_query = "SELECT * FROM hypesquad_house_reacted WHERE guild_id = $1 AND user_id = $2;"
         duped = await self.bot.pool.execute(duped_query, reacting_member.guild.id, reacting_member.id)
-        print(duped)
         if duped != "SELECT 0":
             return  # ! They already reacted
 

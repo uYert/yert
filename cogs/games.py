@@ -59,6 +59,17 @@ class Games(commands.Cog):
         self.bot = bot
 
     @commands.Cog.listener()
+    async def on_guild_join(self, guild):
+        """
+        Adding the guild to the table in the event they want to play.
+        """
+        house_query = """INSERT INTO hypesquad_house
+                         (guild_id, balance_count, bravery_count, brilliance_count)
+                         VALUES ($1, 0, 0, 0);
+                       """
+        await self.bot.pool.execute(house_query, guild.id)
+
+    @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         """
         Let's wait for any and all Emoji reactions to the bot's messages.

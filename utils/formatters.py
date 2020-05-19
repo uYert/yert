@@ -64,7 +64,6 @@ class BetterEmbed(Embed):
         self.color = random_colour()
         self._empty_field = "**⚠️ MISSING FIELD ⚠️**"
 
-
     def fill_fields(self) -> 'ColoredEmbed':
         """Fill the remaining fields so they are lined up properly"""
         inlines = len(
@@ -82,7 +81,6 @@ class BetterEmbed(Embed):
         return super().add_field(name=name or self._empty_field,  # sends the embed anyways, but with a warn
                                  value=value or self._empty_field,  # a bit clearer than the missing field error
                                  inline=inline)
-
 
     def add_fields(self, fields: Iterator[Tuple[str, str, bool]]) -> 'ColoredEmbed':
         """Adds all fields at once"""
@@ -111,69 +109,69 @@ class Flags:
         return (self.value & v) == v
 
     @property
-    def discord_employee(self):
-        return 1 << 0
+    def staff(self):
+        return self.has_flag(1)
 
     @property
-    def discord_partner(self):
-        return 1 << 1
+    def partner(self):
+        return self.has_flag(2)
 
     @property
-    def hs_events(self):
-        return 1 << 2
+    def hypesquad_events(self):
+        return self.has_flag(4)
 
     @property
-    def bug_hunter_lvl1(self):
-        return 1 << 3
+    def bug_hunter_level_1(self):
+        return self.has_flag(8)
 
     @property
     def mfa_sms(self):
-        return 1 << 4
+        return self.has_flag(16)
 
     @property
     def premium_promo_dismissed(self):
-        return 1 << 5
+        return self.has_flag(32)
 
     @property
-    def hs_bravery(self):
-        return 1 << 6
+    def hypesquad_bravery(self):
+        return self.has_flag(64)
 
     @property
-    def hs_brilliance(self):
-        return 1 << 7
+    def hypesquad_brilliance(self):
+        return self.has_flag(128)
 
     @property
-    def hs_balance(self):
-        return 1 << 8
+    def hypesquad_balance(self):
+        return self.has_flag(256)
 
     @property
     def early_supporter(self):
-        return 1 << 9
+        return self.has_flag(512)
 
     @property
     def team_user(self):
-        return 1 << 10
+        return self.has_flag(1024)
 
     @property
     def system(self):
-        return 1 << 12
+        return self.has_flag(4096)
 
     @property
     def unread_sys_msg(self):
-        return 1 << 13
+        return self.has_flag(8192)
 
     @property
-    def bug_hunter_lvl2(self):
-        return 1 << 14
+    def bug_hunter_level_2(self):
+        return self.has_flag(16384)
 
     @property
     def underage_deleted(self):
-        return 1 << 15
+        return self.has_flag(32768)
 
     @property
     def verified_bot(self):
-        return 1 << 16
+        return self.has_flag(65536)
 
     @property
-    def verified_dev(self):
-        return 1 << 17
+    def verified_bot_developer(self):
+        return self.has_flag(131072)

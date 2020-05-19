@@ -86,10 +86,10 @@ class Games(commands.Cog):
             return
         if message.author != self.bot.user:
             return  # ! Only the bots messages work
-        reacting_member = message.guild.get_member(payload.user_id)
-        if reacting_member.bot:
+        if message.author.bot:
             return  # ! No bots
 
+        reacting_member = message.guild.get_member(payload.user_id)
         # Time to check if they're already in here
         duped_query = "SELECT * FROM hypesquad_house_reacted WHERE guild_id = $1 AND user_id = $2;"
         duped = await self.bot.pool.execute(duped_query, reacting_member.guild.id, reacting_member.id)

@@ -29,7 +29,7 @@ from utils import db
 from utils.formatters import Flags
 
 
-class HypeSquadHouse(db.Table, name="hypesquad_house"):
+class HypeSquadHouse(db.Table, table_name="hypesquad_house"):
     """
     # ! This is probably just a documentation thing right now for db table.
     # ? I seen this format for RDanny tables and liked it so.....
@@ -43,7 +43,7 @@ class HypeSquadHouse(db.Table, name="hypesquad_house"):
     brilliance_count = db.Column(db.Integer)
 
 
-class HypeSquadHouseReacted(db.Table, name="hypesquad_house_reacted"):
+class HypeSquadHouseReacted(db.Table, table_name="hypesquad_house_reacted"):
     """
     Let's just store all people who have reacted, and which guild they came
     from since this game is guild agnostic.
@@ -86,6 +86,13 @@ class Games(commands.Cog):
         reacting_member = message.guild.get_member(payload.user_id)
         if reacting_member.bot:
             return  # ! No bots
+
+        # Time to check if they're already in here
+        duped_query = "SELECT * FROM hypesquad_house_reacted WHERE guild_id = $1 AND user_id = $2;"
+        duped = await self.bot.pool.execute(duped_query, reacting_member.guild.id, reacting_member.id)
+        print(duped)
+        if duped != "SELECT 0":
+            return  # ! They already reacted
 
         raw_member = await self.bot.http.get_user(reacting_member.id)
         member_flags = Flags(raw_member['public_flags'])

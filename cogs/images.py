@@ -114,7 +114,6 @@ class Images(commands.Cog):
     def _get_dimension(self, img_bytes: BytesIO) -> Tuple[BytesIO, int]:
         image_obj = Image.open(img_bytes)
         file_size = image_obj.size
-        image_obj.close()
         return img_bytes, file_size
 
     def _resize_avg(self, image_a: BytesIO, size_a: Tuple[int, int],
@@ -122,6 +121,7 @@ class Images(commands.Cog):
 
         new_width = (size_a[0] + size_b[0]) // 2
         new_height = (size_a[1] + size_b[1]) // 2
+
 
         new_a = Image.open(image_a)
         new_a = new_a.resize((new_width, new_height))
@@ -196,11 +196,11 @@ class Images(commands.Cog):
         else:
             raise commands.BadArgument("You must pass either two attachments or two image links")
 
-        file_a, file_b = self._resize_avg(file_a, file_a_size, file_b, file_b_size)
+        new_a, new_b = self._resize_avg(file_a, file_a_size, file_b, file_b_size)
 
         start_time = time.time()
         new_file = await self.bot.loop.run_in_executor(
-            None, self._diff, file_a, file_b)
+            None, self._diff, new_a, new_b)
         end_time = time.time()
 
         fileout = File(new_file, 'diff.png')

@@ -101,19 +101,18 @@ class NewCtx(commands.Context):
     @property
     def qname(self) -> Union[str, None]:
         """Shortcut to get the command's qualified name"""
-        return self.command.qualified_name if self.command else None
+        return getattr(self.command, 'qualified_name', None)
+
 
     @property
     def all_args(self) -> list:
         """Retrieves a list of all args and kwargs passed into the command"""  # ctx.args returns self too
-        args = [arg for arg in self.args if not isinstance(
-            arg, (commands.Cog, commands.Context))]
-        # there should be only one
-        kwargs = [val for val in self.kwargs.values()]
+        args = [arg for arg in self.args if not isinstance(arg, (commands.Cog, commands.Context))]
+        kwargs = [val for val in self.kwargs.values()]  # there should be only one
         return args + kwargs
 
     @property
-    def cache_key(self) -> tuple:
+    def cache_key(self) -> list:
         """Returns the key used to access the cache"""
         return self._altered_cache_key or tuple([self.qname] + self.all_args)
 
@@ -132,7 +131,7 @@ class NewCtx(commands.Context):
         """Tries to retrieve cached data"""
         return self.cache.get(key=self.cache_key)
 
-    def add_to_cache(self, *, value: Any, timeout: Union[int, timedelta] = None,
+    def add_to_cache(self, value: Any, *, timeout: Union[int, timedelta, datetime] = None,
                      key: Hashable = None) -> Any:
         """Sets an item into the cache using the the provided keys"""
         return self.cache.set(key=key or self.cache_key, value=value, timeout=timeout)

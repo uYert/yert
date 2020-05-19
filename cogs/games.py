@@ -66,7 +66,7 @@ class Games(commands.Cog):
         house_query = """INSERT INTO hypesquad_house
                          (guild_id, balance_count, bravery_count, brilliance_count)
                          VALUES ($1, 0, 0, 0);
-                       """
+                      """
         await self.bot.pool.execute(house_query, guild.id)
 
     @commands.Cog.listener()
@@ -95,21 +95,47 @@ class Games(commands.Cog):
 
         raw_member = await self.bot.http.get_user(reacting_member.id)
         member_flags = Flags(raw_member['public_flags'])
-        if not member_flags.flags:
+        if member_flags.value == 0:
             return
-        flag_query = ""
-        if "hs_balance" in member_flags.flags:
-            flag_query = "UPDATE hypesquad_house SET balance_count = balance_count + 1 WHERE guild_id = $1;"
-        elif "hs_bravery" in member_flags.flags:
-            flag_query = "UPDATE hypesquad_house SET bravery_count = bravery_count + 1 WHERE guild_id = $1;"
-        elif "hs_brilliance" in member_flags.flags:
-            flag_query = "UPDATE hypesquad_house SET brilliance_count = brilliance_count + 1 WHERE guild_id = $1;"
+        if member_flags.hypesquad_balance:
+            flag = "balance"
+        elif member_flags.hypesquad_bravery:
+            flag = "bravery"
+        elif member_flags.hypesquad_brilliance:
+            flag = "brilliance"
         else:
             return
+        flag_query = f"UPDATE hypesquad_house SET {flag}_count = {flag}_count + 1 WHERE guild_id = $1"
 
         query = "INSERT INTO hypesquad_house_reacted (guild_id, user_id) VALUES ($1, $2);"
         await self.bot.pool.execute(query, reacting_member.guild.id, reacting_member.id)
         return await self.bot.pool.execute(flag_query, reacting_member.guild.id)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
+        """
+        Little more confusing, we need to check if the removing user has reacted before,
+        and if so, decrement the value for their house.
+        """
+        query = "DELETE FROM hypesquad_house_reacted WHERE guild_id = $1 AND user_id = $2 RETURNING user_id;"
+        possible_user = await self.bot.pool.fetchrow(query, payload.guild_id, payload.user_id)
+        if not possible_user:
+            return
+
+        # ! Time to decrement their house value...
+        user = await self.bot.http.get_user(payload.user_id)
+        flags = Flags(user['public_flags'])
+        if flags.hypesquad_balance:
+            house = "balance"
+        elif flags.hypesquad_bravery:
+            house = "bravery"
+        elif flags.hypesquad_brilliance:
+            house = "brilliance"
+        else:
+            return
+
+        house_query = f"UPDATE hypesquad_house SET {house}_count = {house}_count - 1 WHERE guild_id = $1;"
+        return await self.bot.pool.execute(house_query, payload.guild_id)
 
 
 def setup(bot):

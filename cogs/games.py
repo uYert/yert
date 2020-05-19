@@ -80,7 +80,10 @@ class Games(commands.Cog):
         channel = self.bot.get_channel(payload.channel_id)
         if not channel.guild:
             return  # ! We don't want DM cheats
-        message = await channel.fetch_message(payload.message_id)
+        try:
+            message = await channel.fetch_message(payload.message_id)
+        except discord.errors.NotFound:
+            return
         if message.author != self.bot.user:
             return  # ! Only the bots messages work
         reacting_member = message.guild.get_member(payload.user_id)

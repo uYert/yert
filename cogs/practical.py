@@ -40,7 +40,7 @@ class Practical(commands.Cog):
         self.bot = bot
         self.aioweather = AioWeather(session=bot.session,
                                      api_key=WEATHER_TOKEN)
-        self.aiotranslator = AioTranslator(session=bot.session)
+        self.aiotranslator = AioTranslator()
 
     @commands.command(name='weather')
     @commands.cooldown(1, 30, type=commands.BucketType.channel)

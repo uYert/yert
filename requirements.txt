@@ -1,15 +1,17 @@
 # Discord
-discord.py
-#git+https://github.com/Rapptz/discord.py@master#egg=discord-py
+# discord.py
+git+https://github.com/Rapptz/discord.py@master#egg=discord-py
 git+https://github.com/Rapptz/discord-ext-menus@master#egg=discord-ext-menus
 git+https://github.com/XuaTheGrate/Flag-Parsing@master#egg=discord-flags
 jishaku
 
-# Others
+# Others (git)
+git+https://github.com/Fogapod/aiogoogletrans
+
+# Others (pypi)
 fuzzywuzzy
 numpy
 pillow
 uwuify
 async_cleverbot
-git+https://github.com/Fogapod/aiogoogletrans
 gtts_token

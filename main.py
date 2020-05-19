@@ -83,7 +83,7 @@ class NewCtx(commands.Context):
 
         self._altered_cache_key = None
 
-    async def webhook_send(self,content: str, *,webhook: discord.Webhook,  # more elegant
+    async def webhook_send(self, content: str, *, webhook: discord.Webhook,  # more elegant
                            skip_wh: bool = False, skip_ctx: bool = False) -> None:
         """ This is a custom ctx addon for sending to the webhook and/or the ctx.channel. """
         content = content.strip("```")
@@ -144,7 +144,7 @@ class Bot(commands.Bot):
     def __init__(self, **options):
         super().__init__(**options)
         self._session = ClientSession(loop=self.loop)
-        self._headers = {"Range" : "bytes=0-10"}
+        self._headers = {"Range": "bytes=0-10"}
         self._cache = TimedCache(loop=self.loop)
         self._before_invoke = self.before_invoke
         if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):
@@ -157,8 +157,8 @@ class Bot(commands.Bot):
         for extension in COGS:
             try:
                 self.load_extension(extension)
-            except Exception as exc:
-                print(exc)  # ! TODO: webhook the print_exc
+            except Exception:
+                traceback.print_exc()  # ! TODO: webhook the print_exc
 
     async def before_invoke(self, ctx):
         """Nothing too important"""

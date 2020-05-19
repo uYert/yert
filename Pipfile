@@ -15,7 +15,10 @@ discord-ext-menus = {git = "https://github.com/Rapptz/discord-ext-menus",ref = "
 discord-flags = {git = "https://github.com/XuaTheGrate/Flag-Parsing",ref = "master"}
 jishaku = "*"
 
-# Others
+# Others (git)
+aiogoogletrans = {git = "git+https://github.com/Fogapod/aiogoogletrans",ref = "master"}
+
+# Others (pypi)
 asyncpg = "*"
 psutil = "*"
 async-cse = "*"
@@ -27,7 +30,7 @@ fuzzywuzzy = "*"
 numpy = "*"
 pillow = "*"
 async-cleverbot = "*"
-aiogoogletrans = "*"
+gtts-token = "*"
 
 [requires]
 python_version = "3.8"

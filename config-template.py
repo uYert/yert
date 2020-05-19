@@ -8,6 +8,8 @@ PSQL_DETAILS = "postgres://<user>:<password>@<IP/Addr>:<Port>/<database_name>"
 WEBHOOK = (710260377199575072,
            "rJASHh1omoW7F8AAPHqh2gGTG_gNIZ6ZC1G2FMRDXPPcDa99")
 
+# ? travitia
+TRAVITIA_TOKEN = "vEyN:grf"
 
 # ? openweathermap
 WEATHER_TOKEN = 'e7b0b8448e85ecb4c01e13'

@@ -132,7 +132,7 @@ class NewCtx(commands.Context):
         """Tries to retrieve cached data"""
         return self.cache.get(key=self.cache_key)
 
-    def add_to_cache(self, *, value: Any, timeout: Union[int, timedelta] = None,
+    def add_to_cache(self, value: Any, *, timeout: Union[int, timedelta] = None,
                      key: Hashable = None) -> Any:
         """Sets an item into the cache using the the provided keys"""
         return self.cache.set(key=key or self.cache_key, value=value, timeout=timeout)
@@ -144,7 +144,7 @@ class Bot(commands.Bot):
     def __init__(self, **options):
         super().__init__(**options)
         self._session = ClientSession(loop=self.loop)
-        self._headers = {"Range": "bytes=0-5000"}
+        self._headers = {"Range": "bytes=0-10"}
         self._cache = TimedCache(loop=self.loop)
         self._before_invoke = self.before_invoke
         if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):

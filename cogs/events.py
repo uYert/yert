@@ -23,7 +23,6 @@ SOFTWARE.
 """
 
 from inspect import signature
-from datetime import datetime
 import traceback
 import typing
 
@@ -32,6 +31,7 @@ from discord import Message
 from discord.ext import commands
 
 import config
+from main import NewCtx
 
 
 class Events(commands.Cog):
@@ -49,13 +49,9 @@ class Events(commands.Cog):
             id=wh_id, token=wh_token, adapter=discord.AsyncWebhookAdapter(self.bot.session))
         return hook
 
-    def fmt(self, daytee: datetime):
-        """ Quick datetime formatter. """
-        return daytee.strftime("%Y %b %d: %H:%M:%S:%f")
-
-    async def any_role_converter(self, ctx: commands.Context,
-                                 args: typing.Sequence[typing.Union[int, str]]
-                                 ) -> typing.Sequence[str]:
+    async def any_role_converter(self, ctx: NewCtx,
+                                 args: typing.List[typing.Union[int, str]]
+                                 ) -> typing.List[str]:
         """ Converts to a role object. """
         for idx, item in enumerate(args):
             if isinstance(item, int):
@@ -64,7 +60,7 @@ class Events(commands.Cog):
 
     @commands.group(invoke_without_command=True, name="ignored")
     @commands.is_owner()
-    async def _ignored(self, ctx: commands.Context) -> None:
+    async def _ignored(self, ctx: NewCtx) -> None:
         """
         Adds or removes an exception from the list of exceptions to ignore,
         if you want to add or remove commands.MissingRole,
@@ -74,27 +70,29 @@ class Events(commands.Cog):
 
     @_ignored.command()
     @commands.is_owner()
-    async def add(self, ctx: commands.Context, exc: str):
+    async def add(self, ctx: NewCtx, exc: str):
         """Adds an exception to the list of ingored exceptions"""
         if hasattr(commands, exc):
             if getattr(commands, exc) not in self.ignored:
                 self.ignored.append(getattr(commands, exc))
             else:
-                await ctx.webhook_send(f"commands.{exc} is already in the ignored exceptions.")
+                await ctx.webhook_send(f"commands.{exc} is already in the ignored exceptions.",
+                                       webhook=self.webhook)
         else:
             raise AttributeError(
                 "commands module has no attribute {0}, command aborted".format(exc))
 
     @_ignored.command()
     @commands.is_owner()
-    async def remove(self, ctx: commands.Context, exc: str):
+    async def remove(self, ctx: NewCtx, exc: str):
         """Removes an exception from the list of ingored exceptions"""
         if hasattr(commands, exc):
             try:
                 self.ignored.pop(self.ignored.index(
                     getattr(commands, exc)))
             except ValueError:
-                await ctx.webhook_send("{0} not in the ignored list of exceptions".format(exc))
+                await ctx.webhook_send("{0} not in the ignored list of exceptions".format(exc),
+                                       webhook=self.webhook)
         else:
             raise AttributeError(
                 "commands module has no attribute {0}, command aborted".format(exc))
@@ -108,11 +106,11 @@ class Events(commands.Cog):
         """ On any message. """
 
     @commands.Cog.listener()
-    async def on_command(self, ctx: commands.Context):
+    async def on_command(self, ctx: NewCtx):
         """ On command invokation. """
 
     @commands.Cog.listener()
-    async def on_command_error(self, ctx: commands.Context, error: Exception):
+    async def on_command_error(self, ctx: NewCtx, error: Exception):
         """ On command errors. """
         if hasattr(ctx.command, 'on_error'):
             return
@@ -143,8 +141,7 @@ class Events(commands.Cog):
             return await ctx.webhook_send(message, webhook=self.webhook)
 
         if isinstance(error, commands.BadArgument):
-            bad_argument = list(ctx.command.clean_params)[len(
-                ctx.args[2:] if ctx.command.cog else ctx.args[1:])]
+            bad_argument = list(ctx.command.clean_params)[len(ctx.args[2:])]
             bad_typehint = signature(
                 ctx.command.callback).parameters[bad_argument].annotation
             message = "{0.mention}, argument {1} was expecting {2}".format(
@@ -165,7 +162,7 @@ class Events(commands.Cog):
             return await ctx.webhook_send(message, webhook=self.webhook)
 
         if isinstance(error, commands.MissingRole):
-            if isinstance(error.role, int):
+            if isinstance(error.missing_role, int):
                 role_name = commands.RoleConverter().convert(ctx, str(error.missing_role))
             else:
                 role_name = error.missing_role
@@ -174,7 +171,7 @@ class Events(commands.Cog):
             return await ctx.webhook_send(message, webhook=self.webhook)
 
         if isinstance(error, commands.BotMissingRole):
-            if isinstance(error.role, int):  # ! what
+            if isinstance(error.missing_role, int):
                 role_name = commands.RoleConverter().convert(ctx, str(error.missing_role))
             else:
                 role_name = error.missing_role
@@ -218,10 +215,10 @@ class Events(commands.Cog):
             return await ctx.webhook_send(message, webhook=self.webhook)
 
     @commands.Cog.listener()
-    async def on_command_completion(self, ctx: commands.Context):
+    async def on_command_completion(self, ctx: NewCtx):
         """ On command completion. """
 
 
 def setup(bot):
-    """ Cog entrypoint. """
+    """ Cog entry point. """
     bot.add_cog(Events(bot))

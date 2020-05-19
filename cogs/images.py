@@ -24,8 +24,7 @@ SOFTWARE.
 from io import BytesIO
 from random import randint
 import time
-
-from typing import Tuple
+from typing import Optional, Tuple
 
 from discord import File
 from discord.ext import commands
@@ -33,6 +32,7 @@ from PIL import Image, ImageChops
 
 from main import NewCtx
 from utils.formatters import BetterEmbed
+from utils.converters import LinkConverter
 
 
 class Images(commands.Cog):
@@ -85,15 +85,14 @@ class Images(commands.Cog):
             attachment_file = self._jpeg(attachment_file, severity)
         return attachment_file
 
-    def _diff(self, file_a: BytesIO, file_b: BytesIO) -> BytesIO:
-        image_obj_a = Image.open(file_a)
-        image_obj_b = Image.open(file_b)
+    def _diff(self, image_obj_a, image_obj_b) -> BytesIO:
 
         new_image = ImageChops.difference(image_obj_a, image_obj_b)
 
         out_file = BytesIO()
         new_image.save(out_file, format='PNG')
         out_file.seek(0)
+
         return out_file
 
     async def _get_image(self, ctx: NewCtx, index: int = 0) -> Tuple[BytesIO, str, Tuple[int, int]]:
@@ -111,6 +110,27 @@ class Images(commands.Cog):
             file_size = (target.width, target.height)
 
         return attachment_file, filename, file_size
+
+    def _get_dimension(self, img_bytes: BytesIO) -> Tuple[BytesIO, int]:
+        image_obj = Image.open(img_bytes)
+        file_size = image_obj.size
+        return img_bytes, file_size
+
+    def _resize_avg(self, image_a: BytesIO, size_a: Tuple[int, int],
+                    image_b: BytesIO, size_b: Tuple[int, int]):
+
+        new_width = (size_a[0] + size_b[0]) // 2
+        new_height = (size_a[1] + size_b[1]) // 2
+
+
+        new_a = Image.open(image_a)
+        new_a = new_a.resize((new_width, new_height))
+
+
+        new_b = Image.open(image_b)
+        new_b = new_b.resize((new_width, new_height))
+
+        return new_a, new_b
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
@@ -163,20 +183,24 @@ class Images(commands.Cog):
     @commands.command(name='diff')
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
-    async def diff(self, ctx: NewCtx):
+    async def diff(self, ctx: NewCtx, *img_bytes: Optional[LinkConverter]):
         """Returns the difference between two images"""
-        if len(ctx.message.attachments) < 2:
-            raise commands.BadArgument("Expected two attachments")
+        if len(ctx.message.attachments) == 2:
+            file_a, _, file_a_size = await self._get_image(ctx, 0)
+            file_b, _, file_b_size = await self._get_image(ctx, 1)
 
-        attachment_file_a, _, file_a_size = await self._get_image(ctx, 0)
-        attachment_file_b, _, file_b_size = await self._get_image(ctx, 1)
+        elif len(img_bytes) == 2:
+            file_a, file_a_size = self._get_dimension(img_bytes[0])
+            file_b, file_b_size = self._get_dimension(img_bytes[1])
 
-        if file_a_size != file_b_size:
-            raise commands.BadArgument("Attachment images must be the same size")
+        else:
+            raise commands.BadArgument("You must pass either two attachments or two image links")
+
+        new_a, new_b = self._resize_avg(file_a, file_a_size, file_b, file_b_size)
 
         start_time = time.time()
         new_file = await self.bot.loop.run_in_executor(
-            None, self._diff, attachment_file_a, attachment_file_b)
+            None, self._diff, new_a, new_b)
         end_time = time.time()
 
         fileout = File(new_file, 'diff.png')

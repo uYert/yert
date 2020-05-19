@@ -12,3 +12,4 @@ pillow
 uwuify
 async_cleverbot
 git+https://github.com/Fogapod/aiogoogletrans
+gtts_token

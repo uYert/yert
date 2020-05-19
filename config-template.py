@@ -21,5 +21,3 @@ SAUCENAO_TOKEN = 'b70b01063a9b53deb0c2a35b2e'
 GOOGLE_TOKENS = ['AIzaSy4DsNdB5pcDmGiUQdHvA',
                  'AIzaSyOL3R6QbjILaFoPtObbE',
                  'AIzaSyBJrcUUdcgisxj_j7vzc']
-
-TRAVITIA_TOKEN = "abcdef"

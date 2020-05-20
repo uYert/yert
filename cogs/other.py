@@ -43,16 +43,18 @@ class Other(commands.Cog):
         self.bot = bot
 
     @commands.command(name='dice', aliases=['d'])
-    async def _dice(self, ctx: NewCtx, dice: str):
+    async def _dice(self, ctx: NewCtx, dice: str = '1d6'):
         """Generates dice with the supplied format `NdN`"""
-        dice_list = dice.split('d')
+        dice_list = dice.lower().split('d')
         try:
             d_count, d_value = int(dice_list[0]), int(dice_list[1])
         except ValueError:
             raise commands.BadArgument("The entered format was incorrect, `NdN` only currently")
 
         counter = []
-        crit_s, crit_f = 0
+        crit_s, crit_f = 0, 0
+        if d_count < 0 or d_value < 0:
+            raise commands.BadArgument("You cannot have negative values")
         for dice_num in range(d_count):
             randomnum = random.randint(1, d_value)
             if randomnum == d_value:
@@ -88,7 +90,7 @@ class Other(commands.Cog):
         await ctx.send(embed=embed)
 
     @_random.command(name='colour')
-    async def random_colour(self, ctx: NewCtx):
+    async def _rand_colour(self, ctx: NewCtx):
         """Generates a random colour, displaying its representation in Hex, RGB and HSV values"""
         col = Colour.from_rgb(*[random.randint(0, 255) for _ in range(3)])
         hex_v = hex(col.value).replace('0x', '#')

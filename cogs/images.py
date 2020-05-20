@@ -113,9 +113,11 @@ class Images(commands.Cog):
         new_height = (file_a_size[1] + file_b_size[1]) // 2
 
         image_obj_a = Image.open(file_a)
+        image_obj_a = image_obj_a.convert('RGB')
         image_obj_a = image_obj_a.resize((new_width, new_height))
 
         image_obj_b = Image.open(file_b)
+        image_obj_b = image_obj_b.convert('RGB')
         image_obj_b = image_obj_b.resize((new_width, new_height))
 
         new_image = ImageChops.difference(image_obj_a, image_obj_b)

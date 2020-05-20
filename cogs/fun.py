@@ -42,7 +42,7 @@ class Fun(commands.Cog):
         if not (txt := self.aiocleverbot.check_valid_message(ctx)):
             return
         
-        ctx.cache_key = ('cleverbot', ctx.author.id)
+        ctx.cache_key = ('cleverbot', ctx.author.id)  
         emotion = self.aiocleverbot.update_emotion(ctx)
         
         await ctx.trigger_typing()

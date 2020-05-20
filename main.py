@@ -143,17 +143,19 @@ class Bot(commands.Bot):
 
     def __init__(self, **options):
         super().__init__(**options)
+        if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):
+            self._pool = asyncio.get_event_loop().create_task(
+                Table.create_pool(
+                    PSQL_DETAILS, command_timeout=60
+                ))
+
+
 
     async def connect(self, *, reconnect=True):
         self._session = ClientSession(loop=self.loop)
         self._headers = {"Range": "bytes=0-10"}
         self._cache = TimedCache(loop=self.loop)
         self._before_invoke = self.before_invoke
-        if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):
-            self._pool = asyncio.get_event_loop().run_until_complete(
-                Table.create_pool(
-                    PSQL_DETAILS, command_timeout=60
-                ))
 
         # Extension load
         for extension in COGS:

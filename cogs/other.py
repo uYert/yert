@@ -39,78 +39,83 @@ random.seed(datetime.utcnow())
 
 
 class Other(commands.Cog):
-	def __init__(self, bot):
-		self.bot = bot
+    def __init__(self, bot):
+        self.bot = bot
 
+    @commands.command(name='dice', aliases=['d'])
+    async def _dice(self, ctx: NewCtx, dice: str = '1d6'):
+        """Generates dice with the supplied format `NdN`"""
+        dice_list = dice.lower().split('d')
+        try:
+            d_count, d_value = int(dice_list[0]), int(dice_list[1])
+        except ValueError:
+            raise commands.BadArgument("The entered format was incorrect, `NdN` only currently")
 
-	@commands.command(name='random number', aliases=['rnum', 'num'])
-	async def _rand_num(self, ctx: NewCtx, start: Union[int, float], stop: Union[int, float]):
-		"""Generates a random number from start to stop inclusive, if either is a float, number will be float"""
+        counter = []
+        crit_s, crit_f = 0, 0
+        if d_count < 0 or d_value < 0:
+            raise commands.BadArgument("You cannot have negative values")
+        for dice_num in range(d_count):
+            randomnum = random.randint(1, d_value)
+            if randomnum == d_value:
+                crit_s += 1
+            if randomnum == 1:
+                crit_f += 1
+            counter.append(randomnum)
 
-		if isinstance(start, float) or isinstance(stop, float):
-			number = random.uniform(start, stop)
-		else:
-			number = random.randint(start, stop)
+        total = sum(counter)
 
-		embed = BetterEmbed()
-		embed.description = f"Number between {start} and {stop}, {number=}"
+        embed = BetterEmbed()
+        embed.description = f"{dice} gave {', '.join([str(die) for die in counter])} = {total} with {crit_s} crit successes and {crit_f} fails"
 
-		await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
 
+    @commands.group(name='random', invoke_without_command=False)
+    async def _random(self, ctx):
 
-	@commands.command(aliases=['d'])
-	async def _dice(self, ctx: NewCtx, dice: str):
-		"""Generates dice with the supplied format `NdN`"""
-		dice_list = dice.split('d')
-		try:
-			d_count, d_value = int(dice_list[0]), int(dice_list[1])
-		except ValueError:
-			raise commands.BadArgument("The entered format was incorrect, `NdN` only currently")
+        pass
 
-		counter = []
-		crit_s = 0; crit_f = 0
-		for dice_num in range(d_count):
-			randomnum = random.randint(1, d_value)
-			if randomnum == d_value:
-				crit_s += 1
-			if randomnum == 1:
-				crit_f += 1
-			counter.append(randomnum)
+    @_random.command(name='number', aliases=['num'])
+    async def _rand_num(self, ctx: NewCtx, start: Union[int, float] = 0, stop: Union[int, float] = 100):
+        """Generates a random number from start to stop inclusive, if either is a float, number will be float"""
 
-		total = sum(counter)
+        if isinstance(start, float) or isinstance(stop, float):
+            number = random.uniform(start, stop)
+        else:
+            number = random.randint(start, stop)
 
-		embed = BetterEmbed()
-		embed.description = f"{dice} gave {', '.join([str(die) for die in counter])} = {total} with {crit_s} crit successes and {crit_f} fails"
+        embed = BetterEmbed()
+        embed.description = f"Number between **{start}** and **{stop}**\n{number}"
 
-		await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
 
-	@commands.command(name = 'rc')
-	async def random_colour(self, ctx: NewCtx):
-		"""Generates a random colour, displaying its representation in Hex, RGB and HSV values"""
-		col = Colour.from_rgb(*[random.randint(0, 255) for _ in range(3)])
-		hex_v = hex(col.value).replace('0x', '#')
+    @_random.command(name='colour')
+    async def _rand_colour(self, ctx: NewCtx):
+        """Generates a random colour, displaying its representation in Hex, RGB and HSV values"""
+        col = Colour.from_rgb(*[random.randint(0, 255) for _ in range(3)])
+        hex_v = hex(col.value).replace('0x', '#')
 
-		r, g, b = col.r, col.g, col.b
-		h, s, v = colorsys.rgb_to_hsv(r, g, b)
+        r, g, b = col.r, col.g, col.b
+        h, s, v = colorsys.rgb_to_hsv(r, g, b)
 
-		h = round((h * 360))
-		s = round((s * 100))
-		v = round((h * 100))
+        h = round((h * 360))
+        s = round((s * 100))
+        v = round((h * 100))
 
-		image_obj = Image.new('RGB', (125, 125), (r, g, b))
-		new_obj = BytesIO()
-		image_obj.save(new_obj, format='png')
-		new_obj.seek(0)
-		fileout = File(new_obj, filename='file.png')
+        image_obj = Image.new('RGB', (125, 125), (r, g, b))
+        new_obj = BytesIO()
+        image_obj.save(new_obj, format='png')
+        new_obj.seek(0)
+        fileout = File(new_obj, filename='file.png')
 
+        embed = Embed(colour=col, title='`Random colour: `')
+        embed.description = f'Hex : {hex_v} / {hex(col.value)}\nRGB : {r}, {g}, {b}\nHSV : {h}, {s}, {v//1000}'
+        embed.set_image(url="attachment://file.png")
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
 
-		embed = Embed(colour = col, title = '`Random colour : `')
-		embed.description = f'Hex : {hex_v} / {hex(col.value)}\nRGB : {r}, {g}, {b}\nHSV : {h}, {s}, {v//1000}'
-		embed.set_image(url="attachment://file.png")
-		embed.set_author(name = ctx.author.display_name, icon_url = ctx.author.avatar_url)
+        await ctx.send(embed=embed, file=fileout)
 
-		await ctx.send(embed=embed, file=fileout)
 
 def setup(bot):
-	"""Cog entry point"""
-	bot.add_cog(Other(bot))
+    """Cog entry point"""
+    bot.add_cog(Other(bot))

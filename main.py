@@ -164,7 +164,7 @@ class Bot(commands.Bot):
         """Nothing too important"""
         await ctx.trigger_typing()
 
-    #! Discord stuff
+    # ! Discord stuff
     async def get_context(self, message: discord.Message, *, cls=None):
         """Custom context stuff hahayes"""
         return await super().get_context(message, cls=cls or NewCtx)

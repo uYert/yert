@@ -25,7 +25,6 @@ import asyncio
 from collections.abc import Hashable
 from datetime import datetime, timedelta, timezone
 import os
-import sys
 import traceback
 from typing import Any, Union
 
@@ -87,11 +86,15 @@ class NewCtx(commands.Context):
                            skip_wh: bool = False, skip_ctx: bool = False) -> None:
         """ This is a custom ctx addon for sending to the webhook and/or the ctx.channel. """
         content = content.strip("```")
+
         embed = BetterEmbed(title="Error", description=f"```py\n{content}```",
                             timestamp=datetime.now(tz=timezone.utc))
+
         embed.add_field(name="Invoking command",
                         value=f"{self.prefix}{self.invoked_with}", inline=True)
+
         embed.add_field(name="Author", value=f"{str(self.author)}")
+
         if not skip_ctx:
             await super().send(embed=embed)
 
@@ -101,7 +104,7 @@ class NewCtx(commands.Context):
     @property
     def qname(self) -> Union[str, None]:
         """Shortcut to get the command's qualified name"""
-        return self.command.qualified_name if self.command else None
+        return getattr(self.command, 'qualified_name', None)
 
     @property
     def all_args(self) -> list:
@@ -113,9 +116,9 @@ class NewCtx(commands.Context):
         return args + kwargs
 
     @property
-    def cache_key(self) -> tuple:
+    def cache_key(self) -> list:
         """Returns the key used to access the cache"""
-        return self._altered_cache_key or tuple([self.qname] + self.all_args)
+        return self._altered_cache_key or [self.qname] + self.all_args
 
     @cache_key.setter
     def cache_key(self, key: Hashable) -> None:
@@ -130,12 +133,12 @@ class NewCtx(commands.Context):
     @property
     def cached_data(self) -> Union[Any, None]:
         """Tries to retrieve cached data"""
-        return self.cache.get(key=self.cache_key)
+        return self.cache.get(key=tuple(self.cache_key))
 
     def add_to_cache(self, value: Any, *, timeout: Union[int, timedelta] = None,
                      key: Hashable = None) -> Any:
         """Sets an item into the cache using the the provided keys"""
-        return self.cache.set(key=key or self.cache_key, value=value, timeout=timeout)
+        return self.cache.set(key=tuple(key or self.cache_key), value=value, timeout=timeout)
 
 
 class Bot(commands.Bot):
@@ -143,17 +146,17 @@ class Bot(commands.Bot):
 
     def __init__(self, **options):
         super().__init__(**options)
+        if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):  # ! no idea about why it can't connect
+            self._pool = asyncio.get_event_loop().create_task(
+                Table.create_pool(
+                    PSQL_DETAILS, command_timeout=60
+                ))
 
     async def connect(self, *, reconnect=True):
         self._session = ClientSession(loop=self.loop)
         self._headers = {"Range": "bytes=0-10"}
         self._cache = TimedCache(loop=self.loop)
         self._before_invoke = self.before_invoke
-        if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):
-            self._pool = asyncio.get_event_loop().run_until_complete(
-                Table.create_pool(
-                    PSQL_DETAILS, command_timeout=60
-                ))
 
         # Extension load
         for extension in COGS:
@@ -163,8 +166,6 @@ class Bot(commands.Bot):
                 traceback.print_exc()  # ! TODO: webhook the print_exc
 
         return await super().connect(reconnect=reconnect)
-
-
 
     async def before_invoke(self, ctx):
         """Nothing too important"""
@@ -192,7 +193,7 @@ class Bot(commands.Bot):
     @property
     def pool(self):
         """ Let's not rewrite internals... """
-        if self._pool:
+        if self._pool:  # ? what are we checking there
             return self._pool
         return None
 

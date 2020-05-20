@@ -104,7 +104,17 @@ class Images(commands.Cog):
         return attachment_file
 
     @lru_cache(maxsize=10)
-    def _diff(self, image_obj_a, image_obj_b) -> BytesIO:
+    def _diff(self, file_a: BytesIO, file_a_size: Tuple[int,int],
+              file_b: BytesIO, file_b_size: Tuple[int, int]) -> BytesIO:
+
+        new_width = (file_a_size[0] + file_b_size[0]) // 2
+        new_height = (file_a_size[1] + file_b_size[1]) // 2
+
+        image_obj_a = Image.open(file_a)
+        image_obj_a = image_obj_a.resize((new_width, new_height))
+
+        image_obj_b = Image.open(file_b)
+        image_obj_b = image_obj_b.resize((new_width, new_height))
 
         new_image = ImageChops.difference(image_obj_a, image_obj_b)
 
@@ -137,22 +147,6 @@ class Images(commands.Cog):
         file_size = image_obj.size
         return img_bytes, file_size
 
-    @lru_cache(maxsize=10)
-    def _resize_avg(self, image_a: BytesIO, size_a: Tuple[int, int],
-                    image_b: BytesIO, size_b: Tuple[int, int]):
-
-        new_width = (size_a[0] + size_b[0]) // 2
-        new_height = (size_a[1] + size_b[1]) // 2
-
-
-        new_a = Image.open(image_a)
-        new_a = new_a.resize((new_width, new_height))
-
-
-        new_b = Image.open(image_b)
-        new_b = new_b.resize((new_width, new_height))
-
-        return new_a, new_b
 
     @lru_cache(maxsize=15)
     async def _image_ops_func(self, ctx: NewCtx, img_bytes: tuple):
@@ -223,11 +217,8 @@ class Images(commands.Cog):
         else:
             raise commands.BadArgument("You must pass either two attachments or two image links")
 
-        new_a, new_b = self._resize_avg(file_a, file_a_size, file_b, file_b_size)
-
         start = time.time()
-        new_file = await self.bot.loop.run_in_executor(
-            None, self._diff, new_a, new_b)
+        new_file = self._diff(file_a, file_a_size, file_b, file_b_size)
         end = time.time()
 
         await self.embed_file(ctx, "Difference finished", new_file, end-start, "diff.png")

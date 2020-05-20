@@ -142,6 +142,8 @@ class Bot(commands.Bot):
 
     def __init__(self, **options):
         super().__init__(**options)
+
+    async def connect(self, *, reconnect=True):
         self._session = ClientSession(loop=self.loop)
         self._headers = {"Range" : "bytes=0-10"}
         self._cache = TimedCache(loop=self.loop)
@@ -158,6 +160,9 @@ class Bot(commands.Bot):
                 self.load_extension(extension)
             except Exception as exc:
                 print(exc)  # ! TODO: webhook the print_exc
+        
+        return await super().connect(reconnect=reconnect)
+
 
     async def before_invoke(self, ctx):
         """Nothing too important"""

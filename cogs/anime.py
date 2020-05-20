@@ -42,7 +42,7 @@ class Anime(commands.Cog):
     async def saucenao(self, ctx: NewCtx, target: Union[discord.User, discord.Message] = None):
         image = await self.aiosaucenao.select_image(ctx=ctx, target=target)
         
-        ctx.cache_key += (image,)
+        ctx.cache_key += [image]
         
         if not (source := ctx.cached_data):
             

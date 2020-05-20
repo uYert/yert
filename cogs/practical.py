@@ -78,10 +78,10 @@ class Practical(commands.Cog):
     async def google(self, ctx, *, query):
         is_nsfw = ctx.channel.is_nsfw()
         
-        ctx.cache_key.append(is_nsfw)
+        ctx.cache_key += [is_nsfw]
         
-        
-        results = await self.aiogoogle.search(query, safesearch=not is_nsfw)
+        if not ctx.cached_data:
+            results = await self.aiogoogle.search(query, safesearch=not is_nsfw)
     
     @google.command(name='image', aliases=['-i'])
     async def google_image(self, ctx, *, query):

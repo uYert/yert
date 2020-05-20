@@ -101,7 +101,7 @@ class NewCtx(commands.Context):
     @property
     def qname(self) -> Union[str, None]:
         """Shortcut to get the command's qualified name"""
-        return self.command.qualified_name if self.command else None
+        return getattr(self.command, 'qualified_name', None)
 
     @property
     def all_args(self) -> list:
@@ -113,9 +113,9 @@ class NewCtx(commands.Context):
         return args + kwargs
 
     @property
-    def cache_key(self) -> tuple:
+    def cache_key(self) -> list:
         """Returns the key used to access the cache"""
-        return self._altered_cache_key or tuple([self.qname] + self.all_args)
+        return self._altered_cache_key or [self.qname] + self.all_args
 
     @cache_key.setter
     def cache_key(self, key: Hashable) -> None:
@@ -130,12 +130,12 @@ class NewCtx(commands.Context):
     @property
     def cached_data(self) -> Union[Any, None]:
         """Tries to retrieve cached data"""
-        return self.cache.get(key=self.cache_key)
+        return self.cache.get(key=tuple(self.cache_key))
 
     def add_to_cache(self, value: Any, *, timeout: Union[int, timedelta] = None,
                      key: Hashable = None) -> Any:
         """Sets an item into the cache using the the provided keys"""
-        return self.cache.set(key=key or self.cache_key, value=value, timeout=timeout)
+        return self.cache.set(key=tuple(key or self.cache_key), value=value, timeout=timeout)
 
 
 class Bot(commands.Bot):

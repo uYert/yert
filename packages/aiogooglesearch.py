@@ -21,3 +21,25 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
+from datetime import timedelta
+from typing import Iterable, List
+
+from async_cse import Result as GoogleResult
+from async_cse import Search as BaseGoogleSearch
+from discord.ext.menus import ListPageSource
+
+from main import NewCtx
+from utils.formatters import BetterEmbed
+
+
+class AioSearchEngine(BaseGoogleSearch):
+    """Searches stuff on google"""
+
+
+
+
+
+
+def setup(bot):
+    pass

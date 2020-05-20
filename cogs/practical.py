@@ -29,10 +29,11 @@ from typing import Optional
 import discord
 from discord.ext import commands
 
-from config import WEATHER_TOKEN
+from config import WEATHER_TOKEN, GOOGLE_TOKENS
 from main import NewCtx
 from packages.aioweather import AioWeather
 from packages.aiotranslator import to_language, check_length, AioTranslator
+from packages.aiogooglesearch import AioSearchEngine
 
 
 class Practical(commands.Cog):
@@ -40,7 +41,9 @@ class Practical(commands.Cog):
         self.bot = bot
         self.aioweather = AioWeather(session=bot.session,
                                      api_key=WEATHER_TOKEN)
-        self.aiotranslator = AioTranslator()
+        self.aiotranslator = AioTranslator(session=bot.session)
+        self.aiogoogle = AioSearchEngine(api_keys=GOOGLE_TOKENS, 
+                                         session=bot.session)
 
     @commands.command(name='weather')
     @commands.cooldown(1, 30, type=commands.BucketType.channel)
@@ -70,6 +73,21 @@ class Practical(commands.Cog):
             embed = await self.aiotranslator.do_translation(ctx=ctx, text=text,
                                                             translation_kwarg={'dest': language})
         await ctx.send(embed=embed)
+
+    @commands.group(name='google')
+    async def google(self, ctx, *, query):
+        is_nsfw = ctx.channel.is_nsfw()
+        
+        ctx.cache_key.append(is_nsfw)
+        
+        
+        results = await self.aiogoogle.search(query, safesearch=not is_nsfw)
+    
+    @google.command(name='image', aliases=['-i'])
+    async def google_image(self, ctx, *, query):
+        pass
+    
+
 
     # todo : use menus to implement google search + magmachain
 

@@ -53,6 +53,9 @@ def check_length(arg: str) -> str:
 
 class AioTranslator(BaseTranslator):
     """Translates stuff using google translate's api"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.session = kwargs.pop('session', self.session)
 
     def format_resp(self, *, resp: Translated, text: str) -> BetterEmbed:
         """Formats the response into an embed"""

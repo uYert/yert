@@ -25,7 +25,6 @@ import asyncio
 from collections.abc import Hashable
 from datetime import datetime, timedelta, timezone
 import os
-import sys
 import traceback
 from typing import Any, Union
 
@@ -87,15 +86,15 @@ class NewCtx(commands.Context):
                            skip_wh: bool = False, skip_ctx: bool = False) -> None:
         """ This is a custom ctx addon for sending to the webhook and/or the ctx.channel. """
         content = content.strip("```")
-        
+
         embed = BetterEmbed(title="Error", description=f"```py\n{content}```",
                             timestamp=datetime.now(tz=timezone.utc))
-        
+
         embed.add_field(name="Invoking command",
                         value=f"{self.prefix}{self.invoked_with}", inline=True)
-        
+
         embed.add_field(name="Author", value=f"{str(self.author)}")
-        
+
         if not skip_ctx:
             await super().send(embed=embed)
 
@@ -147,13 +146,11 @@ class Bot(commands.Bot):
 
     def __init__(self, **options):
         super().__init__(**options)
-        if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):  #! no idea about why it can't connect
+        if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):  # ! no idea about why it can't connect
             self._pool = asyncio.get_event_loop().create_task(
                 Table.create_pool(
                     PSQL_DETAILS, command_timeout=60
                 ))
-
-
 
     async def connect(self, *, reconnect=True):
         self._session = ClientSession(loop=self.loop)
@@ -169,8 +166,6 @@ class Bot(commands.Bot):
                 traceback.print_exc()  # ! TODO: webhook the print_exc
 
         return await super().connect(reconnect=reconnect)
-
-
 
     async def before_invoke(self, ctx):
         """Nothing too important"""
@@ -198,7 +193,7 @@ class Bot(commands.Bot):
     @property
     def pool(self):
         """ Let's not rewrite internals... """
-        if self._pool:
+        if self._pool:  # ? what are we checking there
             return self._pool
         return None
 

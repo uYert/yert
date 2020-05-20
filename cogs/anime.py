@@ -39,7 +39,9 @@ class Anime(commands.Cog):
     
     @commands.command(name='saucenao')
     @commands.cooldown(7, 30, type=commands.BucketType.default)
-    async def saucenao(self, ctx: NewCtx, target: Union[discord.User, discord.Message] = None):
+    async def saucenao(self, ctx: NewCtx, 
+                       target: Union[discord.User, discord.Message] = None):
+        """Provides informations about an image"""
         image = await self.aiosaucenao.select_image(ctx=ctx, target=target)
         
         ctx.cache_key += [image]
@@ -47,13 +49,14 @@ class Anime(commands.Cog):
         if not (source := ctx.cached_data):
             
             response = await self.aiosaucenao.search(image) 
-            
-            await ctx.send(response.header.short_limit)
-            
             source = ctx.add_to_cache(value=SauceNaoSource(response.results),
                                       timeout=timedelta(hours=24))
             
-        menu = menus.MenuPages(source, clear_reactions_after=True)  # not caching the menu 
+        menu = menus.MenuPages(source, clear_reactions_after=True) 
+        
+        # The menu isn't cached to allow for changes, since the cache is 
+        # tied to the bot and not the cog
+        
         await menu.start(ctx)
             
 def setup(bot):

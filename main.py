@@ -87,11 +87,15 @@ class NewCtx(commands.Context):
                            skip_wh: bool = False, skip_ctx: bool = False) -> None:
         """ This is a custom ctx addon for sending to the webhook and/or the ctx.channel. """
         content = content.strip("```")
+        
         embed = BetterEmbed(title="Error", description=f"```py\n{content}```",
                             timestamp=datetime.now(tz=timezone.utc))
+        
         embed.add_field(name="Invoking command",
                         value=f"{self.prefix}{self.invoked_with}", inline=True)
+        
         embed.add_field(name="Author", value=f"{str(self.author)}")
+        
         if not skip_ctx:
             await super().send(embed=embed)
 

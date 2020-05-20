@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from datetime import datetime
 
 import discord
 from discord.ext import commands
@@ -86,10 +87,11 @@ class Games(commands.Cog):
             return
         if message.author != self.bot.user:
             return  # ! Only the bots messages work
-        if message.author.bot:
+        reacting_member = message.guild.get_member(payload.user_id)
+        if reacting_member.bot:
+            print("author bot")
             return  # ! No bots
 
-        reacting_member = message.guild.get_member(payload.user_id)
         if not reacting_member:
             return  # ! Not in the guild?? Edge case
         # Time to check if they're already in here
@@ -98,10 +100,10 @@ class Games(commands.Cog):
                          WHERE guild_id = $1
                          AND user_id = $2;
                       """
-        duped = await self.bot.pool.execute(duped_query,
-                                            reacting_member.guild.id,
-                                            reacting_member.id)
-        if duped != "SELECT 0":
+        duped = await self.bot.pool.fetchrow(duped_query,
+                                             reacting_member.guild.id,
+                                             reacting_member.id)
+        if duped:
             return  # ! They already reacted
 
         raw_member = await self.bot.http.get_user(reacting_member.id)
@@ -120,9 +122,8 @@ class Games(commands.Cog):
                          SET {flag}_count = {flag}_count + 1
                          WHERE guild_id = $1
                       """
-
-        query = """INSERT INTO hypesquad_house_reacted (guild_id, user_id) VALUES ($1, $2);"""
-        await self.bot.pool.execute(query, reacting_member.guild.id, reacting_member.id)
+        query = """INSERT INTO hypesquad_house_reacted (guild_id, user_id, reacted_date) VALUES ($1, $2, $3);"""
+        await self.bot.pool.execute(query, reacting_member.guild.id, reacting_member.id, datetime.utcnow())
         return await self.bot.pool.execute(flag_query, reacting_member.guild.id)
 
     @commands.Cog.listener()

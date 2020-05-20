@@ -58,8 +58,9 @@ class Images(commands.Cog):
 
         await ctx.send(embed=embed, file=fileout)
 
-    @lru_cache(maxsize=10)
+    #@lru_cache(maxsize=10)
     def _shifter(self, attachment_file: BytesIO, size: Tuple[int, int]) -> BytesIO:
+
         image_obj = Image.open(attachment_file)
 
         bands = image_obj.split()
@@ -70,8 +71,9 @@ class Images(commands.Cog):
 
         for i in [red_data, green_data, blue_data]:
             random_num = randint(0, len(i))
-            i[random_num // 3:random_num // 2], i[random_num // 2:random_num //
-                                                  3] = i[random_num // 4:random_num // 5], i[random_num // 5:random_num // 4]
+            low = randint(1, 15)
+            high = randint(low, 30)
+            i[random_num//high:random_num//low] = i[random_num//low:random_num//high]
 
         new_red = Image.new('L', size)
         new_red.putdata(red_data)
@@ -83,9 +85,10 @@ class Images(commands.Cog):
         new_blue.putdata(blue_data)
 
         new_image = Image.merge('RGB', (new_red, new_green, new_blue))
+        new_image = new_image.resize((1024, 1024))
 
         out_file = BytesIO()
-        new_image.save(out_file, format='PNG')
+        new_image.save(out_file, format='jpeg')
         out_file.seek(0)
         return out_file
 
@@ -124,14 +127,14 @@ class Images(commands.Cog):
 
         return out_file
 
-    @lru_cache(maxsize=10)
+    #@lru_cache(maxsize=10)
     async def _get_image(self, ctx: NewCtx, index: int = 0) -> Tuple[BytesIO, str, Tuple[int, int]]:
         attachment_file = BytesIO()
 
         if not ctx.message.attachments:
-            await ctx.author.avatar_url_as(size=1024, format='png').save(attachment_file)
+            await ctx.author.avatar_url_as(size=128, format='jpeg').save(attachment_file)
             filename = ctx.author.display_name + '.png'
-            file_size = (1024, 1024)
+            file_size = (128, 128)
 
         else:
             target = ctx.message.attachments[index]
@@ -149,29 +152,29 @@ class Images(commands.Cog):
 
 
     @lru_cache(maxsize=15)
-    async def _image_ops_func(self, ctx: NewCtx, img_bytes: tuple):
+    async def _image_ops_func(self, ctx: NewCtx, img_bytes: Tuple[BytesIO, Optional[BytesIO]]):
         if len(ctx.message.attachments) == 1:
             file_a, _, file_size = await self._get_image(ctx, 0)
 
-        elif len(img_bytes) == 1:
+        elif img_bytes:
             file_a, file_size = self._get_dimension(img_bytes[0])
 
         else:
-            file_a = BytesIO(await ctx.author.avatar_url_as(format='png', size=1024).read())
-            file_size = (1024, 1024)
+            file_a = BytesIO(await ctx.author.avatar_url_as(format='png', size=128).read())
+            file_size = (128, 128)
 
         return file_a, file_size
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
-    async def shift(self, ctx: NewCtx):
+    async def shift(self, ctx: NewCtx, *img_bytes: Optional[LinkConverter]):
         """Shifts the RGB bands in an attached image or the author's profile picture"""
-        attachment_file, _, file_size = await self._get_image(ctx)
+
+        attachment_file, file_size = await self._image_ops_func(ctx, img_bytes)
 
         start = time.time()
-        new_file = await self.bot.loop.run_in_executor(
-            None, self._shifter, attachment_file, file_size)
+        new_file = self._shifter(attachment_file, file_size)
         end = time.time()
 
         await self.embed_file(ctx, "Shifting done", new_file, end-start, "shifted.png")

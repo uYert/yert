@@ -182,7 +182,7 @@ class Images(commands.Cog):
     @commands.command(name='morejpeg', aliases=['jpeg', 'jpegify', 'more'])
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
-    async def morejpeg(self, ctx: NewCtx, severity: int = 15, loopyloops: int = 1):
+    async def _morejpeg(self, ctx: NewCtx, severity: int = 15):
         """Adds jpeg compression proportional to severity to an uploaded image or the author's profile picture"""
 
         if not (0 <= severity <= 100):
@@ -190,15 +190,11 @@ class Images(commands.Cog):
                 "severity parameter must be between 0 and 100 inclusive")
         severity = 101 - severity
 
-        if not(1 <= loopyloops <= 200):
-            raise commands.BadArgument(
-                "loopyloop parameter must be between 1 and 200 inclusive")
-
         attachment_file, _, _ = await self._get_image(ctx)
 
         start = time.time()
         new_file = await self.bot.loop.run_in_executor(
-            None, self._loop_jpeg, attachment_file, severity, loopyloops)
+            None, self._loop_jpeg, attachment_file, severity, 1)
         end = time.time()
 
         await self.embed_file(ctx, "Jpegifying done", new_file, end-start, "diff.png")
@@ -305,6 +301,26 @@ class Images(commands.Cog):
         end = time.time()
 
         await self.embed_file(ctx, "Applying the filter done", new_file, end-start, "filtered.png")
+
+    @commands.command(name='rotate')
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
+    async def _rotate(self, ctx: NewCtx, degrees: int, *img_bytes: Optional[LinkConverter]):
+        """Rotates an image some degrees, 360 returns it to original position"""
+        degrees = degrees % 360 if degrees > 360 else degrees
+
+        file_a, file_size = await self._image_ops_func(ctx, img_bytes)
+
+        start = time.time()
+
+        image_obj = Image.open(file_a)
+        image_obj = image_obj.rotate(angle=degrees)
+        fileout = BytesIO()
+        image_obj.save(fileout, format='PNG')
+        fileout.seek(0)
+        end = time.time()
+
+        await self.embed_file(ctx, "Rotationings finished", fileout, end-start, "rotated.png")
 
 
 

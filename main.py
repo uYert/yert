@@ -150,10 +150,8 @@ class Bot(commands.Bot):
         self._cache = TimedCache(loop=self.loop)
         self._before_invoke = self.before_invoke
         if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):
-            self._pool = asyncio.get_event_loop().run_until_complete(
-                Table.create_pool(
-                    PSQL_DETAILS, command_timeout=60
-                ))
+            self._pool = await Table.create_pool(
+                    config.PSQL_DETAILS, command_timeout=60)
 
         # Extension load
         for extension in COGS:

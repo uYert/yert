@@ -27,13 +27,13 @@ from datetime import timedelta
 from typing import Optional
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, menus
 
 from config import WEATHER_TOKEN, GOOGLE_TOKENS
 from main import NewCtx
 from packages.aioweather import AioWeather
 from packages.aiotranslator import to_language, check_length, AioTranslator
-from packages.aiogooglesearch import AioSearchEngine
+from packages.aiogooglesearch import AioSearchEngine, GoogleSource
 
 
 class Practical(commands.Cog):
@@ -74,18 +74,33 @@ class Practical(commands.Cog):
                                                             translation_kwarg={'dest': language})
         await ctx.send(embed=embed)
 
-    @commands.group(name='google')
-    async def google(self, ctx, *, query):
+    @commands.group(name='google', invoke_without_command=True)
+    async def google(self, ctx: NewCtx, *, query: str):
         is_nsfw = ctx.channel.is_nsfw()
+        ctx.cache_key += [is_nsfw]
         
-        ctx.cache_key.append(is_nsfw)
-        
-        
-        results = await self.aiogoogle.search(query, safesearch=not is_nsfw)
+        if not (source := ctx.cached_data):
+            
+            source = await self.aiogoogle.do_search(ctx, query=query, is_nsfw=is_nsfw)
+            
+        menu = menus.MenuPages(source, clear_reactions_after=True)
+        await menu.start(ctx)
+    
     
     @google.command(name='image', aliases=['-i'])
-    async def google_image(self, ctx, *, query):
-        pass
+    async def google_image(self, ctx, *, query: str):
+        is_nsfw = ctx.channel.is_nsfw()
+        ctx.cache_key += [is_nsfw]
+        
+        if not (source := ctx.cached_data):    
+            source = await self.aiogoogle.do_search(ctx, query=query, is_nsfw=is_nsfw,
+                                                    image_search=True)
+        
+        menu = menus.MenuPages(source, clear_reactions_after=True)
+        
+        await menu.start(ctx)
+        
+        
     
 
 

@@ -22,22 +22,41 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from typing import List
 from datetime import timedelta
-from typing import Iterable, List
 
-from async_cse import Result as GoogleResult
 from async_cse import Search as BaseGoogleSearch
-from discord.ext.menus import ListPageSource
+from async_cse import Result as GoogleResponse
 
-from main import NewCtx
+from discord.ext.menus import ListPageSource
 from utils.formatters import BetterEmbed
 
+from main import NewCtx
 
 class AioSearchEngine(BaseGoogleSearch):
-    """Searches stuff on google"""
+    async def do_search(self, ctx: NewCtx, *, query: str, 
+                        is_nsfw: bool, image_search: bool = False) -> ListPageSource:
+        """Searches stuff and returns the formatted version of it"""
+        results = await self.search(query, 
+                                    safesearch=not is_nsfw, 
+                                    image_search=image_search)
+                
+        return ctx.add_to_cache(GoogleSource(results, is_nsfw), 
+                                timeout=timedelta(minutes=5))
 
+class GoogleSource(ListPageSource):
+    def __init__(self, data: List[GoogleResponse], search_is_nsfw: bool):
+        super().__init__(data, per_page=1)
+        self.search_is_nsfw = search_is_nsfw
 
-
+    def format_page(self, menu, response: GoogleResponse):
+        safesearch_state = 'OFF' if self.search_is_nsfw else 'ON'
+        
+        embed = BetterEmbed(title=f'{response.title} | Safesearch : {safesearch_state}',
+                            description=response.description,
+                            url=response.url)
+        
+        return embed.set_image(url=response.image_url)
 
 
 

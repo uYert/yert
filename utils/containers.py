@@ -22,13 +22,23 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from asyncio import AbstractEventLoop, get_event_loop
+from asyncio import AbstractEventLoop, Task, get_event_loop
 from asyncio import sleep as async_sleep
 from collections.abc import Hashable, MutableMapping
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 from types import MappingProxyType, SimpleNamespace
-from typing import Any, Union
-from datetime import timedelta, datetime, timezone
+from typing import Any, Tuple, Union, Iterator
 
+from humanize import naturaldelta
+
+from discord.utils import sleep_until
+
+@dataclass
+class TimedValue:
+    value: Any
+    expires: datetime
+    task: Task
 
 class TimedCache(MutableMapping):
     """
@@ -38,68 +48,86 @@ class TimedCache(MutableMapping):
     The timer is reset / updated if an item is inserted in the same slot
     """
 
-    def _convert_delay(self, delay: Union[timedelta, datetime, int, None]):
+    def _make_delays(self, delay: Union[timedelta, datetime, int, None]) -> Tuple[int, datetime]:
         """converts a delay into seconds"""
+        
+        dt_now = datetime.now(tz=timezone.utc)
+        
         if isinstance(delay, timedelta):
-            return delay.total_seconds()
-        elif isinstance(delay, datetime):
-            try:  # accepts both offset aware and naive timestamps
-                return (datetime.now(tz=timezone.utc) - delay).total_seconds()
-            except ValueError:
-                return (datetime.utcnow - delay).total_seconds()
-        return delay or self.timeout
+            return delay.total_seconds(), (dt_now + delay)
+        
+        elif isinstance(delay, datetime):       
+            delta = dt_now - delay.replace(tzinfo=timezone.utc)
+            return delta.total_seconds(), delay
+        
+        elif isinstance(delay, int):
+            final_delay = delay or self.timeout
+            return final_delay, (dt_now + timedelta(seconds=final_delay))
+        
+        elif delay is None:
+            return self.timeout
+        
+        else:  # hardcoding ? don't know about what you mean 
+            raise TypeError(f"Expected (timedelta, datetime, int, None), got {delay.__class__.__name__}")
 
     def __init__(self, *,
                  timeout: Union[timedelta, datetime, int] = 600,
                  loop: AbstractEventLoop = None):
-        self.timeout = self._convert_delay(timeout)
+        self.timeout = timeout  # funky way to use the default timeout in the init
+        self.timeout, _ = self._make_delays(timeout)
         self.loop = loop or get_event_loop()
         self.storage = {}
 
-    async def _timed_del(self, key: Hashable, timeout: int = None) -> None:
+    async def _timed_del(self, key: Hashable, timeout: int) -> None:
         """Deletes the item and the task associated with it"""
         self.storage.pop(await async_sleep(timeout or self.timeout, result=key))
-
+    
     def __setitem__(self, key: Hashable, value: Any, *, timeout: int = None) -> None:
         if old_val := self.storage.pop(key, None):
-            old_val[1].cancel()
+            old_val.task.cancel()
 
-        task = self._timed_del(key, timeout=self._convert_delay(timeout))
-        self.storage[key] = (value, self.loop.create_task(task, name=f'Timed deletion : {key}'))
+        timeout, final_time = self._make_delays(timeout)
+        coro = self._timed_del(key, timeout=timeout)
+        task = self.loop.create_task(coro, name='Timed deletion')
+        
+        self.storage[key] = TimedValue(value=value, expires=final_time, task=task)
 
     def __delitem__(self, key: Hashable) -> None:
-        self.storage[key][1].cancel()
+        self.storage[key].task.cancel()
         del self.storage[key]
 
     def get(self, key: Hashable, default: Any = None) -> Any:
         """ Get a value from TimedCache. """
-        value = self.storage.get(key, default)
-        return value[0] if value else default
+        
+        timed_value = self.storage.get(key, default)
+        
+        return timed_value.value if timed_value else default
 
     def set(self, key: Hashable, value: Any,
             timeout: Union[timedelta, datetime, int] = None) -> Any:
         """ Set's the value into TimedCache. """
-        self.__setitem__(key, value, timeout=self._convert_delay(timeout))
+        self.__setitem__(key, value, timeout=timeout)
         return value
 
-    def refresh(self, key: Hashable):
-        pass
-    
-
     def __getitem__(self, key: Hashable) -> Any:
-        return self.storage[key][0]
+        return self.storage[key].value
 
     def __iter__(self) -> iter: 
-        return iter({k: v[0] for k, v in self.storage.items()})
+        return iter(self.storage)
 
     def __len__(self) -> int:
         return len(self.storage)
+
+    def _clean_data(self) -> Iterator[Hashable, Tuple[Any, str]]:
+        dt_now = datetime.now(tz=timezone.utc)
+        for key, timedvalue in self.storage.items():
+            yield key, (timedvalue.value, f'Expires in {naturaldelta(dt_now - timedvalue.expires)}')
 
     def __repr__(self) -> repr:
         return repr(self.storage)
 
     def __str__(self) -> str:
-        return str(self.storage)
+        return str({k: v for k, v in self._clean_data()})
 
 
 class NestedNamespace(SimpleNamespace):  # Thanks, cy

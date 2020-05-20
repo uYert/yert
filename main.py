@@ -143,7 +143,7 @@ class Bot(commands.Bot):
 
     def __init__(self, **options):
         super().__init__(**options)
-        if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):
+        if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):  #! no idea about why it can't connect
             self._pool = asyncio.get_event_loop().create_task(
                 Table.create_pool(
                     PSQL_DETAILS, command_timeout=60

@@ -118,7 +118,7 @@ class TimedCache(MutableMapping):
     def __len__(self) -> int:
         return len(self.storage)
 
-    def _clean_data(self) -> Iterator[Hashable, Tuple[Any, str]]:
+    def _clean_data(self) -> Iterator[Tuple[Hashable, Tuple[Any, str]]]:
         dt_now = datetime.now(tz=timezone.utc)
         for key, timedvalue in self.storage.items():
             yield key, (timedvalue.value, f'Expires in {naturaldelta(dt_now - timedvalue.expires)}')

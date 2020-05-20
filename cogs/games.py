@@ -80,16 +80,27 @@ class Games(commands.Cog):
         channel = self.bot.get_channel(payload.channel_id)
         if not channel.guild:
             return  # ! We don't want DM cheats
-        message = await channel.fetch_message(payload.message_id)
+        try:
+            message = await channel.fetch_message(payload.message_id)
+        except discord.errors.NotFound:
+            return
         if message.author != self.bot.user:
             return  # ! Only the bots messages work
-        reacting_member = message.guild.get_member(payload.user_id)
-        if reacting_member.bot:
+        if message.author.bot:
             return  # ! No bots
 
+        reacting_member = message.guild.get_member(payload.user_id)
+        if not reacting_member:
+            return  # ! Not in the guild?? Edge case
         # Time to check if they're already in here
-        duped_query = "SELECT * FROM hypesquad_house_reacted WHERE guild_id = $1 AND user_id = $2;"
-        duped = await self.bot.pool.execute(duped_query, reacting_member.guild.id, reacting_member.id)
+        duped_query = """SELECT *
+                         FROM hypesquad_house_reacted
+                         WHERE guild_id = $1
+                         AND user_id = $2;
+                      """
+        duped = await self.bot.pool.execute(duped_query,
+                                            reacting_member.guild.id,
+                                            reacting_member.id)
         if duped != "SELECT 0":
             return  # ! They already reacted
 
@@ -105,9 +116,12 @@ class Games(commands.Cog):
             flag = "brilliance"
         else:
             return
-        flag_query = f"UPDATE hypesquad_house SET {flag}_count = {flag}_count + 1 WHERE guild_id = $1"
+        flag_query = f"""UPDATE hypesquad_house
+                         SET {flag}_count = {flag}_count + 1
+                         WHERE guild_id = $1
+                      """
 
-        query = "INSERT INTO hypesquad_house_reacted (guild_id, user_id) VALUES ($1, $2);"
+        query = """INSERT INTO hypesquad_house_reacted (guild_id, user_id) VALUES ($1, $2);"""
         await self.bot.pool.execute(query, reacting_member.guild.id, reacting_member.id)
         return await self.bot.pool.execute(flag_query, reacting_member.guild.id)
 
@@ -117,7 +131,11 @@ class Games(commands.Cog):
         Little more confusing, we need to check if the removing user has reacted before,
         and if so, decrement the value for their house.
         """
-        query = "DELETE FROM hypesquad_house_reacted WHERE guild_id = $1 AND user_id = $2 RETURNING user_id;"
+        query = """DELETE FROM hypesquad_house_reacted
+                   WHERE guild_id = $1
+                   AND user_id = $2
+                   RETURNING user_id;
+                """
         possible_user = await self.bot.pool.fetchrow(query, payload.guild_id, payload.user_id)
         if not possible_user:
             return
@@ -134,7 +152,10 @@ class Games(commands.Cog):
         else:
             return
 
-        house_query = f"UPDATE hypesquad_house SET {house}_count = {house}_count - 1 WHERE guild_id = $1;"
+        house_query = f"""UPDATE hypesquad_house
+                          SET {house}_count = {house}_count - 1
+                          WHERE guild_id = $1;
+                       """
         return await self.bot.pool.execute(house_query, payload.guild_id)
 
 

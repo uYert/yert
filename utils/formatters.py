@@ -97,6 +97,9 @@ class Flags:
     def __repr__(self):
         return f"<{self.__class__.__name__} value={self.value}>"
 
+    def __contains__(self, item):
+        return getattr(self, item) if isinstance(item, str) else getattr(self, item.fget.__name__)
+
     def has_flag(self, v):
         return (self.value & v) == v
 

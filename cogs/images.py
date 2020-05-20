@@ -35,12 +35,11 @@ from main import NewCtx
 from utils.formatters import BetterEmbed
 from utils.converters import LinkConverter
 
-
-FILTERS = {'blur':ImageFilter.BLUR, 'contour':ImageFilter.CONTOUR,
-           'detail':ImageFilter.DETAIL, 'edge':ImageFilter.EDGE_ENHANCE,
-           'moreedge':ImageFilter.EDGE_ENHANCE_MORE, 'emboss':ImageFilter.EMBOSS,
-           'find':ImageFilter.FIND_EDGES, 'sharpen':ImageFilter.SHARPEN,
-           'smooth':ImageFilter.SMOOTH, 'moresmooth':ImageFilter.SMOOTH_MORE}
+FILTERS = {'blur': ImageFilter.BLUR, 'contour': ImageFilter.CONTOUR,
+           'detail': ImageFilter.DETAIL, 'edge': ImageFilter.EDGE_ENHANCE,
+           'moreedge': ImageFilter.EDGE_ENHANCE_MORE, 'emboss': ImageFilter.EMBOSS,
+           'find': ImageFilter.FIND_EDGES, 'sharpen': ImageFilter.SHARPEN,
+           'smooth': ImageFilter.SMOOTH, 'moresmooth': ImageFilter.SMOOTH_MORE}
 
 
 class Images(commands.Cog):
@@ -49,16 +48,16 @@ class Images(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def embed_file(self, ctx: NewCtx, message:str, fileout: BytesIO, timediff: float, filename: str):
+    async def embed_file(self, ctx: NewCtx, message: str, fileout: BytesIO, timediff: float, filename: str):
         fileout = File(fileout, filename)
 
-        embed = BetterEmbed(title=message)
-        embed.set_footer(text=f"That took {timediff:.2f}s")
-        embed.set_image(url="attachment://"+filename)
+        embed = BetterEmbed(title = message)
+        embed.set_footer(text = f"That took {timediff:.2f}s")
+        embed.set_image(url = "attachment://" + filename)
 
-        await ctx.send(embed=embed, file=fileout)
+        await ctx.send(embed = embed, file = fileout)
 
-    #@lru_cache(maxsize=10)
+    @lru_cache(maxsize=10)
     def _shifter(self, attachment_file: BytesIO, size: Tuple[int, int]) -> BytesIO:
 
         image_obj = Image.open(attachment_file)
@@ -73,7 +72,7 @@ class Images(commands.Cog):
             random_num = randint(0, len(i))
             low = randint(1, 15)
             high = randint(low, 30)
-            i[random_num//high:random_num//low] = i[random_num//low:random_num//high]
+            i[random_num // high:random_num // low] = i[random_num // low:random_num // high]
 
         new_red = Image.new('L', size)
         new_red.putdata(red_data)
@@ -88,16 +87,16 @@ class Images(commands.Cog):
         new_image = new_image.resize((1024, 1024))
 
         out_file = BytesIO()
-        new_image.save(out_file, format='jpeg')
+        new_image.save(out_file, format = 'jpeg')
         out_file.seek(0)
         return out_file
 
-    @lru_cache(maxsize=10)
+    @lru_cache(maxsize = 10)
     def _jpeg(self, attachment_file: BytesIO, severity: int) -> BytesIO:
         image_obj = Image.open(attachment_file).convert('RGB')
 
         out_file = BytesIO()
-        image_obj.save(out_file, format='jpeg', quality=severity)
+        image_obj.save(out_file, format = 'jpeg', quality = severity)
         out_file.seek(0)
         return out_file
 
@@ -106,8 +105,8 @@ class Images(commands.Cog):
             attachment_file = self._jpeg(attachment_file, severity)
         return attachment_file
 
-    @lru_cache(maxsize=10)
-    def _diff(self, file_a: BytesIO, file_a_size: Tuple[int,int],
+    @lru_cache(maxsize = 10)
+    def _diff(self, file_a: BytesIO, file_a_size: Tuple[int, int],
               file_b: BytesIO, file_b_size: Tuple[int, int]) -> BytesIO:
 
         new_width = (file_a_size[0] + file_b_size[0]) // 2
@@ -122,17 +121,17 @@ class Images(commands.Cog):
         new_image = ImageChops.difference(image_obj_a, image_obj_b)
 
         out_file = BytesIO()
-        new_image.save(out_file, format='PNG')
+        new_image.save(out_file, format = 'PNG')
         out_file.seek(0)
 
         return out_file
 
-    #@lru_cache(maxsize=10)
+    @lru_cache(maxsize=10)
     async def _get_image(self, ctx: NewCtx, index: int = 0) -> Tuple[BytesIO, str, Tuple[int, int]]:
         attachment_file = BytesIO()
 
         if not ctx.message.attachments:
-            await ctx.author.avatar_url_as(size=128, format='jpeg').save(attachment_file)
+            await ctx.author.avatar_url_as(size = 128, format = 'jpeg').save(attachment_file)
             filename = ctx.author.display_name + '.png'
             file_size = (128, 128)
 
@@ -144,14 +143,13 @@ class Images(commands.Cog):
 
         return attachment_file, filename, file_size
 
-    @lru_cache(maxsize=10)
+    @lru_cache(maxsize = 10)
     def _get_dimension(self, img_bytes: BytesIO) -> Tuple[BytesIO, int]:
         image_obj = Image.open(img_bytes)
         file_size = image_obj.size
         return img_bytes, file_size
 
-
-    @lru_cache(maxsize=15)
+    @lru_cache(maxsize = 15)
     async def _image_ops_func(self, ctx: NewCtx, img_bytes: Tuple[BytesIO, Optional[BytesIO]]):
         if len(ctx.message.attachments) == 1:
             file_a, _, file_size = await self._get_image(ctx, 0)
@@ -160,14 +158,14 @@ class Images(commands.Cog):
             file_a, file_size = self._get_dimension(img_bytes[0])
 
         else:
-            file_a = BytesIO(await ctx.author.avatar_url_as(format='png', size=128).read())
+            file_a = BytesIO(await ctx.author.avatar_url_as(format = 'png', size = 128).read())
             file_size = (128, 128)
 
         return file_a, file_size
 
     @commands.command()
     @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
+    @commands.max_concurrency(1, commands.BucketType.guild, wait = False)
     async def shift(self, ctx: NewCtx, *img_bytes: Optional[LinkConverter]):
         """Shifts the RGB bands in an attached image or the author's profile picture"""
 
@@ -177,11 +175,11 @@ class Images(commands.Cog):
         new_file = self._shifter(attachment_file, file_size)
         end = time.time()
 
-        await self.embed_file(ctx, "Shifting done", new_file, end-start, "shifted.png")
+        await self.embed_file(ctx, "Shifting done", new_file, end - start, "shifted.png")
 
-    @commands.command(name='morejpeg', aliases=['jpeg', 'jpegify', 'more'])
+    @commands.command(name = 'morejpeg', aliases = ['jpeg', 'jpegify', 'more'])
     @commands.cooldown(1, 5, commands.BucketType.user)
-    @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
+    @commands.max_concurrency(1, commands.BucketType.guild, wait = False)
     async def _morejpeg(self, ctx: NewCtx, severity: int = 15):
         """Adds jpeg compression proportional to severity to an uploaded image or the author's profile picture"""
 
@@ -197,11 +195,11 @@ class Images(commands.Cog):
             None, self._loop_jpeg, attachment_file, severity, 1)
         end = time.time()
 
-        await self.embed_file(ctx, "Jpegifying done", new_file, end-start, "diff.png")
+        await self.embed_file(ctx, "Jpegifying done", new_file, end - start, "diff.png")
 
-    @commands.command(name='diff')
+    @commands.command(name = 'diff')
     @commands.cooldown(1, 10, commands.BucketType.user)
-    @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
+    @commands.max_concurrency(1, commands.BucketType.guild, wait = False)
     async def diff(self, ctx: NewCtx, *img_bytes: Optional[LinkConverter]):
         """Returns the difference between two images"""
 
@@ -220,11 +218,11 @@ class Images(commands.Cog):
         new_file = self._diff(file_a, file_a_size, file_b, file_b_size)
         end = time.time()
 
-        await self.embed_file(ctx, "Difference finished", new_file, end-start, "diff.png")
+        await self.embed_file(ctx, "Difference finished", new_file, end - start, "diff.png")
 
-    @commands.command(name='invert', aliases=['negative'])
+    @commands.command(name = 'invert', aliases = ['negative'])
     @commands.cooldown(1, 10, commands.BucketType.user)
-    @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
+    @commands.max_concurrency(1, commands.BucketType.guild, wait = False)
     async def _invert(self, ctx: NewCtx, *img_bytes: Optional[LinkConverter]):
         """Inverts a given image to negative"""
 
@@ -236,24 +234,24 @@ class Images(commands.Cog):
         try:
             image_obj = ImageOps.invert(image_obj)
         except:
-            image_obj = image_obj.convert(mode='RGB')
+            image_obj = image_obj.convert(mode = 'RGB')
             image_obj = ImageOps.invert(image_obj)
         new_file = BytesIO()
-        image_obj.save(new_file, format='PNG')
+        image_obj.save(new_file, format = 'PNG')
         new_file.seek(0)
 
         end = time.time()
 
-        await self.embed_file(ctx, "Inverting finished", new_file, end-start, "inverted.png")
+        await self.embed_file(ctx, "Inverting finished", new_file, end - start, "inverted.png")
 
-    @commands.command(name='poster')
+    @commands.command(name = 'poster')
     @commands.cooldown(1, 10, commands.BucketType.user)
-    @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
+    @commands.max_concurrency(1, commands.BucketType.guild, wait = False)
     async def _poster(self, ctx: NewCtx, bits: int = 8, *img_bytes: Optional[LinkConverter]):
         """Changes the number of bits (1 - 8 inc) dedicated to each channel"""
 
         if not (1 <= bits <= 8):
-            raise commands.BadArgument("Bits arugment should be between 1 and 8 inclusive")
+            raise commands.BadArgument("Bits argument should be between 1 and 8 inclusive")
 
         file_a, file_size = await self._image_ops_func(ctx, img_bytes)
 
@@ -263,19 +261,19 @@ class Images(commands.Cog):
         try:
             image_obj = ImageOps.posterize(image_obj, bits)
         except:
-            image_obj = image_obj.convert(mode='RGB')
+            image_obj = image_obj.convert(mode = 'RGB')
             image_obj = ImageOps.posterize(image_obj, bits)
         new_file = BytesIO()
-        image_obj.save(new_file, format='PNG')
+        image_obj.save(new_file, format = 'PNG')
         new_file.seek(0)
 
         end = time.time()
 
-        await self.embed_file(ctx, "Postering done", new_file, end-start, "poster.png")
+        await self.embed_file(ctx, "Postering done", new_file, end - start, "poster.png")
 
-    @commands.command(name='filter')
+    @commands.command(name = 'filter')
     @commands.cooldown(1, 10, commands.BucketType.user)
-    @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
+    @commands.max_concurrency(1, commands.BucketType.guild, wait = False)
     async def _filter(self, ctx: NewCtx, filter_type: str, *img_bytes: Optional[LinkConverter]):
         """Applies a filter to a given image"""
 
@@ -283,28 +281,28 @@ class Images(commands.Cog):
 
         if not (filter_type in FILTERS):
             raise commands.BadArgument("Filter must be one of those in ImageFilter docs")
-        
+
         file_a, file_size = await self._image_ops_func(ctx, img_bytes)
-        
+
         start = time.time()
 
         image_obj = Image.open(file_a)
         try:
             image_obj = image_obj.filter(FILTERS[filter_type])
         except:
-            image_obj = image_obj.convert(mode='RGB')
+            image_obj = image_obj.convert(mode = 'RGB')
             image_obj = image_obj.filter(FILTERS[filter_type])
         new_file = BytesIO()
-        image_obj.save(new_file, format='png')
+        image_obj.save(new_file, format = 'png')
         new_file.seek(0)
 
         end = time.time()
 
-        await self.embed_file(ctx, "Applying the filter done", new_file, end-start, "filtered.png")
+        await self.embed_file(ctx, "Applying the filter done", new_file, end - start, "filtered.png")
 
-    @commands.command(name='rotate')
+    @commands.command(name = 'rotate')
     @commands.cooldown(1, 10, commands.BucketType.user)
-    @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
+    @commands.max_concurrency(1, commands.BucketType.guild, wait = False)
     async def _rotate(self, ctx: NewCtx, degrees: int, *img_bytes: Optional[LinkConverter]):
         """Rotates an image some degrees, 360 returns it to original position"""
         degrees = degrees % 360 if degrees > 360 else degrees
@@ -314,14 +312,13 @@ class Images(commands.Cog):
         start = time.time()
 
         image_obj = Image.open(file_a)
-        image_obj = image_obj.rotate(angle=degrees)
+        image_obj = image_obj.rotate(angle = degrees)
         fileout = BytesIO()
-        image_obj.save(fileout, format='PNG')
+        image_obj.save(fileout, format = 'PNG')
         fileout.seek(0)
         end = time.time()
 
-        await self.embed_file(ctx, "Rotationings finished", fileout, end-start, "rotated.png")
-
+        await self.embed_file(ctx, "Rotationings finished", fileout, end - start, "rotated.png")
 
 
 def setup(bot):

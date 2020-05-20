@@ -83,7 +83,7 @@ class NewCtx(commands.Context):
 
         self._altered_cache_key = None
 
-    async def webhook_send(self,content: str, *,webhook: discord.Webhook,  # more elegant
+    async def webhook_send(self, content: str, *, webhook: discord.Webhook,  # more elegant
                            skip_wh: bool = False, skip_ctx: bool = False) -> None:
         """ This is a custom ctx addon for sending to the webhook and/or the ctx.channel. """
         content = content.strip("```")
@@ -101,18 +101,19 @@ class NewCtx(commands.Context):
     @property
     def qname(self) -> Union[str, None]:
         """Shortcut to get the command's qualified name"""
-        return getattr(self.command, 'qualified_name', None)
-
+        return self.command.qualified_name if self.command else None
 
     @property
     def all_args(self) -> list:
         """Retrieves a list of all args and kwargs passed into the command"""  # ctx.args returns self too
-        args = [arg for arg in self.args if not isinstance(arg, (commands.Cog, commands.Context))]
-        kwargs = [val for val in self.kwargs.values()]  # there should be only one
+        args = [arg for arg in self.args if not isinstance(
+            arg, (commands.Cog, commands.Context))]
+        # there should be only one
+        kwargs = [val for val in self.kwargs.values()]
         return args + kwargs
 
     @property
-    def cache_key(self) -> list:
+    def cache_key(self) -> tuple:
         """Returns the key used to access the cache"""
         return self._altered_cache_key or tuple([self.qname] + self.all_args)
 
@@ -131,7 +132,7 @@ class NewCtx(commands.Context):
         """Tries to retrieve cached data"""
         return self.cache.get(key=self.cache_key)
 
-    def add_to_cache(self, value: Any, *, timeout: Union[int, timedelta, datetime] = None,
+    def add_to_cache(self, value: Any, *, timeout: Union[int, timedelta] = None,
                      key: Hashable = None) -> Any:
         """Sets an item into the cache using the the provided keys"""
         return self.cache.set(key=key or self.cache_key, value=value, timeout=timeout)
@@ -145,7 +146,7 @@ class Bot(commands.Bot):
 
     async def connect(self, *, reconnect=True):
         self._session = ClientSession(loop=self.loop)
-        self._headers = {"Range" : "bytes=0-10"}
+        self._headers = {"Range": "bytes=0-10"}
         self._cache = TimedCache(loop=self.loop)
         self._before_invoke = self.before_invoke
         if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):
@@ -158,17 +159,18 @@ class Bot(commands.Bot):
         for extension in COGS:
             try:
                 self.load_extension(extension)
-            except Exception as exc:
-                print(exc)  # ! TODO: webhook the print_exc
-        
+            except Exception:
+                traceback.print_exc()  # ! TODO: webhook the print_exc
+
         return await super().connect(reconnect=reconnect)
+
 
 
     async def before_invoke(self, ctx):
         """Nothing too important"""
         await ctx.trigger_typing()
 
-    #! Discord stuff
+    # ! Discord stuff
     async def get_context(self, message: discord.Message, *, cls=None):
         """Custom context stuff hahayes"""
         return await super().get_context(message, cls=cls or NewCtx)

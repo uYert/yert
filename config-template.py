@@ -4,7 +4,7 @@ BOT_TOKEN = "TOKEN HERE"
 PREFIX = "yoink "
 PSQL_DETAILS = "postgres://<user>:<password>@<IP/Addr>:<Port>/<database_name>"
 
-# ? Webhook tuple. Channel ID as int then secret as a string.
+# ? Webhook tuple. Webhook ID as int then secret as a string.
 WEBHOOK = (710260377199575072,
            "rJASHh1omoW7F8AAPHqh2gGTG_gNIZ6ZC1G2FMRDXPPcDa99")
 

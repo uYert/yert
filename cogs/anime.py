@@ -22,20 +22,24 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from datetime import timedelta
 from typing import Union
 
 import discord
 from discord.ext import commands, menus
-from packages.aiosaucenao import AioSaucenao, SauceNaoSource
+from jikanpy import AioJikan
+
 from config import SAUCENAO_TOKEN
 from main import NewCtx
-from datetime import timedelta
+from packages.aiosaucenao import AioSaucenao, SauceNaoSource
+
 
 class Anime(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.aiosaucenao = AioSaucenao(session=bot.session, 
-                                       api_key=SAUCENAO_TOKEN)
+        self.aiosaucenao = AioSaucenao(session=bot.session, api_key=SAUCENAO_TOKEN)
+        self.aiojikan = AioJikan()
+    
     
     @commands.command(name='saucenao')
     @commands.cooldown(7, 30, type=commands.BucketType.default)
@@ -54,10 +58,37 @@ class Anime(commands.Cog):
             
         menu = menus.MenuPages(source, clear_reactions_after=True) 
         
-        # The menu isn't cached to allow for changes, since the cache is 
+        # The menu isn't cached to allow for changes, as the cache is 
         # tied to the bot and not the cog
         
         await menu.start(ctx)
+            
+    @commands.group(name='mal')
+    @commands.cooldown(1, 30, commands.BucketType.default)            
+    async def mal(self, ctx):
+        """
+        Mal related commands
+        """
+        pass
+    
+    @mal.command(name='anime')  #todo: dynamically add the commands
+    async def mal_anime(self, ctx: NewCtx, *, query: str):
+        response = await self.aiojikan.search(search_type='anime', query=query)
+        print(response)
+    
+    @mal.command(name='manga')
+    async def mal_author(self, ctx: NewCtx, *, query: str):
+        pass
+    
+    @mal.command(name='person')
+    async def mal_manga(self, ctx: NewCtx, *, query: str):
+        pass
+    
+    @mal.command(name='character')
+    async def mal_character(self, ctx: NewCtx, *, query: str):
+        pass
+    
+
             
 def setup(bot):
     bot.add_cog(Anime(bot))

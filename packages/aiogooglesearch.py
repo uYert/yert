@@ -57,8 +57,3 @@ class GoogleSource(ListPageSource):
                             url=response.url)
         
         return embed.set_image(url=response.image_url)
-
-
-
-def setup(bot):
-    pass

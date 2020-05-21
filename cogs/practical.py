@@ -22,28 +22,28 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from collections.abc import Hashable
-from datetime import timedelta
 from typing import Optional
+from datetime import timedelta
+from collections.abc import Hashable
 
 import discord
 from discord.ext import commands, menus
 
-from config import WEATHER_TOKEN, GOOGLE_TOKENS
 from main import NewCtx
 from packages.aioweather import AioWeather
-from packages.aiotranslator import to_language, check_length, AioTranslator
+from config import GOOGLE_TOKENS, WEATHER_TOKEN
+from packages.aiomagmachain import AioMagmaChain
 from packages.aiogooglesearch import AioSearchEngine, GoogleSource
+from packages.aiotranslator import AioTranslator, check_length, to_language
 
 
 class Practical(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.aioweather = AioWeather(session=bot.session,
-                                     api_key=WEATHER_TOKEN)
         self.aiotranslator = AioTranslator(session=bot.session)
-        self.aiogoogle = AioSearchEngine(api_keys=GOOGLE_TOKENS, 
-                                         session=bot.session)
+        self.aioweather = AioWeather(session=bot.session, api_key=WEATHER_TOKEN)
+        self.aiogoogle = AioSearchEngine(api_keys=GOOGLE_TOKENS, session=bot.session)
+        self.aioscreen = AioMagmaChain(session=bot.session, google_client=self.aiogoogle)
 
     @commands.command(name='weather')
     @commands.cooldown(1, 30, type=commands.BucketType.channel)
@@ -75,7 +75,9 @@ class Practical(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.group(name='google', invoke_without_command=True)
+    @commands.cooldown(1, 15, commands.BucketType.user)
     async def google(self, ctx: NewCtx, *, query: str):
+        """Searches something on google"""
         is_nsfw = ctx.channel.is_nsfw()
         ctx.cache_key += [is_nsfw]
         
@@ -86,9 +88,10 @@ class Practical(commands.Cog):
         menu = menus.MenuPages(source, clear_reactions_after=True)
         await menu.start(ctx)
     
-    
     @google.command(name='image', aliases=['-i'])
+    @commands.cooldown(1, 15, commands.BucketType.user)
     async def google_image(self, ctx, *, query: str):
+        """Searches an image on google"""
         is_nsfw = ctx.channel.is_nsfw()
         ctx.cache_key += [is_nsfw]
         
@@ -99,12 +102,27 @@ class Practical(commands.Cog):
         menu = menus.MenuPages(source, clear_reactions_after=True)
         
         await menu.start(ctx)
-        
-        
     
+    @commands.command(name='screenshot')
+    @commands.cooldown(1, 15, commands.BucketType.user)
+    async def screenshot(self, ctx, url: str):
+        """Screenshots a website"""
+        is_nsfw = ctx.channel.is_nsfw()
+        ctx.cache_key += [is_nsfw]
+
+        if not (embed := ctx.cached_data):
+
+            if not is_nsfw or len(url.split('.')) < 2:
+                url = await self.aioscreen.check_url(url=url, is_nsfw=is_nsfw)
+
+            response = await self.aioscreen.fetch_snapshot(url)
+            embed = self.aioscreen.format_snapshot(response=response, is_nsfw=is_nsfw)
+
+            ctx.add_to_cache(embed, timeout=timedelta(minutes=5))
+
+        await ctx.send(embed=embed)
 
 
-    # todo : use menus to implement google search + magmachain
 
 
 def setup(bot):

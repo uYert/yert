@@ -69,7 +69,7 @@ class AioCleverbot(ac.Cleverbot):
         if not (emotion := ctx.cached_data):
             emotion = rng_choice(self.emotions)
 
-        return ctx.add_to_cache(value=emotion,  # the timer is refreeshed
+        return ctx.add_to_cache(value=emotion,  # the timer is refreshed
                                 timeout=timedelta(minutes=30))
 
     def format_response(self, *, msg: Message, response: ac.Response, clean_txt: str) -> str:

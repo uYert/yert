@@ -27,14 +27,14 @@ from discord.ext import commands
 from main import Bot
 from re import findall as re_findall
 
-from main import BetterEmbed
+from main import BetterEmbed, NewCtx
 
 class Hentai(commands.Cog):
     def __init__(self, bot):
         self.bot: Bot = bot
         
     @commands.command(name='sixdigits')
-    async def sixdigits(self, ctx):
+    async def sixdigits(self, ctx: NewCtx):
         """Provides you a magical six digits number"""
         async with self.bot.session.head("https://nhentai.net/random", 
                                          allow_redirects=True) as resp:
@@ -46,6 +46,8 @@ class Hentai(commands.Cog):
             return await ctx.send(embed=BetterEmbed(title=digits, url=url))
         
         await ctx.send(digits)
+            
+    
 
 def setup(bot):
     bot.add_cog(Hentai(bot))

@@ -23,10 +23,12 @@ SOFTWARE.
 """
 
 import discord
+import uwuify
 from discord.ext import commands
-from packages.aiocleverbot import AioCleverbot
+
 from config import TRAVITIA_TOKEN
 from main import NewCtx
+from packages.aiocleverbot import AioCleverbot
 
 
 class Fun(commands.Cog):
@@ -53,6 +55,16 @@ class Fun(commands.Cog):
         await ctx.send(self.aiocleverbot.format_response(msg=msg,
                                                          response=response, 
                                                          clean_txt=txt))
+        
+    @commands.command(name='uwuify')
+    async def uwuify(self, ctx, *, text: str):
+        """Uwuify a text"""
+        if len(text) > 200:
+            return
+        
+        flags = uwuify.SMILEY | uwuify.YU  # lazyness 200
+        await ctx.send(uwuify.uwu(text, flags=flags))
+    
         
         
 def setup(bot):

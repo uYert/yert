@@ -27,12 +27,13 @@ from datetime import timedelta
 from typing import Optional
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, menus
 
-from config import WEATHER_TOKEN
+from config import WEATHER_TOKEN, GOOGLE_TOKENS
 from main import NewCtx
 from packages.aioweather import AioWeather
 from packages.aiotranslator import to_language, check_length, AioTranslator
+from packages.aiogooglesearch import AioSearchEngine, GoogleSource
 
 
 class Practical(commands.Cog):
@@ -40,7 +41,9 @@ class Practical(commands.Cog):
         self.bot = bot
         self.aioweather = AioWeather(session=bot.session,
                                      api_key=WEATHER_TOKEN)
-        self.aiotranslator = AioTranslator()
+        self.aiotranslator = AioTranslator(session=bot.session)
+        self.aiogoogle = AioSearchEngine(api_keys=GOOGLE_TOKENS, 
+                                         session=bot.session)
 
     @commands.command(name='weather')
     @commands.cooldown(1, 30, type=commands.BucketType.channel)
@@ -70,6 +73,36 @@ class Practical(commands.Cog):
             embed = await self.aiotranslator.do_translation(ctx=ctx, text=text,
                                                             translation_kwarg={'dest': language})
         await ctx.send(embed=embed)
+
+    @commands.group(name='google', invoke_without_command=True)
+    async def google(self, ctx: NewCtx, *, query: str):
+        is_nsfw = ctx.channel.is_nsfw()
+        ctx.cache_key += [is_nsfw]
+        
+        if not (source := ctx.cached_data):
+            
+            source = await self.aiogoogle.do_search(ctx, query=query, is_nsfw=is_nsfw)
+            
+        menu = menus.MenuPages(source, clear_reactions_after=True)
+        await menu.start(ctx)
+    
+    
+    @google.command(name='image', aliases=['-i'])
+    async def google_image(self, ctx, *, query: str):
+        is_nsfw = ctx.channel.is_nsfw()
+        ctx.cache_key += [is_nsfw]
+        
+        if not (source := ctx.cached_data):    
+            source = await self.aiogoogle.do_search(ctx, query=query, is_nsfw=is_nsfw,
+                                                    image_search=True)
+        
+        menu = menus.MenuPages(source, clear_reactions_after=True)
+        
+        await menu.start(ctx)
+        
+        
+    
+
 
     # todo : use menus to implement google search + magmachain
 

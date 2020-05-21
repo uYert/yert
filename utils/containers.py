@@ -47,7 +47,6 @@ class TimedCache(MutableMapping):
 
     The timer is reset / updated if an item is inserted in the same slot
     """
-
     def _make_delays(self, delay: Union[timedelta, datetime, int, None]) -> Tuple[int, datetime]:
         """converts a delay into seconds"""
         
@@ -98,10 +97,8 @@ class TimedCache(MutableMapping):
 
     def get(self, key: Hashable, default: Any = None) -> Any:
         """ Get a value from TimedCache. """
-        
         timed_value = self.storage.get(key, default)
-        
-        return timed_value.value if timed_value else default
+        return getattr(timed_value, 'value', default)
 
     def set(self, key: Hashable, value: Any,
             timeout: Union[timedelta, datetime, int] = None) -> Any:
@@ -128,6 +125,14 @@ class TimedCache(MutableMapping):
 
     def __str__(self) -> str:
         return str({k: v for k, v in self._clean_data()})
+
+    def __eq__(self, value):
+        return self.storage == value
+        
+    def __bool__(self):
+        return bool(self.storage)
+    
+
 
 
 class NestedNamespace(SimpleNamespace):  # Thanks, cy

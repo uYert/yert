@@ -132,6 +132,10 @@ class TimedCache(MutableMapping):
     def __bool__(self):
         return bool(self.storage)
     
+    def __del__(self):
+        for key in self.storage.keys():
+            del self.storage[key]
+    
 
 
 

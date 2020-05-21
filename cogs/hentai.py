@@ -27,6 +27,8 @@ from discord.ext import commands
 from main import Bot
 from re import findall as re_findall
 
+from main import BetterEmbed
+
 class Hentai(commands.Cog):
     def __init__(self, bot):
         self.bot: Bot = bot
@@ -38,7 +40,12 @@ class Hentai(commands.Cog):
                                          allow_redirects=True) as resp:
             url = str(resp.url)
         
-        await ctx.send(re_findall(r'\d+', url)[0])
+        digits = re_findall(r'\d+', url)[0]
+        
+        if ctx.channel.is_nsfw():
+            return await ctx.send(embed=BetterEmbed(title=digits, url=url))
+        
+        await ctx.send(digits)
 
 def setup(bot):
     bot.add_cog(Hentai(bot))

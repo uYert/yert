@@ -72,7 +72,7 @@ class LinkConverter(commands.PartialEmojiConverter):
 
     async def convert(self, ctx, argument: str) -> BytesIO:
         try:
-            return BytesIO(await super().convert(ctx, argument).url.read())
+            return BytesIO(await (await super().convert(ctx, argument)).url.read())
         except commands.BadArgument:
             if re.match(emoji_regex, argument):
                 unicode = "-".join(map(lambda x: x[2:], map(str, map(hex, map(ord, argument)))))

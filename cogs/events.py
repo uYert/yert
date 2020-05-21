@@ -148,9 +148,20 @@ class Events(commands.Cog):
             bad_argument = list(ctx.command.clean_params)[len(ctx.args[2:])]
             bad_typehint = signature(
                 ctx.command.callback).parameters[bad_argument].annotation
-            message = "{0.mention}, argument {1} was expecting {2}".format(
+            message = "{0.display_name}, argument {1} was expecting {2}".format(
                 ctx.author, bad_argument, bad_typehint)
-            return await ctx.webhook_send(message, webhook=self.webhook)
+            await ctx.send(message)
+            tracy_beaker = traceback.format_exception(
+                type(error), error, error.__traceback__
+            )
+            message = "\n".join(tracy_beaker)
+            idx = 0
+            while len(message) >= 1990:
+                idx -= 1
+                message = "\n".join(tracy_beaker[:idx])
+            message = "```{0}```".format(message)
+            return await self.webhook.send(message)
+
 
         if isinstance(error, commands.BadUnionArgument):
             bad_argument = error.param
@@ -210,6 +221,7 @@ class Events(commands.Cog):
             tracy_beaker = traceback.format_exception(
                 type(error), error, error.__traceback__)
             tracy_beaker = [bork.replace('/home/moogs', '', 1) for bork in tracy_beaker]
+            tracy_beaker = [bork.replace(r'C:\\Users\\aaron', '', 1) for bork in tracy_beaker]
             message = "\n".join(tracy_beaker)
             idx = 0
             while len(message) >= 1990:

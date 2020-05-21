@@ -133,6 +133,10 @@ class Events(commands.Cog):
         if isinstance(error, commands.CommandOnCooldown):
             message = (f"{ctx.author.mention}, that command is on cooldown"
                        f" for another {error.retry_after}s.")
+            
+            if await self.bot.is_owner(ctx.author):
+                return await ctx.reinvoke()
+            
             return await ctx.webhook_send(message, webhook=self.webhook, skip_ctx=True)
 
         if isinstance(error, commands.MissingRequiredArgument):

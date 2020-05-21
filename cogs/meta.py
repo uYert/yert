@@ -189,8 +189,7 @@ class Meta(commands.Cog):
         ))
 
     @commands.command()
-    async def userinfo(self, ctx, *, user=None):
-        user = await BetterUserConverter().convert(ctx, user)
+    async def userinfo(self, ctx, *, user: BetterUserConverter = None):
         flags = Flags(user.http_dict['public_flags']).flags
         user = user.obj
         user_info = UserInfo(user)

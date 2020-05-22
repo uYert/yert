@@ -25,11 +25,14 @@ SOFTWARE.
 from collections import namedtuple
 from datetime import datetime
 import random
+import string
 from typing import Any, List
 from textwrap import shorten
 
 from discord import Embed
 from discord.ext import commands, menus
+
+from main import NewCtx
 
 random.seed(datetime.utcnow())
 
@@ -90,7 +93,7 @@ class Memes(commands.Cog):
 
     @commands.command()
     @commands.max_concurrency(3, commands.BucketType.channel, wait=False)
-    async def reddit(self, ctx: commands.Context,
+    async def reddit(self, ctx: NewCtx,
                      sub: str = 'memes',
                      sort: str = 'hot'):
         """Gets the <sub>reddits <amount> of posts sorted by <method>"""
@@ -159,7 +162,7 @@ class Memes(commands.Cog):
         await pages.start(ctx)
 
     @reddit.error
-    async def reddit_error(self, ctx, error):
+    async def reddit_error(self, ctx: NewCtx, error):
         """ Local Error handler for reddit command. """
         error = getattr(error, "original", error)
         if isinstance(error, commands.NSFWChannelRequired):
@@ -168,6 +171,20 @@ class Memes(commands.Cog):
             msg = ("There seems to be no Reddit posts to show, common cases are:\n"
                    "- Not a real subreddit.\n")
             return await ctx.send(msg)
+
+    @commands.command(name='mock')
+    async def _mock(self, ctx: NewCtx, *, message: str):
+        await ctx.message.delete()
+        output = ''
+        for counter, char in enumerate(message):
+            if not char == string.whitespace:
+                if counter % 2 == 0:
+                    output += char.upper()
+                else:
+                    output += char
+            else:
+                output += string.whitespace
+        await ctx.send(output)
 
 
 def setup(bot):

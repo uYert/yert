@@ -17,3 +17,4 @@ async_cleverbot
 gtts_token
 async_cse
 jikanpy
+rule34

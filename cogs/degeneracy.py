@@ -22,16 +22,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import discord
-from discord.ext import commands
-from main import Bot
+from datetime import timedelta
+from random import shuffle as rng_shuffle
 from re import findall as re_findall
 
-from main import BetterEmbed, NewCtx
+import discord
+from discord.ext import commands, menus
+
+from main import BetterEmbed, Bot, NewCtx
+from packages.r34 import AioRule34, R34Source
+
 
 class Hentai(commands.Cog):
     def __init__(self, bot):
         self.bot: Bot = bot
+        self.aiorule34 = AioRule34(session=bot.session, loop=bot.loop)
+        
         
     @commands.command(name='sixdigits')
     async def sixdigits(self, ctx: NewCtx):
@@ -47,7 +53,20 @@ class Hentai(commands.Cog):
         
         await ctx.send(digits)
             
+    @commands.command(name='r34')
+    @commands.is_nsfw()
+    @commands.cooldown(1, 10, commands.BucketType.user)
+    async def r34(self, ctx: NewCtx, *, query: str, fuzzy: bool = False):
+        """Searches a post on r34"""
+        if not (source := ctx.cached_data):
+            results = await self.aiorule34.getImages(query, fuzzy=fuzzy)
+            ctx.add_to_cache(results, timeout=timedelta(minutes=60))
+            
+        rng_shuffle(results)  # the api returns a *lot* of results
+        source = R34Source(results, query)
+        menu = menus.MenuPages(source, clear_reactions_after=True)
+        await menu.start(ctx)
     
-
+    
 def setup(bot):
     bot.add_cog(Hentai(bot))

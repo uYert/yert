@@ -46,7 +46,7 @@ COGS = (
     "cogs.events",
     "cogs.fun",
     "cogs.games",
-    "cogs.hentai",
+    "cogs.degeneracy",
     "cogs.images",
     "cogs.memes",
     "cogs.meta",

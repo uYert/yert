@@ -123,7 +123,7 @@ class SauceNaoSource(ListPageSource):
         embed = BetterEmbed(title=f"{header.index_name} | {header.similarity}%")
         embed.set_thumbnail(url=header.thumbnail)
         embed.add_field(name='External urls', 
-                        value='\n'.join([maybe_url(url) for url in data['ext_urls']]))
+                        value='\n'.join([maybe_url(url) for url in data.get('ext_urls', [])]))
 
         for key, value in data.items():
             if not isinstance(value, list):

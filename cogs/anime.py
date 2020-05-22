@@ -43,8 +43,8 @@ class Anime(commands.Cog):
     
     @commands.command(name='saucenao')
     @commands.cooldown(7, 30, type=commands.BucketType.default)
-    async def saucenao(self, ctx: NewCtx, 
-                       target: Union[discord.User, discord.Message] = None):
+    async def saucenao(self, ctx: NewCtx, # might be redundant
+                       target: Union[discord.Member, discord.User, discord.Message] = None):
         """Provides informations about an image"""
         image = await self.aiosaucenao.select_image(ctx=ctx, target=target)
         

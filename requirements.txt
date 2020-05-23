@@ -5,7 +5,7 @@ git+https://github.com/Rapptz/discord-ext-menus@master#egg=discord-ext-menus
 jishaku
 
 # Others (git)
-git+https://github.com/Fogapod/aiogoogletrans
+git+https://github.com/Fogapod/aiogoogletrans#egg=aiogoogletrans
 
 # Others (pypi)
 asyncpg

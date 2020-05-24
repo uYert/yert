@@ -49,18 +49,13 @@ class AioCleverbot(ac.Cleverbot):
         msg = ctx.message
         content = msg.content
 
-        if msg.author.bot or ctx.command:
+        if msg.author.bot or ctx.command or ctx.guild is None:
             return None
-
-        checker = funct_partial(check_length, min=3, max=60)
-
-        if ctx.guild is None:
-            return content if checker(content) else None
 
         for mention in (ctx.bot.user.mention + ' ', f'<@!{ctx.bot.user.id}> '):
             if content.startswith(mention):
                 cropped = content[len(mention):]  # removing the witespace
-                return cropped if checker(cropped) else None
+                return cropped if check_length(cropped, min=3, max=60) else None
         else:
             return None
 
@@ -70,10 +65,8 @@ class AioCleverbot(ac.Cleverbot):
             emotion = rng_choice(self.emotions)
 
         return ctx.add_to_cache(value=emotion,  # the timer is refreshed
-                                timeout=timedelta(minutes=30))
+                                timeout=timedelta(minutes=30))  #TODO: cleanup since no dm w/out mention anymore
 
     def format_response(self, *, msg: Message, response: ac.Response, clean_txt: str) -> str:
         """Formats the reponse depending on the context"""
-        if msg.guild is None:
-            return response.text
         return f"> {clean_txt}\n{msg.author.mention} {response.text}"

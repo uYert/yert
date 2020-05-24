@@ -66,8 +66,7 @@ class BetterEmbed(Embed):
 
     def fill_fields(self) -> 'ColoredEmbed':
         """Fill the remaining fields so they are lined up properly"""
-        inlines = len(
-            self.fields[max(i for i, _ in enumerate(self.fields)):]) + 1
+        inlines = len(self.fields[max(i for i, _ in enumerate(self.fields)):]) + 1
         for _ in range(ceil(inlines / 3) * 3 - inlines):
             self.add_field(name='\u200b', value='\u200b')
         return self
@@ -78,8 +77,8 @@ class BetterEmbed(Embed):
     #     return super().add_field(name=f"**{name}**", value=value, inline=inline)
 
     def add_field(self, *, name, value, inline=True):
-        return super().add_field(name=name or self._empty_field,  # sends the embed anyways, but with a warn
-                                 value=value or self._empty_field,  # a bit clearer than the missing field error
+        return super().add_field(name=str(name) or self._empty_field,  # sends the embed anyways, but with a warn
+                                 value=str(value) or self._empty_field,  # a bit clearer than the missing field error
                                  inline=inline)
 
     def add_fields(self, fields: Iterator[Tuple[str, str, bool]]) -> 'ColoredEmbed':

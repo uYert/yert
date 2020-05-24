@@ -32,7 +32,7 @@ NSFW_ANIME = {'r17', 'r', 'rx'}
 NSFW_MANGA = {'doujinshi', 'ecchi', 'hentai'}
 TIME_TEMPLATE = "%Y-%m-%dT%H:%M:%S%z"  # iso 8601
 
-@dataclass
+@dataclass(frozen=True)
 class JikanResponse:  # that one is just there as a placeholder, dunno if it'll be needed later on 
     request_hash: str = None
     request_cached: bool = None
@@ -42,7 +42,7 @@ class JikanResponse:  # that one is just there as a placeholder, dunno if it'll 
     jikan_url: str = None
     headers: dict = None
 
-@dataclass
+@dataclass(frozen=True)
 class AnimeJikanResponse:
     mal_id: int = None
     url: str = None
@@ -57,22 +57,6 @@ class AnimeJikanResponse:
     end_date: str = None 
     members: int = None
     rated: str = None
-
-@dataclass 
-class MangaJikanResponse:
-    mal_id: int = None
-    url: str = None
-    image_url: str = None
-    title: str = None
-    publishing: bool = None
-    synopsis: str = None
-    type: str = None
-    chapters: int = None
-    volumes: int = None
-    score: float = None
-    start_date: str = None
-    end_date: str = None
-    members: int = None
 
 class AnimeJikanSource(ListPageSource):
     def __init__(self, data: JikanResponse, *, is_nsfw: bool):
@@ -102,6 +86,21 @@ class AnimeJikanSource(ListPageSource):
         )
         return embed.add_fields(fields)
 
+@dataclass(frozen=True)
+class MangaJikanResponse:
+    mal_id: int = None
+    url: str = None
+    image_url: str = None
+    title: str = None
+    publishing: bool = None
+    synopsis: str = None
+    type: str = None
+    chapters: int = None
+    volumes: int = None
+    score: float = None
+    start_date: str = None
+    end_date: str = None
+    members: int = None
 class MangaJikanSource(ListPageSource):
     def __init__(self, data: JikanResponse, *, is_nsfw: bool):
         results = data.results
@@ -128,5 +127,24 @@ class MangaJikanSource(ListPageSource):
             ('Chapters', page.chapters),
             ('Score', f"{page.score} / 10"),
         )
-        
         return embed.add_fields(fields)
+
+@dataclass(frozen=True)
+class PersonJikanResponse:
+    mal_id: int = None
+    url: str = None
+    image_url: str = None
+    name: str = None
+    alternative_names: list = None
+
+class PersonJikanSource(ListPageSource):
+    def __init__(self, data: JikanResponse):
+        results = [PersonJikanResponse(**r) for r in data.results]
+        super().__init__(results, per_page=1)
+    
+    def format_page(self, menu, page: PersonJikanResponse):
+        """Formats the page into an embed"""
+        embed = BetterEmbed(title=f"{page.name} | Aliases : {', '.join(page.alternative_names) or None}",
+                            url=page.url)
+        
+        return embed.set_image(url=page.image_url)

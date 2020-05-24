@@ -31,7 +31,7 @@ from discord.ext import commands, menus
 from config import SAUCENAO_TOKEN
 from main import NewCtx
 from packages.aiojikan import (AioJikan, AnimeJikanSource, JikanResponse,
-                               MangaJikanResponse, MangaJikanSource)
+                               MangaJikanSource, PersonJikanSource)
 from packages.aiosaucenao import AioSaucenao, SauceNaoSource
 
 
@@ -90,12 +90,13 @@ class Anime(commands.Cog):
     
     @mal.command(name='manga')
     async def mal_manga(self, ctx: NewCtx, *, query: str):
+        """Searches a manga on my anime list"""
         is_nsfw = ctx.channel.is_nsfw()
         ctx.cache_key += [is_nsfw]
-        results = await self.aiojikan.search(search_type=ctx.command.name, query=query)
         
         if not (resp := ctx.cached_data):
-            resp = ctx.add_to_cache(JikanResponse(**results), timeout=timedelta(hours=23))
+            results = await self.aiojikan.search(search_type=ctx.command.name, query=query)
+            resp = ctx.add_to_cache(JikanResponse(**results), timeout=timedelta(hours=24))
                     
         source = MangaJikanSource(resp, is_nsfw=is_nsfw)
                 
@@ -103,15 +104,27 @@ class Anime(commands.Cog):
         
         await menu.start(ctx)
     
-    
     @mal.command(name='person')
     async def mal_person(self, ctx: NewCtx, *, query: str):
-        pass
+        """Searches a person on mal (Mangakas, Voice...)"""
+        is_nsfw = ctx.channel.is_nsfw()
+        ctx.cache_key += [is_nsfw]
+        
+        if not (resp := ctx.cached_data):
+            results = await self.aiojikan.search(search_type=ctx.command.name, query=query)
+            resp = ctx.add_to_cache(JikanResponse(**results), timeout=timedelta(hours=24))
+                    
+        source = PersonJikanSource(resp)
+                
+        menu = menus.MenuPages(source, clear_reactions_after=True)
+        
+        await menu.start(ctx)
     
     @mal.command(name='character')
     async def mal_character(self, ctx: NewCtx, *, query: str):
+        """pass"""
         pass
-    
+        
 
             
 def setup(bot):

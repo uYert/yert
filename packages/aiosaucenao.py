@@ -86,7 +86,7 @@ class AioSaucenao:
         
     async def select_image(self, *, ctx, target: Union[User, Message, None]) -> bytes:
         """Converts into bytes suitable to send with saucenao"""
-        if isinstance(target, Message):  # kinda funky, needs fix, might return none 
+        if isinstance(target, Message):  # kinda funky, needs fix
             msg = target
         else:
             msg = ctx.message
@@ -123,7 +123,7 @@ class SauceNaoSource(ListPageSource):
         embed = BetterEmbed(title=f"{header.index_name} | {header.similarity}%")
         embed.set_thumbnail(url=header.thumbnail)
         embed.add_field(name='External urls', 
-                        value='\n'.join([maybe_url(url) for url in data.get('ext_urls', [])]))
+                        value='\n'.join([maybe_url(url) for url in data.get('ext_urls', ['Empty'])]))
 
         for key, value in data.items():
             if not isinstance(value, list):

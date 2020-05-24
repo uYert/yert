@@ -22,16 +22,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from typing import Any
 import re
-from contextlib import suppress
 from collections import namedtuple
+from contextlib import suppress
+from datetime import datetime
 from io import BytesIO
-
+from typing import Any
 
 import discord
 from discord.ext import commands
-
+from humanize import naturaldate
 
 BetterUser = namedtuple('BetterUser', ['obj', 'http_dict'])
 u_conv = commands.UserConverter()
@@ -64,6 +64,13 @@ def maybe_url(url: Any, /) -> str:
     else:
         return url
 
+def to_human_datetime(text: str, template: str):
+    """
+    Formats using the template (%D %H) 
+    used by the datetime lib and returns a naturaldate
+    """
+    return naturaldate(datetime.strptime(text, template))
+
 
 class LinkConverter(commands.PartialEmojiConverter):
     def __init__(self):
@@ -90,4 +97,3 @@ class LinkConverter(commands.PartialEmojiConverter):
                     return img_bytes
             else:
                 raise commands.BadArgument("Unable to verify the link was an png or jpg")
-

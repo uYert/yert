@@ -23,13 +23,12 @@ SOFTWARE.
 """
 
 from discord.ext.menus import ListPageSource
-from humanize import naturaldate
-from datetime import datetime
 from utils.formatters import BetterEmbed
 from rule34 import Rule34Post
 from rule34 import Rule34 as BaseRule34
 from asyncio import AbstractEventLoop
 from aiohttp import ClientSession
+from utils.converters import to_human_datetime
 
 class AioRule34(BaseRule34):
     def __init__(self, *, session: ClientSession, timeout: int = 10, 
@@ -49,14 +48,12 @@ class R34Source(ListPageSource):
         self.query = query
     
     def format_page(self, menu, page: Rule34Post):
+        
         embed = BetterEmbed(title=f'Results for : {self.query}', url=page.file_url)
-    
-        created_at = datetime.strptime(page.created_at, "%a %b %d %H:%M:%S %z %Y")  # there must be a format for that
-    
         fields = (
             ('Size', f'{page.width}x{page.height}'),
             ('Creator id', page.creator_ID),
-            ('Created at', naturaldate(created_at)),
+            ('Created at', to_human_datetime(page.created_at, "%a %b %d %H:%M:%S %z %Y")),
         )
         embed.set_image(url=page.file_url)
     

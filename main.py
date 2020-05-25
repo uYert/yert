@@ -166,8 +166,20 @@ class Bot(commands.Bot):
         for extension in COGS:
             try:
                 self.load_extension(extension)
-            except Exception:
-                traceback.print_exc()  # ! TODO: webhook the print_exc
+            except Exception as e:
+                wh_id, wh_token = config.WEBHOOK
+                full_exc = traceback.format_exception(type(e), e, e.__traceback__)
+                hook = discord.Webhook.partial(
+                    id = wh_id, token = wh_token, adapter = discord.AsyncWebhookAdapter(self.session))
+                full_exc = [line.replace('/home/moogs', '', 1) for line in full_exc]
+                full_exc = [line.replace('C:\\Users\\aaron', '', 1) for line in full_exc]
+                output = '\n'.join(full_exc)
+                idx = 0
+                while len(output) >= 1990:
+                    idx -= 1
+                    output = '\n'.join(full_exc[:idx])
+                output = f"```{output}```"
+                await hook.send(output)
 
         return await super().connect(reconnect=reconnect)
 

@@ -21,8 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
-from inspect import signature
+from functools import lru_cache
 import traceback
 import typing
 
@@ -50,6 +49,7 @@ class Events(commands.Cog):
             id=wh_id, token=wh_token, adapter=discord.AsyncWebhookAdapter(self.bot.session))
         return hook
 
+    @lru_cache(maxsize=15)
     def tracy_beaker_fmt(self, error: Exception) -> typing.Tuple[str, str]:
         full_exc = traceback.format_exception(type(error), error, error.__traceback__)
         short_exc = full_exc[-1]

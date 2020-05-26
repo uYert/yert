@@ -78,15 +78,18 @@ class Anime(commands.Cog):
         bucket = aiojikan.API_COOLDOWNS.long.get_bucket(msg)
 
         if retry_after := bucket.update_rate_limit():
-            raise commands.CommandOnCooldown(bucket, retry_after)
+            if retry_after >= 5.0:
+                raise commands.CommandOnCooldown(bucket, retry_after)
+            await asyncio.sleep(retry_after)
                 
         bucket = aiojikan.API_COOLDOWNS.short.get_bucket(msg)
         await asyncio.sleep(bucket.update_rate_limit() or 0)
                 
     def create_mal_commands(self):
-        """Makes all mal commands in a row"""
+        """Makes all mal commands at once"""
+        
         @commands.command() 
-        @commands.cooldown(1, 30, commands.BucketType.user)          
+        @commands.cooldown(1, 15, commands.BucketType.user)          
         async def template(ctx: NewCtx, *, query: str):
             is_nsfw = ctx.channel.is_nsfw()
             ctx.cache_key += [is_nsfw]

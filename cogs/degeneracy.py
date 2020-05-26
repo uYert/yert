@@ -30,13 +30,13 @@ import discord
 from discord.ext import commands, menus
 
 from main import BetterEmbed, Bot, NewCtx
-from packages.r34 import AioRule34, R34Source
+from packages import r34
 
 
 class Hentai(commands.Cog):
     def __init__(self, bot):
         self.bot: Bot = bot
-        self.aiorule34 = AioRule34(session=bot.session, loop=bot.loop)
+        self.aiorule34 = r34.AioRule34(session=bot.session, loop=bot.loop)
         
         
     @commands.command(name='sixdigits')
@@ -63,7 +63,7 @@ class Hentai(commands.Cog):
             ctx.add_to_cache(results, timeout=timedelta(minutes=60))
             
         rng_shuffle(results)  # the api returns a *lot* of results
-        source = R34Source(results, query)
+        source = r34.R34Source(results, query)
         menu = menus.MenuPages(source, clear_reactions_after=True)
         await menu.start(ctx)
     

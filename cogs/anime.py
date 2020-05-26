@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import asyncio
 from datetime import timedelta
 from typing import Union
 
@@ -70,6 +71,18 @@ class Anime(commands.Cog):
         """
         pass
     
+    async def _check_api_cooldowns(self, ctx: NewCtx):
+        """Waits and complies with the api's rate limit"""
+        msg = ctx.message
+        
+        bucket = aiojikan.API_COOLDOWNS.long.get_bucket(msg)
+
+        if retry_after := bucket.update_rate_limit():
+            raise commands.CommandOnCooldown(bucket, retry_after)
+                
+        bucket = aiojikan.API_COOLDOWNS.short.get_bucket(msg)
+        await asyncio.sleep(bucket.update_rate_limit() or 0)
+                
     def create_mal_commands(self):
         """Makes all mal commands in a row"""
         @commands.command() 
@@ -79,6 +92,9 @@ class Anime(commands.Cog):
             ctx.cache_key += [is_nsfw]
             
             if not (response := ctx.cached_data):
+                
+                await self._check_api_cooldowns(ctx)
+                
                 response = await self.aiojikan.search(ctx.command.name, query)
                 ctx.add_to_cache(response, timeout=timedelta(hours=24))
             
@@ -99,6 +115,11 @@ class Anime(commands.Cog):
             
             mal_command.help = f"Searches {article} {name} on My Anime List"
             self.mal.add_command(mal_command)
+    
+
+            
+    
+            
             
 def setup(bot):
     bot.add_cog(Anime(bot))

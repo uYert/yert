@@ -21,17 +21,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from collections import namedtuple
 from dataclasses import dataclass
 from functools import partial as funct_partial
 from typing import List, Tuple, Union
 
-from discord.ext.commands import CooldownMapping
+from discord.ext.commands import BucketType, CooldownMapping
 from discord.ext.menus import ListPageSource
 from jikanpy import AioJikan
 
 from utils.converters import to_human_datetime, try_unpack_class
 from utils.formatters import BetterEmbed
 
+global_cd = BucketType.default
+
+ApiCooldown = namedtuple('ApiCooldown', ['long', 'short'])
+API_COOLDOWNS = ApiCooldown(long=CooldownMapping.from_cooldown(30, 60, global_cd), 
+                            short=CooldownMapping.from_cooldown(2, 1, global_cd),)
 
 NSFW_MANGA = {'doujinshi', 'ecchi', 'hentai'}
 TIME_TEMPLATE = "%Y-%m-%dT%H:%M:%S%z"  # iso 8601

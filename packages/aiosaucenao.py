@@ -71,13 +71,13 @@ class Result:
         self.header = ResultHeader(**self.header)
         
         
-class SaucenaoResponse:
+class Response:
     def __init__(self, data: dict, /):
         self.header = MainHeader(**data.pop('header'))
         self.results = [Result(**result) for result in data.pop('results')]  
         self.extra_data = data  # keeping extra stuff there, in case the api updates
         
-class AioSaucenao:
+class Client:
     """Provides informations about images using saucenao's api"""
     def __init__(self, *, session: ClientSession, api_key: str):
         self.session = session
@@ -103,15 +103,15 @@ class AioSaucenao:
         else:
             return await target.avatar_url_as(format='png', size=4096).read()
     
-    async def search(self, image: bytes, /) -> SaucenaoResponse:
+    async def search(self, image: bytes, /) -> Response:
         """Sends the image to the api"""
         data = FormData()
         data.add_field('file', image, filename='image.png')
         async with self.session.post(url=self.url, data=data) as r:
-            return SaucenaoResponse(await r.json())
+            return Response(await r.json())
         
 
-class SauceNaoSource(ListPageSource):
+class Source(ListPageSource):
     def __init__(self, results: List[Result], /):
         super().__init__(results, per_page=1)
 

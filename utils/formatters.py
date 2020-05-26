@@ -55,7 +55,6 @@ def fmt(daytee: Union[datetime, int], stringform: Optional[str]):
     stringform = stringform or "%Y %b %d: %H:%M"
     return daytee.strftime(stringform)
 
-
 class BetterEmbed(Embed):
     """Haha yes"""
 
@@ -87,7 +86,6 @@ class BetterEmbed(Embed):
             self.add_field(name=field[0], value=field[1],
                            inline=get_index(field, 2, True))
         return self
-
 
 class Flags:
     def __init__(self, value):

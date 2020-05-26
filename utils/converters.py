@@ -27,7 +27,7 @@ from collections import namedtuple
 from contextlib import suppress
 from datetime import datetime
 from io import BytesIO
-from typing import Any
+from typing import Any, Iterable, Mapping
 
 import discord
 from discord.ext import commands
@@ -66,7 +66,7 @@ def maybe_url(url: Any, /) -> str:
 
 def to_human_datetime(text: str, template: str):
     """
-    Formats using the template (%D %H) 
+    Formats using the template e.g (%D %H) 
     used by the datetime lib and returns a naturaldate
     """
     return naturaldate(datetime.strptime(text, template))
@@ -97,3 +97,9 @@ class LinkConverter(commands.PartialEmojiConverter):
                     return img_bytes
             else:
                 raise commands.BadArgument("Unable to verify the link was an png or jpg")
+
+def try_unpack_class(*,  class_: object, iterable: Iterable[Mapping]):
+    """Tries to unpack the mapping in the class' constructor"""
+    for mapping in iterable:
+        with suppress(Exception):
+            yield class_(**mapping)

@@ -65,8 +65,10 @@ class AioCleverbot(ac.Cleverbot):
             emotion = rng_choice(self.emotions)
 
         return ctx.add_to_cache(value=emotion,  # the timer is refreshed
-                                timeout=timedelta(minutes=30))  #TODO: cleanup since no dm w/out mention anymore
+                                timeout=timedelta(minutes=30))
 
     def format_response(self, *, msg: Message, response: ac.Response, clean_txt: str) -> str:
         """Formats the reponse depending on the context"""
+        if msg.guild is None:
+            return response.text
         return f"> {clean_txt}\n{msg.author.mention} {response.text}"

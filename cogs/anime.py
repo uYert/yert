@@ -30,21 +30,20 @@ from discord.ext import commands, menus
 
 from config import SAUCENAO_TOKEN
 from main import NewCtx
-from packages.aiojikan import (AioJikan, AnimeJikanSource, JikanResponse,
-                               MangaJikanSource, PersonJikanSource)
-from packages.aiosaucenao import AioSaucenao, SauceNaoSource
+from packages import aiojikan, aiosaucenao
+from utils import converters
 
 
 class Anime(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.aiosaucenao = AioSaucenao(session=bot.session, api_key=SAUCENAO_TOKEN)
-        self.aiojikan = AioJikan(session=bot.session)
-    
+        self.aiosaucenao = aiosaucenao.Client(session=bot.session, api_key=SAUCENAO_TOKEN)
+        self.aiojikan = aiojikan.Client(session=bot.session)
+        self.create_mal_commands()
     
     @commands.command(name='saucenao')
     @commands.cooldown(7, 30, commands.BucketType.default)
-    async def saucenao(self, ctx: NewCtx, # might be redundant
+    async def saucenao(self, ctx: NewCtx,
                        target: Union[discord.Member, discord.User, discord.Message] = None):
         """Provides informations about an image"""
         image = await self.aiosaucenao.select_image(ctx=ctx, target=target)
@@ -64,68 +63,42 @@ class Anime(commands.Cog):
         
         await menu.start(ctx)
             
-    @commands.group(name='mal')
-    @commands.cooldown(1, 30, commands.BucketType.default)            
+    @commands.group(name='mal', aliases=['myanimelist'])
     async def mal(self, ctx):
         """
         Mal related commands
         """
         pass
     
-    @mal.command(name='anime')  #todo: dynamically add the commands
-    async def mal_anime(self, ctx: NewCtx, *, query: str):
-        is_nsfw = ctx.channel.is_nsfw()
-        ctx.cache_key += [is_nsfw]
-        results = await self.aiojikan.search(search_type=ctx.command.name, query=query)
-        
-        if not (resp := ctx.cached_data):
-            resp = ctx.add_to_cache(JikanResponse(**results), timeout=timedelta(hours=23))
-                    
-        source = AnimeJikanSource(resp, is_nsfw=is_nsfw)  # we filter the results everytime
-                
-        menu = menus.MenuPages(source, clear_reactions_after=True)
-        
-        await menu.start(ctx)
-        
-    
-    @mal.command(name='manga')
-    async def mal_manga(self, ctx: NewCtx, *, query: str):
-        """Searches a manga on my anime list"""
-        is_nsfw = ctx.channel.is_nsfw()
-        ctx.cache_key += [is_nsfw]
-        
-        if not (resp := ctx.cached_data):
-            results = await self.aiojikan.search(search_type=ctx.command.name, query=query)
-            resp = ctx.add_to_cache(JikanResponse(**results), timeout=timedelta(hours=24))
-                    
-        source = MangaJikanSource(resp, is_nsfw=is_nsfw)
-                
-        menu = menus.MenuPages(source, clear_reactions_after=True)
-        
-        await menu.start(ctx)
-    
-    @mal.command(name='person')
-    async def mal_person(self, ctx: NewCtx, *, query: str):
-        """Searches a person on mal (Mangakas, Voice...)"""
-        is_nsfw = ctx.channel.is_nsfw()
-        ctx.cache_key += [is_nsfw]
-        
-        if not (resp := ctx.cached_data):
-            results = await self.aiojikan.search(search_type=ctx.command.name, query=query)
-            resp = ctx.add_to_cache(JikanResponse(**results), timeout=timedelta(hours=24))
-                    
-        source = PersonJikanSource(resp)
-                
-        menu = menus.MenuPages(source, clear_reactions_after=True)
-        
-        await menu.start(ctx)
-    
-    @mal.command(name='character')
-    async def mal_character(self, ctx: NewCtx, *, query: str):
-        """pass"""
-        pass
-        
+    def create_mal_commands(self):
+        """Makes all mal commands in a row"""
+        @commands.command() 
+        @commands.cooldown(1, 30, commands.BucketType.user)          
+        async def template(ctx: NewCtx, *, query: str):
+            is_nsfw = ctx.channel.is_nsfw()
+            ctx.cache_key += [is_nsfw]
+            
+            if not (response := ctx.cached_data):
+                response = await self.aiojikan.search(ctx.command.name, query)
+                ctx.add_to_cache(response, timeout=timedelta(hours=24))
+            
+            source = aiojikan.Source(response.results, is_nsfw=is_nsfw)
+            
+            menu = menus.MenuPages(source, clear_reactions_after=True)
+            
+            await menu.start(ctx)
 
+        for name in ('anime', 'manga', 'person', 'character'):
+            mal_command = template.copy()
+            mal_command.name = name
+            
+            article = 'a'
+            
+            if name == 'anime':
+                article += 'n'
+            
+            mal_command.help = f"Searches {article} {name} on My Anime List"
+            self.mal.add_command(mal_command)
             
 def setup(bot):
     bot.add_cog(Anime(bot))

@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import asyncio
+from itertools import zip_longest 
 from collections import deque
 from datetime import datetime
 import random
@@ -38,6 +39,62 @@ from utils.formatters import Flags, BetterEmbed
 
 random.seed(datetime.utcnow())
 
+class GuessWordGame:
+	def __init__(self, context, difficulty):
+		self.difficulty = difficulty
+		self.context = context
+		self.list_of_words= {"easy":["hello","hi","mum","so","try"] ,"medium":["daddy","anime","point"],"hard":["minority","regardless","opponent"]}
+		self.tries = 0
+		self.win = False
+		self.word = None
+		
+	async def send_message(self):
+		#I did sperate it from the main func(self.play)
+		# so that i canextend it later
+		if self.win:
+			await self.context.send(f"You won ! The word to guess was {self.word}. You guessed it in {self.tries}.")
+		else:
+			await self.context.send(f"You lost !  The word to guess was {self.word}")
+		
+	def generate_word(self) -> str:
+		word = random.choice(self.list_of_words[self.difficulty])
+		self.word = word
+		guess= word[0]+" ".join('_' for _ in range(len(word)-1))
+		return guess
+		
+	async def get_input(self, text: str) -> discord.Message:
+		await self.context.send(text)
+		try:
+			msg = await self.context.bot.wait_for('message', check = lambda m: m.author.id == self.context.author.id, timeout = 360.0)
+		except asyncio.TimeoutError:
+			#TODO : Change this error to a customized error
+			raise commands.BadArgument(f"You're no longer playing? The word to guess was {self.word}.")
+		else:
+			return msg
+		
+	async def play(self):
+		new_guess =""
+		guess = self.generate_word()
+		while self.tries < len(self.word):
+			print("hello")
+			# The random numb which will allow us to randomly 
+			# generate a character of the word to find each try 
+			n = random.randint(1,len(self.word))
+			await self.context.send(f"Here's the word, try to guess it: \n`{new_guess if self.tries >1 else guess}`")
+			u_guess= await self.get_input(f"Send me your answer, you have {self.tries}/{len(self.word)} tries.\n")
+			# The user has won
+			if u_guess.content == self.word:
+				self.win = True
+				break
+			# if the char is the same on the two strings then
+			# the char is correct plus randomly generates a char from the word
+			new_guess = " ".join(word[n] if n == i else x[0] if x[0]==x[1] else "_" for i,x in enumerate(zip_longest(self.word,u_guess.content)))
+			if self.tries >1:
+				if len(old_guess.split("_")) <= len(new_guess.split("_")):
+					new_guess = old_guess
+			old_guess = new_guess
+			self.tries +=1
+		await self.send_message()
 
 class HypeSquadHouse(db.Table, table_name="hypesquad_house"):
     """
@@ -83,7 +140,16 @@ class Games(commands.Cog):
         query = self.queries[query]
         result = await bot.pool.fetchrow(query, *args)
         return result
-
+    
+    @commands.command()
+	@commands.cooldown(1,30, commands.BucketType.user)
+	@commands.max_conncurency(2, commands.BucketType.channel, wait= False)
+	async def guess_word(self,ctx, difficulty: str):
+		""" A guessing word game. Available difficulties: easy - medium - hard."""
+		if difficulty.lower() not in ("easy","hard","medium"):
+			raise commands.BadArgument(f"`{difficulty} is not a valid difficulty. Please choose a valid one.")
+		await GuessWordGame(ctx,difficulty.lower()).play()
+        
     @commands.command(name='blackjack', aliases=['21'])
     @commands.max_concurrency(1, commands.BucketType.channel, wait=False)
     async def _blackjack(self, ctx: NewCtx, bet: int = 30):

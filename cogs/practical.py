@@ -22,40 +22,38 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from collections.abc import Hashable
-from datetime import timedelta
+import datetime
 from typing import Optional
 
-import discord
 from discord.ext import commands, menus
 
-from config import GOOGLE_TOKENS, WEATHER_TOKEN
-from main import NewCtx
+import config
+import main
 from packages import aiogooglesearch, aiomagmachain, aiotranslator, aioweather
 
 
 class Practical(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.aioweather = aioweather.AioWeather(session=bot.session, api_key=WEATHER_TOKEN)
+        self.aioweather = aioweather.AioWeather(session=bot.session, api_key=config.WEATHER_TOKEN)
         self.aiotranslator = aiotranslator.AioTranslator(session=bot.session)
-        self.aiogoogle = aiogooglesearch.AioSearchEngine(api_keys=GOOGLE_TOKENS, session=bot.session)
+        self.aiogoogle = aiogooglesearch.AioSearchEngine(api_keys=config.GOOGLE_TOKENS, session=bot.session)
         self.aioscreen = aiomagmachain.AioMagmaChain(session=bot.session, google_client=self.aiogoogle)
 
     @commands.command(name='weather')
     @commands.cooldown(1, 30, type=commands.BucketType.channel)
-    async def weather(self, ctx: NewCtx, *, city: str):
+    async def weather(self, ctx: main.NewCtx, *, city: str):
         """Displays the weather at a particular location"""
         if not (embed := ctx.cached_data):
 
             res = await self.aioweather.fetch_weather(city)
             embed = self.aioweather.format_weather(res)
-            ctx.add_to_cache(value=embed, timeout=timedelta(minutes=10))
+            ctx.add_to_cache(value=embed, timeout=datetime.timedelta(minutes=10))
 
         await ctx.send(embed=embed)
 
     @commands.group(name='translate', invoke_without_command=True)
-    async def translate(self, ctx: NewCtx, language: Optional[aiotranslator.to_language] = 'auto', *, text: str):
+    async def translate(self, ctx: main.NewCtx, language: Optional[aiotranslator.to_language] = 'auto', *, text: str):
         """Translates from another language"""
         if not (embed := ctx.cached_data):
             # the embed is implicitely cached there, since it's used by both subcommnands
@@ -64,7 +62,7 @@ class Practical(commands.Cog):
         await ctx.send(embed=embed)
 
     @translate.command(name='to')
-    async def translate_to(self, ctx: NewCtx, language: aiotranslator.to_language, *, text: str):
+    async def translate_to(self, ctx: main.NewCtx, language: aiotranslator.to_language, *, text: str):
         """Translate something to another language"""
         if not (embed := ctx.cached_data):
             embed = await self.aiotranslator.do_translation(ctx=ctx, text=text,
@@ -73,36 +71,36 @@ class Practical(commands.Cog):
 
     @commands.group(name='google', invoke_without_command=True)
     @commands.cooldown(1, 15, commands.BucketType.user)
-    async def google(self, ctx: NewCtx, *, query: str):
+    async def google(self, ctx: main.NewCtx, *, query: str):
         """Searches something on google"""
         is_nsfw = ctx.channel.is_nsfw()
         ctx.cache_key += [is_nsfw]
-        
+
         if not (source := ctx.cached_data):
-            
+
             source = await self.aiogoogle.do_search(ctx, query=query, is_nsfw=is_nsfw)
-            
+
         menu = menus.MenuPages(source, clear_reactions_after=True)
         await menu.start(ctx)
-    
+
     @google.command(name='image', aliases=['-i'])
     @commands.cooldown(1, 15, commands.BucketType.user)
-    async def google_image(self, ctx, *, query: str):
+    async def google_image(self, ctx: main.NewCtx, *, query: str):
         """Searches an image on google"""
         is_nsfw = ctx.channel.is_nsfw()
         ctx.cache_key += [is_nsfw]
-        
-        if not (source := ctx.cached_data):    
+
+        if not (source := ctx.cached_data):
             source = await self.aiogoogle.do_search(ctx, query=query, is_nsfw=is_nsfw,
                                                     image_search=True)
-        
+
         menu = menus.MenuPages(source, clear_reactions_after=True)
-        
+
         await menu.start(ctx)
-    
+
     @commands.command(name='screenshot')
     @commands.cooldown(1, 15, commands.BucketType.user)
-    async def screenshot(self, ctx, url: str):
+    async def screenshot(self, ctx: main.NewCtx, url: str):
         """Screenshots a website"""
         is_nsfw = ctx.channel.is_nsfw()
         ctx.cache_key += [is_nsfw]
@@ -115,7 +113,7 @@ class Practical(commands.Cog):
             response = await self.aioscreen.fetch_snapshot(url)
             embed = self.aioscreen.format_snapshot(response=response, is_nsfw=is_nsfw)
 
-            ctx.add_to_cache(embed, timeout=timedelta(minutes=5))
+            ctx.add_to_cache(embed, timeout=datetime.timedelta(minutes=5))
 
         await ctx.send(embed=embed)
 

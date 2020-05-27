@@ -23,19 +23,19 @@ SOFTWARE.
 """
 
 import colorsys
-from datetime import datetime
-from io import BytesIO
+import datetime
+import io
 import random
 from typing import Union
 
+import discord
 from discord.ext import commands
-from discord import Colour, Embed, File
 from PIL import Image
 
 from main import NewCtx
-from utils.formatters import BetterEmbed
+from utils import formatters
 
-random.seed(datetime.utcnow())
+random.seed(datetime.datetime.utcnow())
 
 
 class Other(commands.Cog):
@@ -68,10 +68,12 @@ class Other(commands.Cog):
 
         total = sum(counter)
 
-        embed = BetterEmbed()
-        embed.description = f"{dice} gave {', '.join([str(die) for die in counter])} = {total}"
+        embed = formatters.BetterEmbed()
+        embed.description = f"{dice} gave {', '.join([str(die) for die in counter])} = {total} with {crit_s} crit successes and {crit_f} fails"
+
         embed.add_field(name='Critical Successes; ', value=str(crit_s), inline=True)
         embed.add_field(name='Critical Failures; ', value=str(crit_f), inline=True)
+
 
         await ctx.send(embed=embed)
 
@@ -89,7 +91,7 @@ class Other(commands.Cog):
         else:
             number = random.randint(start, stop)
 
-        embed = BetterEmbed()
+        embed = formatters.BetterEmbed()
         embed.description = f"Number between **{start}** and **{stop}**\n{number}"
 
         await ctx.send(embed=embed)
@@ -97,7 +99,7 @@ class Other(commands.Cog):
     @_random.command(name='colour')
     async def _rand_colour(self, ctx: NewCtx):
         """Generates a random colour, displaying its representation in Hex, RGB and HSV values"""
-        col = Colour.from_rgb(*[random.randint(0, 255) for _ in range(3)])
+        col = discord.Colour.from_rgb(*[random.randint(0, 255) for _ in range(3)])
         hex_v = hex(col.value).replace('0x', '#')
 
         r, g, b = col.r, col.g, col.b
@@ -107,13 +109,13 @@ class Other(commands.Cog):
         s = round((s * 100))
         v = round((h * 100))
 
-        image_obj = Image.new('RGB', (125, 125), (r, g, b))
-        new_obj = BytesIO()
+        image_obj = Image.new('RGB', (125, 125), (r, g, b))  # ! EXECUTOR
+        new_obj = io.BytesIO()
         image_obj.save(new_obj, format='png')
         new_obj.seek(0)
-        fileout = File(new_obj, filename='file.png')
+        fileout = discord.File(new_obj, filename='file.png')
 
-        embed = Embed(colour=col, title='`Random colour: `')
+        embed = discord.Embed(colour=col, title='`Random colour: `')
         embed.description = f'Hex : {hex_v} / {hex(col.value)}\nRGB : {r}, {g}, {b}\nHSV : {h}, {s}, {v//1000}'
         embed.set_image(url="attachment://file.png")
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)

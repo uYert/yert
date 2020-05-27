@@ -53,7 +53,7 @@ class AioMagmaChain:
         try:
             results = await self.google_client.search(url, safesearch=not is_nsfw)
         except NoResults:
-            raise BadArgument(message=f"Couldn't find the url you're looking for")
+            raise BadArgument(message="Couldn't find the url you're looking for")
         else:
             return results[0].url
         

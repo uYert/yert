@@ -53,7 +53,7 @@ class Hentai(commands.Cog):
         
         await ctx.send(digits)
             
-    @commands.command(name='r34')
+    @commands.command(name='r34', aliases=['rule34'])
     @commands.is_nsfw()
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def r34(self, ctx: NewCtx, *, query: str, fuzzy: bool = False):

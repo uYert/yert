@@ -39,6 +39,7 @@ from utils.formatters import Flags, BetterEmbed
 
 random.seed(datetime.utcnow())
 
+
 class GuessWordGame:
     def __init__(self, context, difficulty):
         self.difficulty = difficulty
@@ -59,7 +60,7 @@ class GuessWordGame:
     def generate_word(self) -> str:
         word = random.choice(self.list_of_words[self.difficulty])
         self.word = word
-        guess= word[0]+" ".join('_' for _ in range(len(word)-1))
+        guess = word[0] + " ".join('_' for _ in range(len(word)-1))
         return guess
         
     async def get_input(self, text: str) -> discord.Message:
@@ -73,7 +74,7 @@ class GuessWordGame:
             return msg
         
     async def play(self):
-        new_guess =""
+        new_guess = ""
         guess = self.generate_word()
         while self.tries < len(self.word):
             print("hello")
@@ -81,20 +82,22 @@ class GuessWordGame:
             # generate a character of the word to find each try 
             n = random.randint(1,len(self.word))
             await self.context.send(f"Here's the word, try to guess it: \n`{new_guess if self.tries >1 else guess}`")
-            u_guess= await self.get_input(f"Send me your answer, you have {self.tries}/{len(self.word)} tries.\n")
+            u_guess = await self.get_input(f"Send me your answer, you have {self.tries}/{len(self.word)} tries.\n")
             # The user has won
             if u_guess.content == self.word:
                 self.win = True
                 break
             # if the char is the same on the two strings then
             # the char is correct plus randomly generates a char from the word
-            new_guess = " ".join(word[n] if n == i else x[0] if x[0]==x[1] else "_" for i,x in enumerate(zip_longest(self.word,u_guess.content)))
-            if self.tries >1:
+            new_guess = " ".join(self.word[n] if n == i else x[0] if x[0] == x[1] else "_"
+                                 for i, x in enumerate(zip_longest(self.word, u_guess.content)))
+            if self.tries > 1:
                 if len(old_guess.split("_")) <= len(new_guess.split("_")):
                     new_guess = old_guess
             old_guess = new_guess
-            self.tries +=1
+            self.tries += 1
         await self.send_message()
+
 
 class HypeSquadHouse(db.Table, table_name="hypesquad_house"):
     """
@@ -143,8 +146,8 @@ class Games(commands.Cog):
     
     @commands.command()
     @commands.cooldown(1,30, commands.BucketType.user)
-    @commands.max_conncurency(2, commands.BucketType.channel, wait= False)
-    async def guess_word(self,ctx, difficulty: str):
+    @commands.max_concurrency(2, commands.BucketType.channel, wait=False)
+    async def guess_word(self, ctx: NewCtx, difficulty: str):
         """ A guessing word game. Available difficulties: easy - medium - hard."""
         if difficulty.lower() not in ("easy","hard","medium"):
             raise commands.BadArgument(f"`{difficulty} is not a valid difficulty. Please choose a valid one.")

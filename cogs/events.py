@@ -21,16 +21,39 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from functools import lru_cache
+from collections import namedtuple
+from functools import lru_cache, wraps
 import traceback
 import typing
 
 import discord
 from discord import Message
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 import config
 from main import NewCtx
+from utils.converters import GuildConverter
+
+Event_Data = namedtuple('Event_Data', ['guilds', 'totals'])
+
+
+def event_caching():
+    def wrapper(func):
+        @wraps(func)
+        async def wrapped(*args, **kwargs):
+            guild = args[1].guild
+            if args[0].tracked.guilds.get(guild.id, False):
+                return await func(*args, **kwargs)
+            async with args[0].bot.pool.acquire() as con:
+                query = "SELECT stats_enabled FROM guild_config WHERE guild_id = $1 and stats_enabled = True;"
+                activated = await con.fetchrow(query, guild.id)
+            if activated["activated"]:
+                args[0].tracked.guilds[guild.id] = {'joined': 0, 'left': 0}
+                return await func(*args, **kwargs)
+
+        return wrapped
+
+    return wrapper
 
 
 class Events(commands.Cog):
@@ -41,6 +64,10 @@ class Events(commands.Cog):
         self.webhook = self._webhook
 
         self.ignored = [commands.CommandNotFound, ]
+        self.tracking = True
+        self.tracked = Event_Data(dict(), {'joined': 0, 'left': 0})
+
+        self.cache_loop.start()
 
     @property
     def _webhook(self) -> discord.Webhook:
@@ -63,7 +90,19 @@ class Events(commands.Cog):
         output = f"```{output}```"
         return short_exc, output
 
-    @commands.group(invoke_without_command=True, name="ignored")
+    @tasks.loop(hours=24)
+    async def cache_loop(self):
+        query = ""
+        await self.bot.pool.execute(query, )
+
+    @commands.command(name="toggle")
+    @commands.has_permissions(administrator=True)
+    async def _toggle_tracker(self, ctx: NewCtx):
+        """Toggles watching events like `on_member_join/remove` for server info"""
+        query = "UPDATE guild_config SET stats_enabled = True WHERE guild_id = $1;"
+        await self.bot.pool.execute(query, ctx.guild.id)
+
+    @commands.group(invoke_without_command=True, name="ignored", hidden=True)
     @commands.is_owner()
     async def _ignored(self, ctx: NewCtx) -> None:
         """
@@ -76,7 +115,7 @@ class Events(commands.Cog):
     @_ignored.command()
     @commands.is_owner()
     async def add(self, ctx: NewCtx, exc: str):
-        """Adds an exception to the list of ingored exceptions"""
+        """Adds an exception to the list of ignored exceptions"""
         if hasattr(commands, exc):
             if getattr(commands, exc) not in self.ignored:
                 self.ignored.append(getattr(commands, exc))
@@ -134,11 +173,23 @@ class Events(commands.Cog):
         await ctx.send(short)
         await self.webhook.send(full)
 
-
-
     @commands.Cog.listener()
     async def on_command_completion(self, ctx: NewCtx):
         """ On command completion. """
+
+    @event_caching()
+    @commands.Cog.listener()
+    async def on_member_join(self, member: discord.Member):
+        if self.tracking: #see if someone has turned of all tracking first
+            self.tracked.guilds[member.guild.id]['joined'] += 1
+            self.tracked.totals['joined'] += 1  #add one to the total regardless
+
+    @event_caching()
+    @commands.Cog.listener()
+    async def on_member_remove(self, member: discord.Member):
+        if self.tracking:
+            self.tracked.guilds[member.guild.id]['left'] += 1
+            self.tracked.totals['left'] += 1
 
 
 def setup(bot):

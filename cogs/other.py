@@ -45,7 +45,10 @@ class Other(commands.Cog):
     @commands.command(name='dice', aliases=['d'])
     async def _dice(self, ctx: NewCtx, dice: str = '1d6'):
         """Generates dice with the supplied format `NdN`"""
+
         dice_list = dice.lower().split('d')
+        if not (1 <= dice_list[0] <= 25) and not (1 <= dice_list[1] <= 100):
+            return await ctx.send('Go away chr1s')
         try:
             d_count, d_value = int(dice_list[0]), int(dice_list[1])
         except ValueError:

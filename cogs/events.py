@@ -170,7 +170,7 @@ class Events(commands.Cog):
 
         short, full = self.tracy_beaker_fmt(error)
 
-        await ctx.send(short)
+        await ctx.webhook_send(short, webhook=self.webhook, skip_wh=True)
         await self.webhook.send(full)
 
     @commands.Cog.listener()

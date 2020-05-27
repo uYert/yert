@@ -47,7 +47,7 @@ class Other(commands.Cog):
         """Generates dice with the supplied format `NdN`"""
 
         dice_list = dice.lower().split('d')
-        if not (1 <= dice_list[0] <= 25) and not (1 <= dice_list[1] <= 100):
+        if not (1 <= int(dice_list[0]) <= 25) and not (1 <= int(dice_list[1]) <= 100):
             return await ctx.send('Go away chr1s')
         try:
             d_count, d_value = int(dice_list[0]), int(dice_list[1])
@@ -69,7 +69,9 @@ class Other(commands.Cog):
         total = sum(counter)
 
         embed = BetterEmbed()
-        embed.description = f"{dice} gave {', '.join([str(die) for die in counter])} = {total} with {crit_s} crit successes and {crit_f} fails"
+        embed.description = f"{dice} gave {', '.join([str(die) for die in counter])} = {total}"
+        embed.add_field(name='Critical Successes; ', value=str(crit_s), inline=True)
+        embed.add_field(name='Critical Failures; ', value=str(crit_f), inline=True)
 
         await ctx.send(embed=embed)
 
@@ -117,6 +119,15 @@ class Other(commands.Cog):
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
 
         await ctx.send(embed=embed, file=fileout)
+
+    @commands.command(name='pep')
+    async def _pep_finder(self, ctx: NewCtx, target: int = 8):
+        """Gets the pep of your desires"""
+        if not(0 <= target <= 8101):
+            return await ctx.send('PEPs only exist between 0 and 8101.')
+        url = f"https://www.python.org/dev/peps/pep-{target:04d}/"
+        assert (await self.bot.session.get(url)).status == 200, 'PEP not found'
+        await ctx.send(f"Here you go, pep {target:04d} \n{url}")
 
 
 def setup(bot):

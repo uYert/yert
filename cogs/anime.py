@@ -32,7 +32,6 @@ from discord.ext import commands, menus
 from config import SAUCENAO_TOKEN
 from main import NewCtx
 from packages import aiojikan, aiosaucenao
-from utils import converters
 
 
 class Anime(commands.Cog):
@@ -54,7 +53,7 @@ class Anime(commands.Cog):
         if not (source := ctx.cached_data):
 
             response = await self.aiosaucenao.search(image)
-            source = ctx.add_to_cache(value=SauceNaoSource(response.results),
+            source = ctx.add_to_cache(value=aiosaucenao.Source(response.results),
                                       timeout=timedelta(hours=24))
 
         menu = menus.MenuPages(source, clear_reactions_after=True)

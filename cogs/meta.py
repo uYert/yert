@@ -167,7 +167,7 @@ class Meta(commands.Cog):
             for member in guild.members:
                 if not member.bot:
                     uniq_mem_count.add(member)
-        
+
         # {member for member in ctx.bot.get_all_members() if not member.bot}
 
         embed = BetterEmbed(title=f"About {ctx.guild.me.display_name}")

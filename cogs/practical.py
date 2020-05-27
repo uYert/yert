@@ -22,28 +22,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from typing import Optional
-from datetime import timedelta
 from collections.abc import Hashable
+from datetime import timedelta
+from typing import Optional
 
 import discord
 from discord.ext import commands, menus
 
-from main import NewCtx
-from packages.aioweather import AioWeather
 from config import GOOGLE_TOKENS, WEATHER_TOKEN
-from packages.aiomagmachain import AioMagmaChain
-from packages.aiogooglesearch import AioSearchEngine, GoogleSource
-from packages.aiotranslator import AioTranslator, check_length, to_language
+from main import NewCtx
+from packages import aiogooglesearch, aiomagmachain, aiotranslator, aioweather
 
 
 class Practical(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.aiotranslator = AioTranslator(session=bot.session)
-        self.aioweather = AioWeather(session=bot.session, api_key=WEATHER_TOKEN)
-        self.aiogoogle = AioSearchEngine(api_keys=GOOGLE_TOKENS, session=bot.session)
-        self.aioscreen = AioMagmaChain(session=bot.session, google_client=self.aiogoogle)
+        self.aioweather = aioweather.AioWeather(session=bot.session, api_key=WEATHER_TOKEN)
+        self.aiotranslator = aiotranslator.AioTranslator(session=bot.session)
+        self.aiogoogle = aiogooglesearch.AioSearchEngine(api_keys=GOOGLE_TOKENS, session=bot.session)
+        self.aioscreen = aiomagmachain.AioMagmaChain(session=bot.session, google_client=self.aiogoogle)
 
     @commands.command(name='weather')
     @commands.cooldown(1, 30, type=commands.BucketType.channel)
@@ -58,7 +55,7 @@ class Practical(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.group(name='translate', invoke_without_command=True)
-    async def translate(self, ctx: NewCtx, language: Optional[to_language] = 'auto', *, text: str):
+    async def translate(self, ctx: NewCtx, language: Optional[aiotranslator.to_language] = 'auto', *, text: str):
         """Translates from another language"""
         if not (embed := ctx.cached_data):
             # the embed is implicitely cached there, since it's used by both subcommnands
@@ -67,7 +64,7 @@ class Practical(commands.Cog):
         await ctx.send(embed=embed)
 
     @translate.command(name='to')
-    async def translate_to(self, ctx: NewCtx, language: to_language, *, text: str):
+    async def translate_to(self, ctx: NewCtx, language: aiotranslator.to_language, *, text: str):
         """Translate something to another language"""
         if not (embed := ctx.cached_data):
             embed = await self.aiotranslator.do_translation(ctx=ctx, text=text,

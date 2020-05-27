@@ -60,7 +60,7 @@ class Fun(commands.Cog):
     async def uwuify(self, ctx, *, text: str):
         """Uwuify a text"""
         if len(text) > 200:
-            return
+            raise commands.BadArgument(message='The text needs to be shorter then 200 characters')
         
         flags = uwuify.SMILEY | uwuify.YU  # lazyness 200
         await ctx.send(uwuify.uwu(text, flags=flags))

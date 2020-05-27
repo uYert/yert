@@ -55,7 +55,7 @@ class Memes(commands.Cog):
         self.bot = bot
         self.webhook = bot.get_cog("Events").webhook
 
-    @staticmethod
+    @staticmethod  #? Staticmethod and self ? 
     def _gen_embeds(self, requester: str, iterable: List[Any]) -> List[Embed]:
         embeds = []
 

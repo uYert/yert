@@ -46,8 +46,7 @@ def to_language(arg: str) -> Union[str, None]:
 def check_length(arg: str) -> str:
     """Checks the initial text and returns it"""
     if len(arg) > 200:
-        raise BadArgument(
-            message=f"Cannot translate texts longer than 200 characters")
+        raise BadArgument(message="Cannot translate texts longer than 200 characters")
     return arg
 
 

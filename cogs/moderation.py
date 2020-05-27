@@ -22,9 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from typing import Union, Optional
+from typing import Optional, Union
 
-from discord import Member, Object
+import discord
 from discord.ext import commands
 
 
@@ -41,7 +41,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
     async def ban(self, ctx: commands.Context,
-                  target: Union[Member, Object], days: Optional[int],
+                  target: Union[discord.Member, discord.Object], days: Optional[int],
                   *, reason: Optional[str]) -> None:
         """Bans the given <target> for [reason], deleting [days] of messages"""  # that good?
         days = days or self.def_days
@@ -51,7 +51,7 @@ class Moderation(commands.Cog):
     @commands.command()
     @commands.has_permissions(kick_members=True)
     @commands.bot_has_permissions(kick_members=True)
-    async def kick(self, ctx: commands.Context, target: Member, *, reason: Optional[str]) -> None:
+    async def kick(self, ctx: commands.Context, target: discord.Member, *, reason: Optional[str]) -> None:
         """Kicks the given target for a reason"""
         reason = reason or self.def_reason
         await target.kick(reason=reason)
@@ -62,12 +62,12 @@ class Moderation(commands.Cog):
     async def unban(self, ctx: commands.Context, target: int, *, reason: Optional[str]) -> None:
         """Unbans the given target"""
         reason = reason or self.def_reason
-        await ctx.guild.unban(Object(id=target), reason=reason)
+        await ctx.guild.unban(discord.Object(id=target), reason=reason)
 
     @commands.command()
     @commands.has_guild_permissions(mute_members=True)
     @commands.bot_has_guild_permissions(mute_members=True)
-    async def mute(self, ctx: commands.Context, target: Member, *, reason: Optional[str]) -> None:
+    async def mute(self, ctx: commands.Context, target: discord.Member, *, reason: Optional[str]) -> None:
         """Mutes the given target with a reason"""
         reason = reason or self.def_reason
         await target.edit(mute=True, reason=reason)
@@ -75,7 +75,7 @@ class Moderation(commands.Cog):
     @commands.command()
     @commands.has_guild_permissions(mute_members=True)
     @commands.bot_has_guild_permissions(mute_members=True)
-    async def unmute(self, ctx: commands.Context, target: Member, *, reason: Optional[str]) -> None:
+    async def unmute(self, ctx: commands.Context, target: discord.Member, *, reason: Optional[str]) -> None:
         """ Unmutes the given target with optional reason. """
         reason = reason or self.def_reason
         await target.edit(mute=False, reason=reason)

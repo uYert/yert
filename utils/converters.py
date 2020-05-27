@@ -72,6 +72,25 @@ def to_human_datetime(text: str, template: str):
     return naturaldate(datetime.strptime(text, template))
 
 
+class GuildConverter(commands.IDConverter):
+    async def convert(self, ctx, argument: str) -> discord.Guild:
+        bot = ctx.bot
+        match = self._get_id_match(argument) or re.match(r'<#([0-9]+)>$', argument)
+        result = None
+
+        if match is None:
+            def check(g): return isinstance(g, discord.Guild) and g.name == argument
+            result = discord.utils.find(check, bot.guilds)
+        else:
+            guild_id = int(match.group(1))
+            result = bot.get_guild(guild_id)
+
+        if not isinstance(result, discord.Guild):
+            raise commands.BadArgument(f"Guild {argument} not found.")
+
+        return result
+
+
 class LinkConverter(commands.PartialEmojiConverter):
     def __init__(self):
         self.png_header = b'\x89PNG\r\n\x1a\n'

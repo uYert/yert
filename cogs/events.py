@@ -77,8 +77,13 @@ class Events(commands.Cog):
         return hook
 
     @lru_cache(maxsize=15)
-    def tracy_beaker_fmt(self, error: Exception) -> typing.Tuple[str, str]:
+    def tracy_beaker_fmt(self, error: Exception) -> typing.Tuple[str, str, typing.Tuple[str, str, str]]:
         full_exc = traceback.format_exception(type(error), error, error.__traceback__)
+        listed_exc = full_exc[-2].split()
+        filename = '\\'.join(listed_exc[1].split('\\')[-3:])[:-1]
+        linenumber = str(listed_exc[3])[:-1]
+        funcname = listed_exc[5]
+        exc_info = (filename, linenumber, funcname)
         short_exc = full_exc[-1]
         full_exc = [line.replace('/home/moogs', '', 1) for line in full_exc]
         full_exc = [line.replace('C:\\Users\\aaron', '', 1) for line in full_exc]
@@ -87,8 +92,8 @@ class Events(commands.Cog):
         while len(output) >= 1990:
             idx -= 1
             output = '\n'.join(full_exc[:idx])
-        output = f"```{output}```"
-        return short_exc, output
+        output = f"```\n{output}```"
+        return short_exc, output, exc_info
 
     @tasks.loop(hours=24)
     async def cache_loop(self):
@@ -168,10 +173,9 @@ class Events(commands.Cog):
             if await self.bot.is_owner(ctx.author):
                 return await ctx.reinvoke()
 
-        short, full = self.tracy_beaker_fmt(error)
+        short, full, exc_info = self.tracy_beaker_fmt(error)
 
-        await ctx.webhook_send(short, webhook=self.webhook, skip_wh=True)
-        await self.webhook.send(full)
+        await ctx.webhook_send(short, full, exc_info, webhook=self.webhook)
 
     @commands.Cog.listener()
     async def on_command_completion(self, ctx: NewCtx):

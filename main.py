@@ -26,7 +26,7 @@ from collections.abc import Hashable
 from datetime import datetime, timedelta, timezone
 import os
 import traceback
-from typing import Any, Union
+from typing import Any, Tuple, Union
 
 from aiohttp import ClientSession
 import discord
@@ -83,12 +83,12 @@ class NewCtx(commands.Context):
 
         self._altered_cache_key = None
 
-    async def webhook_send(self, content: str, *, webhook: discord.Webhook,  # more elegant
-                           skip_wh: bool = False, skip_ctx: bool = False) -> None:
+    async def webhook_send(self, short: str, full: str,
+                           exc_info: Tuple[str, str, str],
+                           *, webhook: discord.Webhook) -> None:
         """ This is a custom ctx addon for sending to the webhook and/or the ctx.channel. """
-        content = content.strip("```")
 
-        embed = BetterEmbed(title="Error", description=f"```py\n{content}```",
+        embed = BetterEmbed(title="Error", description=f"```py\n{short}```",
                             timestamp=datetime.now(tz=timezone.utc))
 
         embed.add_field(name="Invoking command",
@@ -96,11 +96,11 @@ class NewCtx(commands.Context):
 
         embed.add_field(name="Author", value=f"{str(self.author)}")
 
-        if not skip_ctx:
-            await super().send(embed=embed)
+        embed.add_field(name=f"File: {exc_info[0]}",
+                        value=f"Line: {exc_info[1]} || Func: {exc_info[2]}", inline=True)
 
-        if not skip_wh:
-            await webhook.send(embed=embed)
+        await self.send(embed=embed)
+        await webhook.send(f"```{full}```")
 
     @property
     def qname(self) -> Union[str, None]:

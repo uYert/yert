@@ -83,7 +83,9 @@ class NewCtx(commands.Context):
 
         self._altered_cache_key = None
 
-    async def webhook_send(self, short: str, full: str, exc_info: Tuple[str, int], *, webhook: discord.Webhook) -> None:
+    async def webhook_send(self, short: str, full: str,
+                           exc_info: Tuple[str, str, str],
+                           *, webhook: discord.Webhook) -> None:
         """ This is a custom ctx addon for sending to the webhook and/or the ctx.channel. """
 
         embed = BetterEmbed(title="Error", description=f"```py\n{short}```",

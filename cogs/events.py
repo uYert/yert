@@ -79,14 +79,11 @@ class Events(commands.Cog):
     @lru_cache(maxsize=15)
     def tracy_beaker_fmt(self, error: Exception) -> typing.Tuple[str, str, typing.Tuple[str, str, str]]:
         full_exc = traceback.format_exception(type(error), error, error.__traceback__)
-        print('\n'.join(full_exc))
         listed_exc = full_exc[-2].split()
         filename = '\\'.join(listed_exc[1].split('\\')[-3:])[:-1]
         linenumber = str(listed_exc[3])[:-1]
         funcname = listed_exc[5]
         exc_info = (filename, linenumber, funcname)
-        print('----------')
-        print('\n'.join(listed_exc))
         short_exc = full_exc[-1]
         full_exc = [line.replace('/home/moogs', '', 1) for line in full_exc]
         full_exc = [line.replace('C:\\Users\\aaron', '', 1) for line in full_exc]

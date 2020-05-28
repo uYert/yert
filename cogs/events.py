@@ -80,6 +80,7 @@ class Events(commands.Cog):
     def tracy_beaker_fmt(self, error: Exception) -> typing.Tuple[str, str, typing.Tuple[str, str, str]]:
         full_exc = traceback.format_exception(type(error), error, error.__traceback__)
         listed_exc = full_exc[-2].split()
+        filename = listed_exc.replace('/', '\\')
         filename = '\\'.join(listed_exc[1].split('\\')[-3:])[:-1]
         linenumber = str(listed_exc[3])[:-1]
         funcname = listed_exc[5]
@@ -184,16 +185,12 @@ class Events(commands.Cog):
     @event_caching()
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
-        if self.tracking: #see if someone has turned of all tracking first
-            self.tracked.guilds[member.guild.id]['joined'] += 1
-            self.tracked.totals['joined'] += 1  #add one to the total regardless
+        await self.bot.pool.execute("CALL evaluate_data($1, true);", member.guild.id)
 
     @event_caching()
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
-        if self.tracking:
-            self.tracked.guilds[member.guild.id]['left'] += 1
-            self.tracked.totals['left'] += 1
+        await self.bot.pool.execute("CALL evaluate_data($1, false);", member.guild.id)
 
 
 def setup(bot):

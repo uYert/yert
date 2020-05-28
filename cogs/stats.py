@@ -51,32 +51,9 @@ class Stats(commands.Cog):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.webhook = self._webhook
-        self.ignored = [commands.CommandNotFound, ]
         self.tracking = True
         self.tracked = []
         
-    @property
-    def _webhook(self) -> discord.Webhook:
-    	wh_id, wh_token = config.WEBHOOK
-        hook = discord.Webhook.partial(
-            id=wh_id, token=wh_token, adapter=discord.AsyncWebhookAdapter(self.bot.session))
-        return hook
-
-    @lru_cache(maxsize=15)
-    def tracy_beaker_fmt(self, error: Exception) -> typing.Tuple[str, str]:
-        full_exc = traceback.format_exception(type(error), error, error.__traceback__)
-        short_exc = full_exc[-1]
-        full_exc = [line.replace("/home/moogs", "", 1) for line in full_exc]
-        full_exc = [line.replace("C:\\Users\\aaron", "", 1) for line in full_exc]
-        output = "\n".join(full_exc)
-        idx = 0
-        while len(output) >= 1990:
-            idx -= 1
-            output = "\n".join(full_exc[:idx])
-        output = f"```{output}```"
-        return short_exc, output
-
     @commands.command(name="toggle")
     @commands.has_permissions(administrator = True)
     async def _toggle_tracker(self, ctx ):
@@ -128,79 +105,16 @@ class Stats(commands.Cog):
     	JOIN seven_days ON seven_days.guild_id = left_days.guild_id
     	WHERE guild_id = $1
     	"""
-    	async with self.bot.db.acquire() as conn:
+    	async with self.bot.pool.acquire() as conn:
     		result = await conn.fetch(query, ctx.guild.id)
-    	embed = discord.Embed(colour = discord.Color.blue())
+    	embed = discord.Embed(colour= discord.Color.blue())
     	stats_joined = f"<:down:715574958176337920> {result['difference_join']}"if result['difference_join'] < 0 else f"<:up:715574974642913301> {result['difference_join']}" if  result['difference_join'] >= 0 else ""
     	stats_left = f"<:down:715574958176337920> {result['difference_left']}"if result['difference_left'] < 0 else f"<:up:715574974642913301> {result['difference_left']}" if  result['difference_left'] >= 0 else ""
-    	embed.add_field(name= "\U0001f55aStats for the last 24 hours", value = "Member joined:{result['day_joined']} {stats_joined}\nMember left: {result['day_left']}{stats_left}")
-    	embed.add_field(name = "\U0000231bStats for the last 7 days",value = "Member joined:{result['seven_joined']}\nMember left:{result['seven_left']}\nAverage joins:{result['avg_seven_joined']}\nAveragequits:{result['avg_seven_left']}")
-    	embed.add_field(name = "\U0001f5d3 Stats for the last 30 days", value="Member joined:{result['left_joined']}\nMember left:{result['left_left']}\nAverage joins:{result['avg_left_joined']}\nAveragequits:{result['avg_left_left']}")
+    	embed.add_field(name= "\U0001f55aStats for the last 24 hours",value= f"Member joined:{result['day_joined']} {stats_joined}\nMember left: {result['day_left']}{stats_left}")
+    	embed.add_field(name= "\U0000231bStats for the last 7 days",value= f"Member joined:{result['seven_joined']}\nMember left:{result['seven_left']}\nAverage joins:{result['avg_seven_joined']}\nAveragequits:{result['avg_seven_left']}")
+    	embed.add_field(name= "\U0001f5d3 Stats for the last 30 days",value=f "Member joined:{result['left_joined']}\nMember left:{result['left_left']}\nAverage joins:{result['avg_left_joined']}\nAveragequits:{result['avg_left_left']}")
     	await ctx.send(embed= embed)
- 
-    @commands.group(invoke_without_command=True, name="ignored", hidden=True)
-    @commands.is_owner()
-    async def _ignored(self, ctx ) -> None:
-        """
-        Adds or removes an exception from the list of exceptions to ignore,
-        if you want to add or remove commands.MissingRole,
-        be sure to exclude the "commands."
-        """
-        await ctx.send(", ".join([exc.__name__ for exc in self.ignored]))
-
-    @_ignored.command()
-    @commands.is_owner()
-    async def add(self, ctx , exc: str):
-        """Adds an exception to the list of ignored exceptions"""
-        if hasattr(commands, exc):
-            if getattr(commands, exc) not in self.ignored:
-                self.ignored.append(getattr(commands, exc))
-            else:
-                await ctx.webhook_send(f"commands.{exc} is already in the ignored exceptions.",
-                                       webhook=self.webhook)
-        else:
-            raise AttributeError(
-                "commands module has no attribute {0}, command aborted".format(exc))
-
-    @_ignored.command()
-    @commands.is_owner()
-    async def remove(self, ctx , exc: str):
-        """Removes an exception from the list of ingored exceptions"""
-        if hasattr(commands, exc):
-            try:
-                self.ignored.pop(self.ignored.index(
-                    getattr(commands, exc)))
-            except ValueError:
-                await ctx.webhook_send("{0} not in the ignored list of exceptions".format(exc),
-                                       webhook=self.webhook)
-        else:
-            raise AttributeError(
-                "commands module has no attribute {0}, command aborted".format(exc))
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        """ On websocket ready. """
-        
-    @commands.Cog.listener()
-    async def on_command_error(self, ctx , error: Exception):
-        """ On command errors. """
-        if hasattr(ctx.command, "on_error"):
-            return
-
-        if isinstance(error, tuple(self.ignored)):
-            return
-
-        error = getattr(error, "original", error)
-
-        if isinstance(error, commands.CommandOnCooldown):
-            if await self.bot.is_owner(ctx.author):
-                return await ctx.reinvoke()
-
-        short, full = self.tracy_beaker_fmt(error)
-
-        await ctx.send(short)
-        await self.webhook.send(full)
-
+  
     @caching()
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):

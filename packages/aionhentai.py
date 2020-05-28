@@ -25,27 +25,29 @@ SOFTWARE.
 import nhentai as _nhentai
 from asyncio import AbstractEventLoop
 from typing import Union, List
-from discord.ext.menus import ListPageSource
+from discord.ext.menus import ListPageSource, MenuPages, button, Last
 from utils.formatters import BetterEmbed
+from copy import copy
 
 class Client:
     def __init__(self, loop: AbstractEventLoop):
         self.loop = loop
-        
+
     def _str_search(self, query: str):
         """Query using a string"""
         return [*_nhentai.search(query)]
-        
+
     def _int_search(self, query: int):
         """Query using an int"""
         return _nhentai.Doujinshi(query)
-    
+
     async def search(self, query: Union[int, str]) -> List[_nhentai.Doujinshi]:
         """Searches something on nhentai"""
         if isinstance(query, str):
-            return await self.loop.run_in_executor(self._str_search(query))
+            return await self.loop.run_in_executor(None, self._str_search, query)
         elif isinstance(query, int):
-            return [await self.loop.run_in_executor(self._int_search(query))]
+            res = await self.loop.run_in_executor(None, self._int_search, query)
+            return [res, res]
 
 """
 .name = primary/english name
@@ -61,21 +63,55 @@ class Client:
 class Source(ListPageSource):
     def __init__(self, data: List[_nhentai.Doujinshi]):
         super().__init__(data, per_page=1)
-        self.is_reading = False
-    
+
     def format_page(self, menu, page: _nhentai.Doujinshi):
-        pass
-    
-    
-    
-    def format_overview(self, page: _nhentai.Doujinshi):
-        """Formats the overview page that provides general informations"""
         embed = BetterEmbed(title=f"{page.name} | {page.magic}")
-        embed.set_image(url=page.cover)
         fields = (
             ('Tags', ', '.join(page.tags), False),
             ('Japanese name', page.jname),
             ('Page amount', page.pages),
             ('Galeries id', page.gid)
         )
-        return embed.add_fields(fields)
+        return embed.set_image(url=page.cover).add_fields(fields)
+
+class _ReadingSource(ListPageSource):
+    def __init__(self, data: _nhentai.Doujinshi):
+        super().__init__(data._images, per_page=1)
+        self.data = data
+        self.current_page = 0  # hacky way to do it
+        self.template = BetterEmbed(title=f"{data.name} | {data.magic}")
+
+    def format_page(self, menu, page: str):
+        embed = self.template.copy()
+        embed.url = page
+        embed.set_image(url=page)
+        return embed.set_footer(text=f'Page {self.current_page} out of {self._max_pages}')
+
+    def get_page(self, page_number: int):
+        self.current_page = page_number
+        return super().get_page(page_number)
+
+class Menu(MenuPages):
+    def __init__(self, source: Source, **kwargs):
+        super().__init__(source, **kwargs)
+        self.backup_source = source
+        self.last_overview_page: int = 0
+
+    async def change_source(self, source, *, new_page: int = 0):
+        self._source = source
+        self.current_page = new_page
+        if self.message is not None:
+            await source._prepare_once()
+            await self.show_page(new_page)
+
+    @button('📖', position=Last(5))
+    async def open_doujin(self, payload):
+        self.last_overview_page = self.current_page
+        data = self.source.entries[self.current_page]
+        await self.change_source(_ReadingSource(data))
+
+    @button('↩️', position=Last(6))
+    async def return_to_overview(self, payload):
+        """Returns to overview mode"""
+        await self.change_source(self.backup_source,
+                                 new_page=self.last_overview_page)

@@ -80,8 +80,8 @@ class Events(commands.Cog):
     def tracy_beaker_fmt(self, error: Exception) -> typing.Tuple[str, str, typing.Tuple[str, str, str]]:
         full_exc = traceback.format_exception(type(error), error, error.__traceback__)
         listed_exc = full_exc[-2].split()
-        filename = listed_exc.replace('/', '\\')
-        filename = '\\'.join(listed_exc[1].split('\\')[-3:])[:-1]
+        filename = listed_exc[1].replace('/', '\\')
+        filename = '\\'.join(filename.split('\\')[-3:])[:-1]
         linenumber = str(listed_exc[3])[:-1]
         funcname = listed_exc[5]
         exc_info = (filename, linenumber, funcname)

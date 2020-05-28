@@ -57,7 +57,7 @@ class Anime(commands.Cog):
             source = ctx.add_to_cache(value=aiosaucenao.Source(response.results),
                                       timeout=datetime.timedelta(hours=24))
 
-        menu = menus.MenuPages(source, clear_reactions_after=True)
+        menu = menus.MenuPages(source, delete_message_after=True)
 
         # The menu isn't cached to allow for changes, as the cache is
         # tied to the bot and not the cog
@@ -103,7 +103,7 @@ class Anime(commands.Cog):
 
             source = aiojikan.Source(response.results, is_nsfw=is_nsfw)
 
-            menu = menus.MenuPages(source, clear_reactions_after=True)
+            menu = menus.MenuPages(source, delete_message_after=True)
 
             await menu.start(ctx)
 

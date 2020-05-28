@@ -66,7 +66,7 @@ class Hentai(commands.Cog):
         response = await self.aionhentai.search(doujin)
         source = aionhentai.Source(response)
         
-        menu = aionhentai.Menu(source, clear_reactions_after=True)
+        menu = aionhentai.Menu(source, delete_message_after=True)
         await menu.start(ctx)
 
 
@@ -81,7 +81,7 @@ class Hentai(commands.Cog):
 
         random.shuffle(results)  # the api returns a *lot* of results
         source = r34.R34Source(results, query)
-        menu = menus.MenuPages(source, clear_reactions_after=True)
+        menu = menus.MenuPages(source, delete_message_after=True)
         await menu.start(ctx)
 
 

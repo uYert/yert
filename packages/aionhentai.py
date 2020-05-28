@@ -58,12 +58,20 @@ class Client:
 """
 
 
-class OverviewSource(ListPageSource):
+class Source(ListPageSource):
     def __init__(self, data: List[_nhentai.Doujinshi]):
         super().__init__(data, per_page=1)
+        self.is_reading = False
     
     def format_page(self, menu, page: _nhentai.Doujinshi):
+        pass
+    
+    
+    
+    def format_overview(self, page: _nhentai.Doujinshi):
+        """Formats the overview page that provides general informations"""
         embed = BetterEmbed(title=f"{page.name} | {page.magic}")
+        embed.set_image(url=page.cover)
         fields = (
             ('Tags', ', '.join(page.tags), False),
             ('Japanese name', page.jname),
@@ -71,5 +79,3 @@ class OverviewSource(ListPageSource):
             ('Galeries id', page.gid)
         )
         return embed.add_fields(fields)
-    
-    

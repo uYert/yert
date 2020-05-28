@@ -61,7 +61,7 @@ class Hentai(commands.Cog):
     @commands.is_nsfw()
     async def nhentai(self, ctx, doujin: Union[int, str] = None):
         if doujin is None:
-            doujin = await self._get_random_nhentai()
+            _, doujin = await self._get_random_nhentai()
         
         response = await self.aionhentai.search(doujin)
         source = aionhentai.Source(response)

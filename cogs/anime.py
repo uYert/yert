@@ -23,7 +23,7 @@ SOFTWARE.
 """
 
 import asyncio
-from datetime import timedelta
+import datetime
 from typing import Union
 
 import discord
@@ -42,6 +42,7 @@ class Anime(commands.Cog):
         self.create_mal_commands()
 
     @commands.command(name='saucenao')
+    @commands.is_nsfw()
     @commands.cooldown(7, 30, commands.BucketType.default)
     async def saucenao(self, ctx: NewCtx,
                        target: Union[discord.Member, discord.User, discord.Message] = None):
@@ -54,7 +55,7 @@ class Anime(commands.Cog):
 
             response = await self.aiosaucenao.search(image)
             source = ctx.add_to_cache(value=aiosaucenao.Source(response.results),
-                                      timeout=timedelta(hours=24))
+                                      timeout=datetime.timedelta(hours=24))
 
         menu = menus.MenuPages(source, clear_reactions_after=True)
 
@@ -98,7 +99,7 @@ class Anime(commands.Cog):
                 await self._check_api_cooldowns(ctx)
 
                 response = await self.aiojikan.search(ctx.command.name, query)
-                ctx.add_to_cache(response, timeout=timedelta(hours=24))
+                ctx.add_to_cache(response, timeout=datetime.timedelta(hours=24))
 
             source = aiojikan.Source(response.results, is_nsfw=is_nsfw)
 

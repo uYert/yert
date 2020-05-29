@@ -183,9 +183,10 @@ class Bot(commands.Bot):
 
         return await super().connect(reconnect=reconnect)
 
-    async def before_invoke(self, ctx):
+    async def before_invoke(self, ctx: NewCtx):
         """Nothing too important"""
-        await ctx.trigger_typing()
+        if ctx.invoked_subcommand is not None:
+            await ctx.trigger_typing()
 
     # ! Discord stuff
     async def get_context(self, message: discord.Message, *, cls=None):

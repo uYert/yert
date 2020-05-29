@@ -49,17 +49,6 @@ class Client:
             res = await self.loop.run_in_executor(None, self._int_search, query)
             return [res, res]
 
-"""
-.name = primary/english name
-.jname = secondary/non english name
-.tags = a list of numerical tags
-.magic = magic number/id
-.cover = cover(thumbnail)
-.gid = /galleries/ id for page lookup
-.pages = number of pages
-"""
-
-
 class Source(ListPageSource):
     def __init__(self, data: List[_nhentai.Doujinshi]):
         super().__init__(data, per_page=1)

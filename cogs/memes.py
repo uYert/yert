@@ -55,7 +55,6 @@ class Memes(commands.Cog):
         self.bot = bot
         self.webhook = bot.get_cog("Events").webhook
 
-    @staticmethod  #? Staticmethod and self ? 
     def _gen_embeds(self, requester: str, iterable: List[Any]) -> List[Embed]:
         embeds = []
 
@@ -92,7 +91,7 @@ class Memes(commands.Cog):
         return embeds[:15]
 
     @commands.command()
-    @commands.max_concurrency(3, commands.BucketType.channel, wait=False)
+    @commands.max_concurrency(1, commands.BucketType.channel, wait=False)
     async def reddit(self, ctx: NewCtx,
                      sub: str = 'memes',
                      sort: str = 'hot'):
@@ -156,8 +155,7 @@ class Memes(commands.Cog):
                             )
 
             posts.add(_post)
-        embeds = self._gen_embeds(
-            ctx.author, list(posts))
+        embeds = self._gen_embeds(ctx.author, list(posts))
         pages = menus.MenuPages(PagedEmbedMenu(embeds))
         await pages.start(ctx)
 

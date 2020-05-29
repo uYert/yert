@@ -50,10 +50,24 @@ class Client:
             return [res, res]
 
 class Source(ListPageSource):
+    
+    def _filter_doujins(self, data: List[_nhentai.Doujinshi]):
+        """Removes some dubious tags"""
+        for doujin in data:
+            for tag in doujin.tags:
+                if any([True for t in ('loli', 'shota') if t in tag.lower()]):
+                    break
+            else:
+                yield doujin
+    
     def __init__(self, data: List[_nhentai.Doujinshi]):
-        super().__init__(data, per_page=1)
+        filtered = [*self._filter_doujins(data)] or ["No results"]
+        super().__init__(filtered, per_page=1)
 
-    def format_page(self, menu, page: _nhentai.Doujinshi):
+    def format_page(self, menu, page: Union[_nhentai.Doujinshi, str]):
+        if isinstance(page, str):
+            return page
+        
         embed = BetterEmbed(title=f"{page.name} | {page.magic}")
         fields = (
             ('Tags', ', '.join(page.tags), False),

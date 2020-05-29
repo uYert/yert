@@ -8,6 +8,9 @@ PSQL_DETAILS = "postgres://<user>:<password>@<IP/Addr>:<Port>/<database_name>"
 WEBHOOK = (710260377199575072,
            "rJASHh1omoW7F8AAPHqh2gGTG_gNIZ6ZC1G2FMRDXPPcDa99")
 
+#? The suggestion channel's id
+SUGGESTION = 20720575720570274042024024422042422
+
 # ? travitia
 TRAVITIA_TOKEN = "vEyN:grf"
 

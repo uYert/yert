@@ -28,9 +28,11 @@ from contextlib import suppress
 from textwrap import dedent
 from time import perf_counter
 
+import config
 import discord
 from discord.ext import commands
 import humanize
+import main
 
 from utils.formatters import BetterEmbed, Flags
 from utils.converters import BetterUserConverter
@@ -201,6 +203,27 @@ class Meta(commands.Cog):
             .set_thumbnail(url=user.avatar_url_as(static_format='png'))
         embed.add_field(name='Info', value=f'Account Created: {humanize.naturaltime(user.created_at)}')
         await ctx.send(embed=embed)
+        
+    @commands.command()
+    async def suggest(self, ctx: main.NewCtx, *, suggestion: str):
+        if len(suggestion) >= 1000:
+            raise commands.BadArgument(message="Cannot forward suggestions longer than 1000 characters")
+        
+        embed = BetterEmbed(title='Suggestion', description=suggestion)
+        
+        fields = (
+            ('Guild', f"{ctx.guild.name} ({ctx.guild.id})"),
+            ('Channel', f"{ctx.channel.name} ({ctx.channel.id})"),
+            ('User', f"{ctx.author} ({ctx.author.id})")
+        )
+
+        channel = self.bot.get_channel(config.SUGGESTION)
+        await channel.send(embed=embed.add_fields(fields))
+
+        with suppress(discord.DiscordException):
+            await ctx.message.delete()
+        
+        await ctx.send('Thank you for your suggestion')
 
 
 def setup(bot):

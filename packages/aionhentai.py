@@ -49,9 +49,7 @@ class Client:
             res = await self.loop.run_in_executor(None, self._int_search, query)
             return [res, res]
 
-class Source(ListPageSource):
-    
-    def _filter_doujins(self, data: List[_nhentai.Doujinshi]):
+    def filter_doujins(self, data: List[_nhentai.Doujinshi]):
         """Removes some dubious tags"""
         for doujin in data:
             for tag in doujin.tags:
@@ -59,10 +57,11 @@ class Source(ListPageSource):
                     break
             else:
                 yield doujin
+
+class Source(ListPageSource):
     
-    def __init__(self, data: List[_nhentai.Doujinshi]):
-        filtered = [*self._filter_doujins(data)] or ["No results"]
-        super().__init__(filtered, per_page=1)
+    def __init__(self, data: Union[List[_nhentai.Doujinshi], List[str]]):
+        super().__init__(data, per_page=1)
 
     def format_page(self, menu, page: Union[_nhentai.Doujinshi, str]):
         if isinstance(page, str):

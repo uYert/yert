@@ -60,11 +60,20 @@ class Hentai(commands.Cog):
     @commands.command(name='nhentai', aliases=['doujin', 'doujins'])
     @commands.is_nsfw()
     async def nhentai(self, ctx, doujin: Union[int, str] = None):
+        """
+        Displays a doujin from nhentai
+        If no doujin is provided, a random one will be selected
+        """
         if doujin is None:
-            _, doujin = await self._get_random_nhentai()
+            while not doujin:
+                _, doujin_id = await self._get_random_nhentai()
+                response = await self.aionhentai.search(doujin_id)
+                doujin = [*self.aionhentai.filter_doujins(response)]
+        else:
+            response = await self.aionhentai.search(doujin)
+            doujin = [*self.aionhentai.filter_doujins(response)] or ['No results']
         
-        response = await self.aionhentai.search(doujin)
-        source = aionhentai.Source(response)
+        source = aionhentai.Source(doujin)
         
         menu = aionhentai.Menu(source, delete_message_after=True)
         await menu.start(ctx)

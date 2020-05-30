@@ -6,7 +6,5 @@ Pipfile
 Pipfile.lock
 
 ## Umbra ignores
-shitpostbot.pm2config.json
-test.py
-tox.ini
-sample.py
+yoink.pm2config.json
+Pipfile.lock

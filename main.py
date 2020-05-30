@@ -62,7 +62,7 @@ class NewCtx(commands.Context):
     # typehinted copypaste of the default init ## pylint: disable=super-init-not-called
     def __init__(self, **attrs):
         self.message: Union[discord.Message, None] = attrs.pop('message', None)
-        self.bot: Union[Bot, None] = attrs.pop('bot', None)
+        self.bot: Bot = attrs.pop('bot', None)
 
         self.args: list = attrs.pop('args', [])
         self.kwargs: dict = attrs.pop('kwargs', {})

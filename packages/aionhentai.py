@@ -59,9 +59,9 @@ class Client:
                 yield doujin
 
 class Source(ListPageSource):
-    
     def __init__(self, data: Union[List[_nhentai.Doujinshi], List[str]]):
         super().__init__(data, per_page=1)
+        self.last_viewed_page = 0
 
     def format_page(self, menu, page: Union[_nhentai.Doujinshi, str]):
         if isinstance(page, str):
@@ -76,18 +76,21 @@ class Source(ListPageSource):
         )
         return embed.set_image(url=page.cover).add_fields(fields)
 
+    def get_page(self, page_number: int):
+        self.current_page = page_number
+        return super().get_page(page_number)
+
 class _ReadingSource(ListPageSource):
     def __init__(self, data: _nhentai.Doujinshi):
         super().__init__(data._images, per_page=1)
         self.data = data
-        self.current_page = 0  # hacky way to do it
         self.template = BetterEmbed(title=f"{data.name} | {data.magic}")
 
-    def format_page(self, menu, page: str):
+    def format_page(self, menu: MenuPages, page: str):
         embed = self.template.copy()
         embed.url = page
         embed.set_image(url=page)
-        return embed.set_footer(text=f'Page {self.current_page} out of {self._max_pages}')
+        return embed.set_footer(text=f'Page {menu.current_page} out of {self.get_max_pages()}')
 
     def get_page(self, page_number: int):
         self.current_page = page_number
@@ -97,23 +100,21 @@ class Menu(MenuPages):
     def __init__(self, source: Source, **kwargs):
         super().__init__(source, **kwargs)
         self.backup_source = source
-        self.last_overview_page: int = 0
 
-    async def change_source(self, source, *, new_page: int = 0):
+    async def change_source(self, source, *, at_index: int = 0):
         self._source = source
-        self.current_page = new_page
+        self.current_page = at_index
         if self.message is not None:
             await source._prepare_once()
-            await self.show_page(new_page)
+            await self.show_page(at_index)
 
     @button('📖', position=Last(5))
     async def open_doujin(self, payload):
-        self.last_overview_page = self.current_page
         data = self.source.entries[self.current_page]
         await self.change_source(_ReadingSource(data))
 
     @button('↩️', position=Last(6))
     async def return_to_overview(self, payload):
         """Returns to overview mode"""
-        await self.change_source(self.backup_source,
-                                 new_page=self.last_overview_page)
+        source = self.backup_source
+        await self.change_source(source, at_index=source.last_viewed_page)

@@ -21,3 +21,4 @@ rule34
 nhentai.py
 bs4
 lxml
+uwuify

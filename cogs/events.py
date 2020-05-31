@@ -78,7 +78,8 @@ class Events(commands.Cog):
 
     @lru_cache(maxsize=15)
     def tracy_beaker_fmt(self, error: Exception) -> typing.Tuple[str, str, typing.Tuple[str, str, str]]:
-        full_exc = traceback.format_exception(type(error), error, error.__traceback__)
+        full_exc = traceback.format_exception(
+            type(error), error, error.__traceback__)
         listed_exc = full_exc[-2].split()
         filename = listed_exc[1].replace('/', '\\')
         filename = '\\'.join(filename.split('\\')[-3:])[:-1]
@@ -87,7 +88,8 @@ class Events(commands.Cog):
         exc_info = (filename, linenumber, funcname)
         short_exc = full_exc[-1]
         full_exc = [line.replace('/home/moogs', '', 1) for line in full_exc]
-        full_exc = [line.replace('C:\\Users\\aaron', '', 1) for line in full_exc]
+        full_exc = [line.replace('C:\\Users\\aaron', '', 1)
+                    for line in full_exc]
         output = '\n'.join(full_exc)
         idx = 0
         while len(output) >= 1990:
@@ -191,6 +193,30 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
         await self.bot.pool.execute("CALL evaluate_data($1, false);", member.guild.id)
+
+    @commands.Cog.listener()
+    async def on_guild_join(self, guild):
+        embed = discord.Embed(title="New Guild", colour=discord.Colour.green())
+        embed.add_field(name='Name', value=guild.name)
+        embed.add_field(name='ID', value=guild.id)
+        embed.add_field(name='Shard ID', value=guild.shard_id or 'N/A')
+        embed.add_field(
+            name='Owner', value=f'{guild.owner} (ID: {guild.owner.id})')
+
+        bots = sum(m.bot for m in guild.members)
+        total = guild.member_count
+        online = sum(m.status is discord.Status.online for m in guild.members)
+        embed.add_field(name='Members', value=str(total))
+        embed.add_field(name='Bots', value=f'{bots} ({bots/total:.2%})')
+        embed.add_field(name='Online', value=f'{online} ({online/total:.2%})')
+
+        if guild.icon:
+            embed.set_thumbnail(url=guild.icon_url)
+
+        if guild.me:
+            embed.timestamp = guild.me.joined_at
+
+        await self.webhook.send(embed=embed)
 
 
 def setup(bot):

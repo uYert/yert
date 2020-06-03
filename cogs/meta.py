@@ -192,8 +192,8 @@ class Meta(commands.Cog):
 
     @commands.command()
     async def userinfo(self, ctx, *, user: BetterUserConverter = None):
-        flags = Flags(user.http_dict['public_flags']).flags
         user = user.obj
+        flags = [flag for flag, value in [*user.public_flags] if value]
         user_info = UserInfo(user)
         badges = [badge_mapping.get(f) for f in flags]
         if user_info.is_nitro:

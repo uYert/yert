@@ -53,6 +53,7 @@ COGS = (
     "cogs.moderation",
     "cogs.practical",
     "cogs.other",
+    "cogs.stats",
 )
 
 

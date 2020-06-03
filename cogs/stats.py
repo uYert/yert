@@ -21,10 +21,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
+from datetime import datetime
 from functools import wraps
+
 import discord
 from discord.ext import commands
+
+
+class DataNotFound(commands.CommandError):
+    pass
+
 
 def caching():
     def wrapper(func):
@@ -36,7 +42,7 @@ def caching():
             async with args[0].bot.pool.acquire() as con:
                 query = """SELECT stats_enabled AS activated FROM guild_config WHERE guild_id= $1 """
                 activated = await con.fetchrow(query, guild.id)
-            if activated["activated"]:
+            if activated and activated["activated"]:
                 args[0].tracked.append(guild.id)
                 return await func(*args, **kwargs)
         return wrapped
@@ -50,34 +56,34 @@ class Stats(commands.Cog):
         self.tracked = []
         
     @commands.command()
-    @commands.has_permissions(administrator = True)
+    @commands.has_permissions(administrator=True)
     async def enable_stats(self, ctx):
         self.tracked.append(ctx.guild.id)
-    query = """
-    INSERT INTO guild_config(guild_id)
-    VALUES($1)
-    ON CONFLICT (guild_id)
-    DO UPDATE SET stats_enabled = true
-    """
+        query = """
+                INSERT INTO guild_config(guild_id, stats_enabled)
+                VALUES($1, true)
+                ON CONFLICT (guild_id)
+                DO UPDATE SET stats_enabled = true
+                """
         await self.bot.pool.execute(query, ctx.guild.id)
         await ctx.send("The stats were successfully activated for this server.")
-    
 
     @commands.command()
-    @commands.has_permissions(administrator = True)
+    @commands.has_permissions(administrator=True)
     async def disable_stats(self, ctx):
         self.tracked.remove(ctx.guild.id)
-    query = """
-    INSERT INTO guild_config(guild_id)
-    VALUES($1)
-    ON CONFLICT (guild_id)
-    DO UPDATE SET stats_enabled = false
-    """
+        query = """
+                INSERT INTO guild_config(guild_id, stats_enabled)
+                VALUES($1, false)
+                ON CONFLICT (guild_id)
+                DO UPDATE SET stats_enabled = false
+                """
         await self.bot.pool.execute(query, ctx.guild.id)
         await ctx.send("The stats were successfully disabled for this server.")
     
     @commands.command()
     @commands.cooldown(1, 15, commands.BucketType.guild)
+    @commands.has_permissions(administrator=True)
     @caching()
     async def show_stats(self, ctx):
         query = """
@@ -119,15 +125,45 @@ class Stats(commands.Cog):
         INNER JOIN seven_days ON seven_days.guild_id = left_days.guild_id
         WHERE left_days.guild_id = $1
         """
-        async with self.bot.db.acquire() as conn:
+        async with self.bot.pool.acquire() as conn:
             result = await conn.fetchrow(query, ctx.guild.id)
+        if result is None:
+            raise DataNotFound("Data was not found in the database")
         embed = discord.Embed(colour=discord.Color.blurple(), timestamp=datetime.now())
         embed.set_thumbnail(url=ctx.guild.icon_url)
-        stats_joined = f"<:down:715574958176337920> {result['difference_join']}"if result['difference_join'] < 0 else f"<:up:715574974642913301> {result['difference_join']}" if  result['difference_join'] >= 0 else ""
-        stats_left = f"<:down:715574958176337920> {result['difference_left']}"if result['difference_left'] < 0 else f"<:up:715574974642913301> {result['difference_left']}" if  result['difference_left'] >= 0 else ""
-        embed.add_field(name="\U0001f55aStats for the last 24 hours", value=f"Members who have joined:{result['day_joined']} {stats_joined}\nMembers who have left: {result['day_left']}{stats_left}")
-        embed.add_field(name="\U0000231bStats for the last 7 days", value=f"Members who have joined:{result['seven_joined']}\nMembers who have left:{result['seven_left']}\nAverage joins:{result['avg_joined_seven']}\nAveragequits:{result['avg_joined_seven']}")
-        embed.add_field(name="\U0001f5d3 Stats for the last 30 days", value=f"Members who have joined:{result['left_joined']}\nMembers who have left:{result['left_left']}\nAverage joins:{result['avg_joined_left']}\nAverage quits:{result['avg_left_left']}")
+        up_arrow = "<:up:715574974642913301>"
+        down_arrow = "<:down:715574958176337920>"
+        stats_joined = ""
+        stats_left = ""
+        if d_join := (result['difference_join']):
+            if d_join < 0:
+                stats_joined = f"{down_arrow} {d_join}"
+            else:
+                stats_joined = f"{up_arrow} {d_join}"
+        if d_left := (result['difference_left']):
+            if d_left < 0:
+                stats_left = f"{down_arrow} {d_left}"
+            else:
+                stats_left = f"{up_arrow} {d_left}"
+        embed.add_field(
+            name="\U0001f55aStats for the last 24 hours",
+            value=f"Members who have joined:{result['day_joined']} {stats_joined}\n"
+                  f"Members who have left: {result['day_left']}{stats_left}"
+        )
+        embed.add_field(
+            name="\U0000231bStats for the last 7 days",
+            value=f"Members who have joined:{result['seven_joined']:.1f}\n"
+                  f"Members who have left:{result['seven_left']:.1f}\n"
+                  f"Average joins:{result['avg_joined_seven']:.1f}\n"
+                  f"Average quits:{result['avg_joined_seven']:.1f}"
+        )
+        embed.add_field(
+            name="\U0001f5d3 Stats for the last 30 days",
+            value=f"Members who have joined:{result['left_joined']:.1f}\n"
+                  f"Members who have left:{result['left_left']:.1f}\n"
+                  f"Average joins:{result['avg_joined_left']:.1f}\n"
+                  f"Average quits:{result['avg_left_left']:.1f}"
+        )
         await ctx.send(embed=embed)
   
     @caching()

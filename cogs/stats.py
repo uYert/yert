@@ -52,88 +52,88 @@ class Stats(commands.Cog):
     @commands.command()
     @commands.has_permissions(administrator = True)
     async def enable_stats(self, ctx):
-    	self.tracked.append(ctx.guild.id)
-	query = """
-	INSERT INTO guild_config(guild_id)
-	VALUES($1)
-	ON CONFLICT (guild_id)
-	DO UPDATE SET stats_enabled = true
-	"""
-    	await self.bot.pool.execute(query, ctx.guild.id)
-    	await ctx.send("The stats were successfully activated for this server.")
-	
+        self.tracked.append(ctx.guild.id)
+    query = """
+    INSERT INTO guild_config(guild_id)
+    VALUES($1)
+    ON CONFLICT (guild_id)
+    DO UPDATE SET stats_enabled = true
+    """
+        await self.bot.pool.execute(query, ctx.guild.id)
+        await ctx.send("The stats were successfully activated for this server.")
+    
 
     @commands.command()
     @commands.has_permissions(administrator = True)
     async def disable_stats(self, ctx):
-    	self.tracked.remove(ctx.guild.id)
-	query = """
-	INSERT INTO guild_config(guild_id)
-	VALUES($1)
-	ON CONFLICT (guild_id)
-	DO UPDATE SET stats_enabled = false
-	"""
-    	await self.bot.pool.execute(query, ctx.guild.id)
-    	await ctx.send("The stats were successfully disabled for this server.")
-	
+        self.tracked.remove(ctx.guild.id)
+    query = """
+    INSERT INTO guild_config(guild_id)
+    VALUES($1)
+    ON CONFLICT (guild_id)
+    DO UPDATE SET stats_enabled = false
+    """
+        await self.bot.pool.execute(query, ctx.guild.id)
+        await ctx.send("The stats were successfully disabled for this server.")
+    
     @commands.command()
     @commands.cooldown(1, 15, commands.BucketType.guild)
     @caching()
     async def show_stats(self, ctx):
-    	query = """
-    	WITH one_day AS(
-	    	SELECT guild_id, 
-	    	joined_numb AS "day_joined",
-	    	left_numb AS "day_left",
-	    	joined_numb - (SELECT joined_numb FROM stats WHERE  age(now(), days) BETWEEN INTERVAL '1 DAY' AND '2 DAYS') AS "difference_join",
-	    	left_numb - (SELECT left_numb FROM stats WHERE age(now(),days) BETWEEN INTERVAL '1 DAY' AND '2 DAYS') AS "difference_left"
-	    	FROM stats
-	    	WHERE age(days) <= INTERVAL '1 days'
-    	),
-    	seven_days AS(
-	    	SELECT guild_id,
-	    	SUM(joined_numb) AS "seven_joined",
-	    	SUM(left_numb) AS "seven_left",
-	    	AVG(joined_numb) AS "avg_joined_seven",
-	    	AVG(left_numb) AS "avg_left_seven"
-	    	FROM stats
-	    	WHERE age(now(), days) <= INTERVAL '7day'
-	    	GROUP BY guild_id
-    	),
-    	left_days AS(
-	    	SELECT guild_id,
-	    	SUM(joined_numb) AS "left_joined",
-	    	SUM(left_numb) AS "left_left",
-	    	AVG(joined_numb) AS "avg_joined_left",
-	    	AVG(left_numb) AS "avg_left_left"
-	    	FROM stats
-	    	WHERE age(now(), days) <= INTERVAL '30 days'
-	    	GROUP BY guild_id
-    	)
-    	SELECT 
-    	one_day.*,
-    	left_days.*,
-    	seven_days.*
-    	FROM left_days
-    	INNER JOIN one_day ON one_day.guild_id = left_days.guild_id
-    	INNER JOIN seven_days ON seven_days.guild_id = left_days.guild_id
-    	WHERE left_days.guild_id = $1
-    	"""
-    	async with self.bot.db.acquire() as conn:
-    		result = await conn.fetchrow(query, ctx.guild.id)
-    	embed = discord.Embed(colour=discord.Color.blurple(), timestamp=datetime.now())
-    	embed.set_thumbnail(url=ctx.guild.icon_url)
-    	stats_joined = f"<:down:715574958176337920> {result['difference_join']}"if result['difference_join'] < 0 else f"<:up:715574974642913301> {result['difference_join']}" if  result['difference_join'] >= 0 else ""
-    	stats_left = f"<:down:715574958176337920> {result['difference_left']}"if result['difference_left'] < 0 else f"<:up:715574974642913301> {result['difference_left']}" if  result['difference_left'] >= 0 else ""
-    	embed.add_field(name="\U0001f55aStats for the last 24 hours", value=f"Members who have joined:{result['day_joined']} {stats_joined}\nMembers who have left: {result['day_left']}{stats_left}")
-    	embed.add_field(name="\U0000231bStats for the last 7 days", value=f"Members who have joined:{result['seven_joined']}\nMembers who have left:{result['seven_left']}\nAverage joins:{result['avg_joined_seven']}\nAveragequits:{result['avg_joined_seven']}")
-    	embed.add_field(name="\U0001f5d3 Stats for the last 30 days", value=f"Members who have joined:{result['left_joined']}\nMembers who have left:{result['left_left']}\nAverage joins:{result['avg_joined_left']}\nAverage quits:{result['avg_left_left']}")
-    	await ctx.send(embed=embed)
+        query = """
+        WITH one_day AS(
+            SELECT guild_id, 
+            joined_numb AS "day_joined",
+            left_numb AS "day_left",
+            joined_numb - (SELECT joined_numb FROM stats WHERE  age(now(), days) BETWEEN INTERVAL '1 DAY' AND '2 DAYS') AS "difference_join",
+            left_numb - (SELECT left_numb FROM stats WHERE age(now(),days) BETWEEN INTERVAL '1 DAY' AND '2 DAYS') AS "difference_left"
+            FROM stats
+            WHERE age(days) <= INTERVAL '1 days'
+        ),
+        seven_days AS(
+            SELECT guild_id,
+            SUM(joined_numb) AS "seven_joined",
+            SUM(left_numb) AS "seven_left",
+            AVG(joined_numb) AS "avg_joined_seven",
+            AVG(left_numb) AS "avg_left_seven"
+            FROM stats
+            WHERE age(now(), days) <= INTERVAL '7day'
+            GROUP BY guild_id
+        ),
+        left_days AS(
+            SELECT guild_id,
+            SUM(joined_numb) AS "left_joined",
+            SUM(left_numb) AS "left_left",
+            AVG(joined_numb) AS "avg_joined_left",
+            AVG(left_numb) AS "avg_left_left"
+            FROM stats
+            WHERE age(now(), days) <= INTERVAL '30 days'
+            GROUP BY guild_id
+        )
+        SELECT 
+        one_day.*,
+        left_days.*,
+        seven_days.*
+        FROM left_days
+        INNER JOIN one_day ON one_day.guild_id = left_days.guild_id
+        INNER JOIN seven_days ON seven_days.guild_id = left_days.guild_id
+        WHERE left_days.guild_id = $1
+        """
+        async with self.bot.db.acquire() as conn:
+            result = await conn.fetchrow(query, ctx.guild.id)
+        embed = discord.Embed(colour=discord.Color.blurple(), timestamp=datetime.now())
+        embed.set_thumbnail(url=ctx.guild.icon_url)
+        stats_joined = f"<:down:715574958176337920> {result['difference_join']}"if result['difference_join'] < 0 else f"<:up:715574974642913301> {result['difference_join']}" if  result['difference_join'] >= 0 else ""
+        stats_left = f"<:down:715574958176337920> {result['difference_left']}"if result['difference_left'] < 0 else f"<:up:715574974642913301> {result['difference_left']}" if  result['difference_left'] >= 0 else ""
+        embed.add_field(name="\U0001f55aStats for the last 24 hours", value=f"Members who have joined:{result['day_joined']} {stats_joined}\nMembers who have left: {result['day_left']}{stats_left}")
+        embed.add_field(name="\U0000231bStats for the last 7 days", value=f"Members who have joined:{result['seven_joined']}\nMembers who have left:{result['seven_left']}\nAverage joins:{result['avg_joined_seven']}\nAveragequits:{result['avg_joined_seven']}")
+        embed.add_field(name="\U0001f5d3 Stats for the last 30 days", value=f"Members who have joined:{result['left_joined']}\nMembers who have left:{result['left_left']}\nAverage joins:{result['avg_joined_left']}\nAverage quits:{result['avg_left_left']}")
+        await ctx.send(embed=embed)
   
     @caching()
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
-    	await self.bot.pool.execute("CALL evaluate_data($1, true)",member.guild.id)
+        await self.bot.pool.execute("CALL evaluate_data($1, true)",member.guild.id)
 
     @caching()
     @commands.Cog.listener()

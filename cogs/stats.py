@@ -49,13 +49,33 @@ class Stats(commands.Cog):
         self.tracking = True
         self.tracked = []
         
-    @commands.command(name="toggle")
+    @commands.command()
     @commands.has_permissions(administrator = True)
-    async def _toggle_tracker(self, ctx):
+    async def enable_stats(self, ctx):
     	self.tracked.append(ctx.guild.id)
-    	await self.bot.pool.execute("UPDATE guild_config SET stats_activated = true WHERE guild_id= $1", ctx.guild.id)
+	query = """
+	INSERT INTO guild_config(guild_id)
+	VALUES($1)
+	ON CONFLICT (guild_id)
+	DO UPDATE SET stats_enabled = true
+	"""
+    	await self.bot.pool.execute(query, ctx.guild.id)
     	await ctx.send("The stats were successfully activated for this server.")
+	
 
+    @commands.command()
+    @commands.has_permissions(administrator = True)
+    async def disable_stats(self, ctx):
+    	self.tracked.remove(ctx.guild.id)
+	query = """
+	INSERT INTO guild_config(guild_id)
+	VALUES($1)
+	ON CONFLICT (guild_id)
+	DO UPDATE SET stats_enabled = false
+	"""
+    	await self.bot.pool.execute(query, ctx.guild.id)
+    	await ctx.send("The stats were successfully disabled for this server.")
+	
     @commands.command()
     @commands.cooldown(1, 15, commands.BucketType.guild)
     @caching()

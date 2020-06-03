@@ -52,18 +52,17 @@ def retrieve_checks(command):
 
 
 badge_mapping = {
-    'discord_employee': '<:staff:711628736977567776>',
-    'discord_partner': '<:partner:711628720963715096>',
-    'hs_events': '<:events:711628678748045483>',
-    'hs_balance': '<:balance:711628592081272943>',
-    'hs_bravery': '<:bravery:711628626742870026>',
-    'hs_brilliance': '<:brilliance:711628635152318475>',
-    'bug_hunter_lvl1': '<:bug1:711628644518461540>',
-    'bug_hunter_lvl2': '<:bug2:711628652340707408>',
-    'verified_dev': '<:dev:711628661077573644>',
+    'staff': '<:staff:711628736977567776>',
+    'partner': '<:partner:711628720963715096>',
+    'hypesquad': '<:events:711628678748045483>',
+    'hypesquad_balance': '<:balance:711628592081272943>',
+    'hypesquad_bravery': '<:bravery:711628626742870026>',
+    'hypesquad_brilliance': '<:brilliance:711628635152318475>',
+    'bug_hunter': '<:bug1:711628644518461540>',
+    'bug_hunter_level_2': '<:bug2:711628652340707408>',
+    'verified_bot_developer': '<:dev:711628661077573644>',
     'early_supporter': '<:early:711628670032150568>'
 }
-
 
 class UserInfo:
     def __init__(self, user):
@@ -191,8 +190,8 @@ class Meta(commands.Cog):
         ))
 
     @commands.command()
-    async def userinfo(self, ctx, *, user: BetterUserConverter = None):
-        user = user.obj
+    async def userinfo(self, ctx, *, user = None):
+        user = (await BetterUserConverter().convert(ctx, user)).obj
         flags = [flag for flag, value in [*user.public_flags] if value]
         user_info = UserInfo(user)
         badges = [badge_mapping.get(f) for f in flags]

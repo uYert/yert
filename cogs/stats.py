@@ -83,7 +83,6 @@ class Stats(commands.Cog):
     
     @commands.command()
     @commands.cooldown(1, 15, commands.BucketType.guild)
-    @commands.has_permissions(administrator=True)
     @caching()
     async def show_stats(self, ctx):
         query = """

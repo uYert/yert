@@ -53,6 +53,7 @@ COGS = (
     "cogs.moderation",
     "cogs.practical",
     "cogs.other",
+    "cogs.stats",
 )
 
 
@@ -100,7 +101,7 @@ class NewCtx(commands.Context):
                         value=f"Line: {exc_info[1]} || Func: {exc_info[2]}", inline=True)
 
         await self.send(embed=embed)
-        await webhook.send(f"```{full}```")
+        await webhook.send(full)
 
     @property
     def qname(self) -> Union[str, None]:

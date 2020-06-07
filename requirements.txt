@@ -9,16 +9,16 @@ git+https://github.com/Fogapod/aiogoogletrans#egg=aiogoogletrans
 
 # Others (pypi)
 asyncpg
-async_cse
-fuzzywuzzy
-numpy
-pillow
 async_cleverbot
-gtts_token
 async_cse
-jikanpy
-rule34
-nhentai.py
 bs4
+fuzzywuzzy
+gtts_token
+jikanpy
 lxml
+numpy
+nhentai.py
+pillow
+psutil
+rule34
 uwuify

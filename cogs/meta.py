@@ -34,7 +34,7 @@ from discord.ext import commands
 import humanize
 import main
 
-from utils.formatters import BetterEmbed, Flags
+from utils.formatters import BetterEmbed
 from utils.converters import BetterUserConverter
 
 checked_perms = ['is_owner', 'guild_only', 'dm_only', 'is_nsfw']

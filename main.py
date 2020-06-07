@@ -62,7 +62,7 @@ class NewCtx(commands.Context):
 
     # typehinted copypaste of the default init ## pylint: disable=super-init-not-called
     def __init__(self, **attrs):
-        self.message: Union[discord.Message, None] = attrs.pop('message', None)
+        self.message: discord.Message = attrs.pop('message', None)
         self.bot: Bot = attrs.pop('bot', None)
 
         self.args: list = attrs.pop('args', [])
@@ -186,8 +186,7 @@ class Bot(commands.Bot):
 
     async def before_invoke(self, ctx: NewCtx):
         """Nothing too important"""
-        if ctx.invoked_subcommand is not None:
-            await ctx.trigger_typing()
+        await ctx.trigger_typing()
 
     # ! Discord stuff
     async def get_context(self, message: discord.Message, *, cls=None):
@@ -211,9 +210,8 @@ class Bot(commands.Bot):
     @property
     def pool(self):
         """ Let's not rewrite internals... """
-        if self._pool:  # ? what are we checking there
-            return self._pool
-        return None
+        return getattr(self, '_pool', None)
+    
 
 
 if __name__ == '__main__':

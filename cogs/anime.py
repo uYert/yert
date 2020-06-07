@@ -64,10 +64,11 @@ class Anime(commands.Cog):
 
         await menu.start(ctx)
 
-    @commands.group(name='mal', aliases=['myanimelist'])
+    @commands.group(name='mal', aliases=['myanimelist'], invoke_without_command=True)
     async def mal(self, ctx: NewCtx):
         """
-        My anime list related commands
+        My anime list related commands,
+        Please note that those are API dependant and might randomly stop working
         """
         await ctx.send_help(ctx.command)
 

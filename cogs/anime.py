@@ -65,11 +65,11 @@ class Anime(commands.Cog):
         await menu.start(ctx)
 
     @commands.group(name='mal', aliases=['myanimelist'])
-    async def mal(self, ctx):
+    async def mal(self, ctx: NewCtx):
         """
         My anime list related commands
         """
-        pass
+        await ctx.send_help(ctx.command)
 
     async def _check_api_cooldowns(self, ctx: NewCtx):
         """Waits and complies with the api's rate limit"""

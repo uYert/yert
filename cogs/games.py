@@ -34,7 +34,7 @@ from discord.ext import commands
 from main import Bot, NewCtx
 from packages import blackjack, roulette, connect4
 from utils import db
-from utils.formatters import Flags, BetterEmbed
+from utils.formatters import BetterEmbed
 
 random.seed(datetime.utcnow())
 
@@ -152,7 +152,7 @@ class Games(commands.Cog):
             raise commands.BadArgument(f"`{difficulty} is not a valid difficulty. Please choose a valid one.")
         await GuessWordGame(ctx,difficulty.lower()).play()
 
-    @commands.command(name='blackjack', aliases=['21'])
+    @commands.command(name='blackjack', aliases=['21'], hidden=True)
     @commands.max_concurrency(1, commands.BucketType.channel, wait=False)
     async def _blackjack(self, ctx: NewCtx, bet: int = 30):
         """Plays blackjack against the house, default bet is 30 <:peepee:712691831703601223>"""
@@ -214,7 +214,7 @@ class Games(commands.Cog):
                 other_query = self.queries['win']
                 await self.bot.pool.execute(other_query, house['wins'] + 1, house['amount'] + bet, self.bot.user.id)
 
-    @commands.command(name='start')
+    @commands.command(name='start', hidden=True)
     @commands.cooldown(1, 80, commands.BucketType.channel)
     @commands.max_concurrency(1, commands.BucketType.channel, wait=False)
     async def _begin_roulette(self, ctx: NewCtx):
@@ -234,7 +234,7 @@ class Games(commands.Cog):
         else:
             return await ctx.send("A game is already in progress here")
 
-    @commands.command(name='addbet')
+    @commands.command(name='addbet', hidden=True)
     async def _add_roulette_bet(self, ctx: NewCtx, bet: Union[int, str], amount: int):
         """Bets an amount on a specific tile or outside tile"""
         if isinstance(bet, str) and bet not in self.roulette_options:
@@ -278,7 +278,7 @@ class Games(commands.Cog):
         await original.edit(content=text, embed=embed)
 
 
-    @commands.command(name='check', aliases=['account'])
+    @commands.command(name='check', aliases=['account'], hidden=True)
     async def _check_bal(self, ctx: NewCtx, target: Optional[discord.Member]):
         """"""
         user_id = getattr(target, 'id', None) or ctx.author.id

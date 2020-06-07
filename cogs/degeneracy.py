@@ -33,7 +33,7 @@ import main
 from packages import r34, aionhentai
 from utils import formatters
 
-class Hentai(commands.Cog):
+class Degeneracy(commands.Cog):
     def __init__(self, bot: main.Bot):
         self.bot = bot
         self.aiorule34 = r34.AioRule34(session=bot.session, loop=bot.loop)
@@ -97,4 +97,4 @@ class Hentai(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Hentai(bot))
+    bot.add_cog(Degeneracy(bot))

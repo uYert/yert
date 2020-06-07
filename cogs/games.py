@@ -134,8 +134,8 @@ class Games(commands.Cog):
 
         self.queries = {'get_user_data': "SELECT * FROM game_data WHERE user_id=$1;",
                         'new_user': "INSERT INTO game_data VALUES($1, $2, $3, $4);",
-                        'win': "UPDATE game_data SET wins=$1, amount=$2 WHERE user_id=$3;",
-                        'loss': "UPDATE game_data SET losses=$1, amount=$2 WHERE user_id=$3;"}
+                        'win': "UPDATE game_data SET wins= wins+1, amount=amount+$2 WHERE user_id=$3;",
+                        'loss': "UPDATE game_data SET losses=losses+1, amount=amount-$2 WHERE user_id=$3;"}
 
         self.roulette_games = dict()
 
@@ -153,32 +153,31 @@ class Games(commands.Cog):
             raise commands.BadArgument(f"`{difficulty} is not a valid difficulty. Please choose a valid one.")
         await GuessWordGame(ctx,difficulty.lower()).play()
         
-    @commands.command(name='blackjack', aliases=['21'])
+    @commands.command(hidden=True, name='blackjack', aliases=['21'])
     @commands.max_concurrency(1, commands.BucketType.channel, wait=False)
     async def _blackjack(self, ctx: NewCtx, bet: int = 30):
         """Plays blackjack against the house, default bet is 30 <:peepee:712691831703601223>"""
         if not(1 <= bet <= 100):
             return await ctx.send("You must bet between 1 and 100 <:peepee:712691831703601223>.")
-        else:
-            result = await self.db_query(self.bot, 'get_user_data', ctx.author.id)
-            if result:
+        query = """WITH to_insert AS(
+	            INSERT INTO  hypesquad_house_reacted(guild_id, user_id)
+                    VALUES ($1, $2)
+                    ON CONFLICT (user_id, guild_id)
+                    DO NOTHING
+                    RETURNING guild_id)
+                  SELECT *, (SELECT guild_id FROM to_insert) AS "result" FROM hypesquad_house_reacted WHERE user_id =$1 AND guild_id=$2;"""
+            result = await self.bot.pool.fetchrow(ctx.author.id, ctx.guild.id)
+            if result["result"]:
                 available_currency = result['amount']
                 if bet > available_currency:
                     return await ctx.send("You don't have enough <:peepee:712691831703601223> for that bet.")
-                else:
-                    await ctx.send(f"Very well, your {bet}<:peepee:712691831703601223> will be gladly accepted.")
-                    wins = result['wins']
-                    losses = result['losses']
+                
+                await ctx.send(f"Very well, your {bet}<:peepee:712691831703601223> will be gladly accepted.")
+                wins = result['wins']
+                losses = result['losses']
 
             else:
-                query = self.queries['new_user']
-                await self.bot.pool.execute(query, ctx.author.id, 0, 0, 150)
-                wins = 0
-                losses = 0
-                available_currency = 150
                 await ctx.send("Yoink has not seen you before, have 150 <:peepee:712691831703601223> on the house.")
-
-            house = await self.db_query(self.bot, 'get_user_data', self.bot.user.id)
 
             embed = BetterEmbed()
             embed.add_field(
@@ -203,19 +202,19 @@ class Games(commands.Cog):
                 await ctx.send(f"Congratulations, you beat the house, take your {bet}<:peepee:712691831703601223> ")
                 end_amount = available_currency + bet
                 query = self.queries['win']
-                await self.bot.pool.execute(query, wins + 1, end_amount, ctx.author.id)
+                await self.bot.pool.execute(query,ctx.author.id)
                 other_query = self.queries['loss']
-                await self.bot.pool.execute(other_query, house['losses'] + 1, house['amount'] - bet, self.bot.user.id)
+                await self.bot.pool.execute(other_query, self.bot.user.id)
 
             else:
                 await ctx.send(f"The house always wins, your {bet}<:peepee:712691831703601223> have been yoinked.")
                 end_amount = available_currency - bet
                 query = self.queries['loss']
-                await self.bot.pool.execute(query, losses + 1, end_amount, ctx.author.id)
+                await self.bot.pool.execute(query,ctx.author.id)
                 other_query = self.queries['win']
-                await self.bot.pool.execute(other_query, house['wins'] + 1, house['amount'] + bet, self.bot.user.id)
+                await self.bot.pool.execute(other_query,self.bot.user.id)
 
-    @commands.command(name='start')
+    @commands.command(hidden=True, name='start')
     @commands.cooldown(1, 80, commands.BucketType.channel)
     @commands.max_concurrency(1, commands.BucketType.channel, wait=False)
     async def _begin_roulette(self, ctx: NewCtx):
@@ -235,7 +234,7 @@ class Games(commands.Cog):
         else:
             return await ctx.send("A game is already in progress here")
 
-    @commands.command(name='addbet')
+    @commands.command(hidden=True, name='addbet')
     async def _add_roulette_bet(self, ctx: NewCtx, bet: Union[int, str], amount: int):
         """Bets an amount on a specific tile or outside tile"""
         if isinstance(bet, str) and bet not in self.roulette_options:
@@ -278,8 +277,7 @@ class Games(commands.Cog):
         await asyncio.sleep(2)
         await original.edit(content=text, embed=embed)
 
-
-    @commands.command(name='check', aliases=['account'])
+    @commands.command(hidden=True, name='check', aliases=['account'])
     async def _check_bal(self, ctx: NewCtx, target: Optional[discord.Member]):
         """"""
         user_id = getattr(target, 'id', None) or ctx.author.id
@@ -306,7 +304,7 @@ class Games(commands.Cog):
             e.set_author(name = target.display_name, icon_url = str(target.avatar_url))
             return await ctx.send(embed = e)
 
-    @commands.command(name="del")
+    @commands.command(hidden=True, name="del")
     @commands.is_owner()
     async def _delete(self, ctx: NewCtx, target: Optional[discord.Member]):
 

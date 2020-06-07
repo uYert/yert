@@ -97,4 +97,4 @@ class Degeneracy(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Hentai(bot))
+    bot.add_cog(Degeneracy(bot))

@@ -326,7 +326,7 @@ class Games(commands.Cog):
                       """
         await self.bot.pool.execute(house_query, guild.id)
 
-    #@commands.Cog.listener()
+    @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         """
         Let's wait for any and all Emoji reactions to the bot's messages.
@@ -381,7 +381,7 @@ class Games(commands.Cog):
         await self.bot.pool.execute(query, reacting_member.guild.id, reacting_member.id, datetime.utcnow())
         return await self.bot.pool.execute(flag_query, reacting_member.guild.id)
 
-    #@commands.Cog.listener()
+    @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
         """
         Little more confusing, we need to check if the removing user has reacted before,

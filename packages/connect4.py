@@ -24,13 +24,13 @@ SOFTWARE.
 
 import asyncio
 import collections
+import contextlib
+import copy
 import itertools
 import random
 import typing
-import contextlib
-import copy
-import discord
 
+import discord
 from discord.ext import commands, menus
 
 import main
@@ -64,8 +64,6 @@ class Prompt(menus.Menu):
 Player = collections.namedtuple('Player', ['id', 'mention', 'token_id'])
 
 class ConnectMenu(menus.Menu):
-
-    emojis = ('⬛', '🟢', '🔴')  # ids : (0, 1, -1)
     operators = ('-', '+')
     spacing_row = '\n' * 2
     spacing_column = ' ' * 2
@@ -76,18 +74,28 @@ class ConnectMenu(menus.Menu):
                  p2: discord.Member,
                  aligned_amount: int = 4,
                  column_amount: int = 7,
-                 row_amount: int = 6,
-                 **kwargs):
-        super().__init__(**kwargs)
+                 row_amount: int = 6):
+
+        super().__init__(timeout=30, clear_reactions_after=True, check_embeds=True)
+
+
+
+        self.emojis = ('⬛', '🟢', '🔴')  # ids : (0, 1, -1)
+
+
         self.aligned_amount = aligned_amount
+        self.is_timeout_win = True
 
         self.players = [Player(p1.id, p1.mention, 1), Player(p2.id, p2.mention, -1)]
         self.cycle_players = itertools.cycle((lambda x: [random.shuffle(x), x][1])(self.players))  # type: ignore
         self.current_player: Player = next(self.cycle_players)
 
         self.grid = grid = [[0 for _ in range(column_amount)] for _ in range(row_amount)]
-        
-        self.backup_grid = [[0 for _ in range(column_amount)] for _ in range(row_amount)]
+
+        self.backup_grid = [[0 for _ in range(column_amount)] for _ in range(row_amount)]  # less painfull than deepcopy
+
+        title = f'Connect {self.aligned_amount} using {row_amount} rows and {column_amount} columns'
+        self.embed_template = formatters.BetterEmbed(title=title)
 
         self.max_offset = max(len(grid), len(grid[0]))
 
@@ -100,52 +108,67 @@ class ConnectMenu(menus.Menu):
         for key in self.keycaps:
             async def keycap_placeholder(self, payload: discord.RawReactionActionEvent):
                 await self.on_keycap(payload)
-                
+
             maybecoro = self.add_button(menus.Button(key, keycap_placeholder), react=react)
             if maybecoro is not None:
                 await maybecoro
 
-    async def prevent_burying(self):
+    async def prevent_burying(self) -> None:
         """
         Checks if the menu hasn't been burried too far into messages
         """
+        def check(m: discord.Message):
+            return m.channel == self.ctx.channel
+        
         counter = 0
         while self._running:
             try:
-                await self.bot.wait_for('message', check=lambda m: m.channel == self.ctx.channel,
-                                        timeout=5)
+                msg = await self.bot.wait_for('message', check=check, timeout=5)
             except asyncio.TimeoutError:
-                pass
+                continue
 
             else:
-                counter += 1
+                counter += len(msg.content.split('\n'))
+                if msg.embeds or msg.attachments:
+                    counter += 9
 
-                if counter >= 10:
+                if counter >= 12:
                     await self.message.delete()
                     self.clear_buttons()
-                    self.message = await self.ctx.send(content=self.to_send(self.grid, self.current_player))
+                    self.message = await self.ctx.send(**self.to_send(self.grid, self.current_player))
                     await self.make_buttons(react=True)
                     counter = 0
 
-    async def start(self, ctx, *, channel=None, wait=False):
+    async def start(self, ctx, *, channel=None, wait=False) -> None:
         await self.make_buttons()
         await super().start(ctx, channel=channel, wait=wait)
-        self.bot.loop.create_task(self.prevent_burying())
+        self.bury_task = self.bot.loop.create_task(self.prevent_burying())
 
-    def format_grid(self, grid: typing.List[typing.List[int]]) -> str:  # don't question, it works
+    def get_emoji(self, id_: int) -> str:
+        """Gets the emoji corresponding to the id"""
+        return self.emojis[id_]
+
+    def format_row(self, row: typing.List[int]) -> str:
+        """Formats a row xd"""
+        return self.spacing_column.join(map(self.get_emoji, row))
+
+    def format_grid(self, grid: typing.List[typing.List[int]]) -> str:
         """Formats the grid into an str"""
-        return (f"```\n{self.spacing_row.join(((map(lambda row: self.spacing_column.join(map(lambda id_: self.emojis[id_], row)), grid))))}"
+        return (f"```\n{self.spacing_row.join(map(self.format_row, grid))}"
                 f"{self.spacing_row}{self.f_keycaps}```")
 
-    def to_send(self, grid: typing.List[typing.List[int]], current_player: Player):
+    def to_send(self, grid: typing.List[typing.List[int]], current_player: Player
+                ) -> typing.Dict[str, typing.Union[str, formatters.BetterEmbed]]:
         """Formats the full message to send"""
-        return self.current_player.mention + self.format_grid(self.grid)
+        curr_player = self.current_player
+        return {'content': curr_player.mention + ' - ' + self.emojis[curr_player.token_id],
+                'embed': self.embed_template(description=self.format_grid(grid))}
 
-    async def send_initial_message(self, ctx: main.NewCtx, channel: discord.abc.Messageable):
+    async def send_initial_message(self, ctx: main.NewCtx, channel: discord.abc.Messageable) -> discord.Message:
         """Sends the initial grid"""
-        return await ctx.send(self.to_send(self.grid, self.current_player))
+        return await channel.send(**self.to_send(self.grid, self.current_player))
 
-    def reaction_check(self, payload: discord.RawReactionActionEvent):
+    def reaction_check(self, payload: discord.RawReactionActionEvent) -> bool:
         if payload.message_id != self.message.id:
             return False
 
@@ -159,7 +182,7 @@ class ConnectMenu(menus.Menu):
         """Updates the displayed grid"""
         row_index = None
         column_index = None
-        
+
         if payload:
             column_index = self.keycaps.index(str(payload.emoji))
 
@@ -175,7 +198,7 @@ class ConnectMenu(menus.Menu):
             self.grid[row_index][column_index] = self.current_player.token_id
             self.current_player = next(self.cycle_players)
 
-        await self.message.edit(content=self.to_send(self.grid, self.current_player))
+        await self.message.edit(**self.to_send(self.grid, self.current_player))
 
         return row_index, column_index
 
@@ -184,27 +207,25 @@ class ConnectMenu(menus.Menu):
         """Gets all lines around the newly placed token"""
         operators = self.operators
         max_offset = self.max_offset
-        
+
         for line in (grid[row_index], [row[column_index] for row in grid]):  # horizontal, vertical
             yield line
 
-        with contextlib.suppress(IndexError):  # sideways up to down, both ways
-            for left_operator, right_operator in (operators, reversed(operators)):
-                nums = []
-                for offset in range(max_offset * 2):
+        # sideways up to down, both ways
+        for left_operator, right_operator in (operators, reversed(operators)):
+            nums = []
+            for offset in range(max_offset * 2):
 
-                    y_offset = row_index - max_offset + offset
-                    x_offset = eval(f"column_index {left_operator} max_offset {right_operator} offset", locals())
+                y_offset = row_index - max_offset + offset
+                x_offset = eval(f"column_index {left_operator} max_offset {right_operator} offset", locals())
 
-                    if min(y_offset, x_offset) < 0:
-                        continue
+                if min(y_offset, x_offset) < 0:
+                    continue
 
-                    try:
-                        nums.append(grid[y_offset][x_offset])
-                    except IndexError:
-                        pass
+                with contextlib.suppress(IndexError):
+                    nums.append(grid[y_offset][x_offset])
 
-                yield nums
+            yield nums
 
     def check_winner(self, lines: typing.List[typing.List[int]]):
         """Checks all provided lines looking for n aligned tokens in a row"""
@@ -218,22 +239,30 @@ class ConnectMenu(menus.Menu):
         else:
             return None
 
-    async def check_filled_grid(self, grid: typing.List[typing.List[int]]):
+    async def check_filled_grid(self, grid: typing.List[typing.List[int]]) -> None:
         """Checks if the grid is completely filled"""
-        if all(grid[0]):
+        if not 0 in grid[0]:
             self.grid = self.backup_grid
             await self.update_grid(None)
 
-    async def on_keycap(self, payload: discord.RawReactionActionEvent):
+    async def on_keycap(self, payload: discord.RawReactionActionEvent) -> None:
         """Dispatches the keycaps"""
         row_index, column_index = await self.update_grid(payload)
-        if not (row_index and column_index):
+        if None in {row_index, column_index}:
             return
-        
+
         lines = [*self.get_lines(self.grid, row_index=row_index, column_index=column_index)]
 
-        if winner := self.check_winner(lines): 
-            await self.ctx.send(winner.mention)
+        if winner := self.check_winner(lines):
+            self.is_timeout_win = False
             return self.stop()
 
         await self.check_filled_grid(self.grid)
+
+    async def finalize(self) -> None:
+        if self.is_timeout_win:
+            self.current_player = next(self.cycle_players)
+
+        await self.message.edit(embed=self.embed_template(description=self.format_grid(self.grid)),
+                                content=self.current_player.mention + ' won ! ')
+

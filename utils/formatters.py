@@ -65,6 +65,12 @@ class BetterEmbed(Embed):
         self.color = random_colour()
         self._empty_field = "**⚠️ MISSING FIELD ⚠️**"
 
+    def __call__(self, **kwargs):
+        """Allows us to call the constructor again"""
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        return self
+
     def fill_fields(self):
         """Fill the remaining fields so they are lined up properly"""
         inlines = len(self.fields[max(i for i, _ in enumerate(self.fields)):]) + 1

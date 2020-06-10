@@ -164,16 +164,11 @@ class Events(commands.Cog):
         """ On command invocation. """
         embed = formatters.BetterEmbed(title=f'Command launched : {ctx.qname}',
                                        description=f'{ctx.guild.name} / {ctx.channel.name} / {ctx.author}')
-        params = ctx.command.clean_params.keys()
-        all_params = {}
-        for param, arg in itertools.zip_longest(params, ctx.args):
-            all_params[param] = arg
-        all_params.update(ctx.kwargs)
-        for key, value in all_params.items():
-            embed.add_field(name=key, value=value, inline=False)
+
+        for key, value in itertools.zip_longest(ctx.command.clean_params.keys(), ctx.all_args):
+            embed.add_field(name=key, value=value)
 
         await self.webhook.send(embed=embed)
-
 
 
     @commands.Cog.listener()

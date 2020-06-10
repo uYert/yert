@@ -25,6 +25,7 @@ from collections import namedtuple
 from functools import lru_cache, wraps
 import traceback
 import typing
+import itertools
 
 import discord
 from discord import Message
@@ -33,6 +34,7 @@ from discord.ext import commands, tasks
 import config
 from main import NewCtx
 from utils.converters import GuildConverter
+from utils import formatters
 
 Event_Data = namedtuple('Event_Data', ['guilds', 'totals'])
 
@@ -159,7 +161,20 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command(self, ctx: NewCtx):
-        """ On command invokation. """
+        """ On command invocation. """
+        embed = formatters.BetterEmbed(title=f'Command launched : {ctx.qname}',
+                                       description=f'{ctx.guild.name} / {ctx.channel.name} / {ctx.author}')
+        params = ctx.command.clean_params.keys()
+        all_params = {}
+        for param, arg in itertools.zip_longest(params, ctx.args):
+            all_params[param] = arg
+        all_params.update(ctx.kwargs)
+        for key, value in all_params.items():
+            embed.add_field(name=key, value=value, inline=False)
+
+        await self.webhook.send(embed=embed)
+
+
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: NewCtx, error: Exception):

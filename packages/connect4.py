@@ -90,7 +90,7 @@ class ConnectMenu(menus.Menu):
 
         self.grid = grid = [[0 for _ in range(column_amount)] for _ in range(row_amount)]
 
-        self.backup_grid = [[0 for _ in range(column_amount)] for _ in range(row_amount)]  # less painfull than deepcopy
+        self.backup_grid = [[0 for _ in range(column_amount)] for _ in range(row_amount)]  # less painful than deepcopy
 
         title = f'Connect {self.aligned_amount} using {row_amount} rows and {column_amount} columns'
         self.embed_template = formatters.BetterEmbed(title=title)
@@ -116,9 +116,9 @@ class ConnectMenu(menus.Menu):
             self.is_timeout_win = False
             self.stop()
 
-            maybecoro = self.add_button(menus.Button(self.white_flag, on_french), react=react)
-            if maybecoro is not None:
-                await maybecoro
+        maybecoro = self.add_button(menus.Button(self.white_flag, on_french), react=react)
+        if maybecoro is not None:
+            await maybecoro
 
     async def prevent_burying(self) -> None:
         """

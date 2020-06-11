@@ -185,7 +185,9 @@ class Memes(commands.Cog):
                     output += char
             else:
                 output += string.whitespace
-        await ctx.send(output)
+        
+        mentions = discord.AllowedMentions(everyone=False, users=False, roles=False)
+        await ctx.send(output, allowed_mentions=mentions)
 
 
 def setup(bot):

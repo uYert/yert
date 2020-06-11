@@ -29,7 +29,9 @@ import string
 from typing import Any, List
 from textwrap import shorten
 
-from discord import Embed
+import contextlib
+from discord import Embed  # needs fix :tm:
+import discord
 from discord.ext import commands, menus
 
 from main import NewCtx
@@ -172,7 +174,8 @@ class Memes(commands.Cog):
 
     @commands.command(name='mock')
     async def _mock(self, ctx: NewCtx, *, message: str):
-        await ctx.message.delete()
+        with contextlib.suppress(discord.Forbidden):
+            await ctx.message.delete()
         output = ''
         for counter, char in enumerate(message):
             if not char == string.whitespace:

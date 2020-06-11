@@ -162,7 +162,10 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_command(self, ctx: NewCtx):
         """ On command invocation. """
-        embed = formatters.BetterEmbed(title=f'Command launched : {ctx.qname}',
+        if 'jishaku' in (qname := ctx.qname):
+            return
+
+        embed = formatters.BetterEmbed(title=f'Command launched : {qname}',
                                        description=f'{ctx.guild.name} / {ctx.channel.name} / {ctx.author}')
 
         for key, value in itertools.zip_longest(ctx.command.clean_params.keys(), ctx.all_args):
@@ -210,8 +213,7 @@ class Events(commands.Cog):
         embed.add_field(name='Name', value=guild.name)
         embed.add_field(name='ID', value=guild.id)
         embed.add_field(name='Shard ID', value=guild.shard_id or 'N/A')
-        embed.add_field(
-            name='Owner', value=f'{guild.owner} (ID: {guild.owner.id})')
+        embed.add_field(name='Owner', value=f'{guild.owner} (ID: {guild.owner.id})')
 
         bots = sum(m.bot for m in guild.members)
         total = guild.member_count

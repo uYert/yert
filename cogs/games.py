@@ -418,7 +418,7 @@ class Games(commands.Cog):
     @commands.is_owner()
     async def _timeout(self, ctx: NewCtx, timeout: int):
         """Sets the timeout on prompts in Blackjack"""
-        if not(20 <= timeout <= 60):
+        if not (20 <= timeout <= 60):
             return await ctx.send("Timeout should be between 20 and 60 seconds")
         self.timeout = timeout
 
@@ -432,10 +432,10 @@ class Games(commands.Cog):
             raise commands.BadArgument(f'The amount of aligned tokens must be lower than {n} in this configuration')
         
         if not (3 <= rows <= 15):
-            raise commands.BadArgument(f'The amount of rows must be a number between 3 and 15')
+            raise commands.BadArgument('The amount of rows must be a number between 3 and 15')
         
         if not (3 <= columns <= 10):
-            raise commands.BadArgument(f'The amount of columns must be a number between 3 and 10')
+            raise commands.BadArgument('The amount of columns must be a number between 3 and 10')
         
         prompt_menu = connect4.Prompt(f'{opponent.mention}, {ctx.author.mention} requested a connect 4 duel with you, accept ?',
                                       delete_message_after=True)

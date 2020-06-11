@@ -423,10 +423,34 @@ class Games(commands.Cog):
         self.timeout = timeout
 
     @commands.command(name='connect4')
-    async def connect4(self, ctx, opponent: discord.Member):
+    @commands.max_concurrency(1, commands.BucketType.channel)
+    async def connect4(self, ctx, opponent: discord.Member, 
+                       aligned: int = 4, rows: int = 6,
+                       columns: int = 7):
         """Plays a game of connect 4"""
-        menu = connect4.ConnectMenu(p1=ctx.author, p2=opponent)
-        await menu.start(ctx)
+        if aligned > (n := min(columns, rows)):
+            raise commands.BadArgument(f'The amount of aligned tokens must be lower than {n} in this configuration')
+        
+        if not (3 <= rows <= 15):
+            raise commands.BadArgument(f'The amount of rows must be a number between 3 and 15')
+        
+        if not (3 <= columns <= 10):
+            raise commands.BadArgument(f'The amount of columns must be a number between 3 and 10')
+        
+        prompt_menu = connect4.Prompt(f'{opponent.mention}, {ctx.author.mention} requested a connect 4 duel with you, accept ?',
+                                      delete_message_after=True)
+        
+        await prompt_menu.start(ctx, wait=True)
+        if not prompt_menu.accepted:
+            return await ctx.send(f"{opponent} didn't accept the duel")
+        
+        main_menu = connect4.ConnectMenu(p1=ctx.author, 
+                                         p2=opponent, 
+                                         aligned_amount=aligned, 
+                                         row_amount=rows,
+                                         column_amount=columns) 
+        
+        await main_menu.start(ctx, wait=True)
         
 
 def setup(bot):

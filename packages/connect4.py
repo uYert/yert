@@ -64,9 +64,10 @@ class Prompt(menus.Menu):
 Player = collections.namedtuple('Player', ['id', 'mention', 'token_id'])
 
 class ConnectMenu(menus.Menu):
-    operators = ('-', '+')
+    operators = ('-', '+')  # those should be all caps
     spacing_row = '\n' * 2
     spacing_column = ' ' * 2
+    white_flag = '🏳️'
 
     def __init__(self,
                  *,
@@ -78,10 +79,7 @@ class ConnectMenu(menus.Menu):
 
         super().__init__(timeout=30, clear_reactions_after=True, check_embeds=True)
 
-
-
         self.emojis = ('⬛', '🟢', '🔴')  # ids : (0, 1, -1)
-
 
         self.aligned_amount = aligned_amount
         self.is_timeout_win = True
@@ -113,13 +111,22 @@ class ConnectMenu(menus.Menu):
             if maybecoro is not None:
                 await maybecoro
 
+        async def on_french(self, payload: discord.RawReactionActionEvent):  # not very dry, but we clear the buttons everytime
+            self.current_player = next(self.cycle_players)
+            self.is_timeout_win = False
+            self.stop()
+
+            maybecoro = self.add_button(menus.Button(self.white_flag, on_french), react=react)
+            if maybecoro is not None:
+                await maybecoro
+
     async def prevent_burying(self) -> None:
         """
         Checks if the menu hasn't been burried too far into messages
         """
         def check(m: discord.Message):
             return m.channel == self.ctx.channel
-        
+
         counter = 0
         while self._running:
             try:

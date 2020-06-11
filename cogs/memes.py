@@ -178,7 +178,7 @@ class Memes(commands.Cog):
             await ctx.message.delete()
         output = ''
         for counter, char in enumerate(message):
-            if not char == string.whitespace:
+            if char != string.whitespace:
                 if counter % 2 == 0:
                     output += char.upper()
                 else:

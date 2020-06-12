@@ -267,8 +267,8 @@ class ConnectMenu(menus.Menu):
         await self.check_filled_grid(self.grid)
 
     async def finalize(self) -> None:
-        if self.is_timeout_win:
-            self.current_player = next(self.cycle_players)
+
+        self.current_player = next(self.cycle_players)
 
         await self.message.edit(embed=self.embed_template(description=self.format_grid(self.grid)),
                                 content=self.current_player.mention + ' won ! ')

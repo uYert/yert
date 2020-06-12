@@ -427,7 +427,10 @@ class Games(commands.Cog):
     async def connect4(self, ctx, opponent: discord.Member, 
                        aligned: int = 4, rows: int = 6,
                        columns: int = 7):
-        """Plays a game of connect 4"""
+        """
+        Plays a game of connect 4, please note that this command is still WIP 
+        and might yield unexpected results
+        """
         if aligned > (n := min(columns, rows)):
             raise commands.BadArgument(f'The amount of aligned tokens must be lower than {n} in this configuration')
         

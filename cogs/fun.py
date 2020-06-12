@@ -57,13 +57,16 @@ class Fun(commands.Cog):
                                                          clean_txt=txt))
         
     @commands.command(name='uwuify')
-    async def uwuify(self, ctx, *, text: str):
+    async def uwuify(self, ctx: NewCtx, *, text: str):
         """Uwuify a text"""
         if len(text) > 200:
             raise commands.BadArgument(message='The text needs to be shorter then 200 characters')
         
         flags = uwuify.SMILEY | uwuify.YU  # lazyness 200
-        await ctx.send(uwuify.uwu(text, flags=flags))
+
+        allowed_mentions = discord.AllowedMentions(everyone=False, users=False, roles=False)
+
+        await ctx.send(uwuify.uwu(text, flags=flags), allowed_mentions=allowed_mentions)
     
         
         

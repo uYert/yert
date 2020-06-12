@@ -155,6 +155,8 @@ class Bot(commands.Bot):
                 ))
 
     async def connect(self, *, reconnect=True):
+        self.test = {}
+
         self._session = ClientSession(loop=self.loop)
         self._headers = {"Range": "bytes=0-10"}
         self._cache = TimedCache(loop=self.loop)
@@ -192,6 +194,13 @@ class Bot(commands.Bot):
     async def get_context(self, message: discord.Message, *, cls=None):
         """Custom context stuff hahayes"""
         return await super().get_context(message, cls=cls or NewCtx)
+
+    async def get_prefix(self, message):
+
+        ret = self.test.get(message.guild.id)
+        if not ret:
+            ret = self.test[message.guild.id] = [config.PREFIX]
+        return ret
 
     async def on_ready(self):
         """ We're online. """

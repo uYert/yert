@@ -80,6 +80,45 @@ class Moderation(commands.Cog):
         reason = reason or self.def_reason
         await target.edit(mute=False, reason=reason)
 
+    @commands.group(invoke_without_command=True)
+    @commands.has_permissions(manage_roles=True)
+    async def config(self, ctx):
+
+        await ctx.send_help(ctx.command)
+
+    @config.group(name='prefix', invoke_without_command=True)
+    @commands.has_permissions(manage_roles=True)
+    async def config_prefix(self, ctx):
+
+        fmt = ', '.join(await self.bot.get_prefix(ctx.message))
+
+        await ctx.send(f'The prefixes for `{ctx.guild}` are `{fmt}`')
+
+    @config_prefix.command(name='set')
+    @commands.has_permissions(manage_roles=True)
+    async def prefix_set(self, ctx, prefix):
+
+        self.bot.test[ctx.guild.id] = [prefix]
+        await ctx.send(f'Set the prefix to `{prefix}`')
+
+    @config_prefix.command(name='add')
+    @commands.has_permissions(manage_roles=True)
+    async def prefix_add(self, ctx, prefix):
+
+        self.bot.test[ctx.guild.id].append(prefix)
+        await ctx.send(f'Added `{prefix}` to the list of prefixes')
+
+    @config_prefix.command(name='remove')
+    @commands.has_permissions(manage_roles=True)
+    async def prefix_remove(self, ctx, prefix):
+
+        prefix = [a for a in enumerate(self.bot.test[ctx.guild.id]) if a[1] == prefix]
+        if prefix:
+            self.bot.test[ctx.guild.id].pop(prefix[0][0])
+            await ctx.send(f'Removed `{prefix[0][1]}` from the list of prefixes')
+        else:
+            await ctx.send('That was not a prefix!')
+
 
 def setup(bot):
     """ Cog entrypoint. """

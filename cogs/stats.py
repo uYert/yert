@@ -83,6 +83,7 @@ class Stats(commands.Cog):
     
     @commands.command()
     @commands.cooldown(1, 15, commands.BucketType.guild)
+    @caching()
     async def show_stats(self, ctx):
         query = """
         WITH one_day AS(
@@ -164,6 +165,14 @@ class Stats(commands.Cog):
         )
         await ctx.send(embed=embed)
   
+    @show_stats.error
+    async def show_stats_error(self, ctx, error):
+        if isinstance(error, DataNotFound):
+            return await ctx.send("No member joining or leaving have been recorded")
+        return self.bot.dispatch('command_error', ctx, error)
+
+
+
     @caching()
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):

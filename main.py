@@ -215,5 +215,6 @@ class Bot(commands.Bot):
 
 
 if __name__ == '__main__':
-    bot = Bot(command_prefix=config.PREFIX)
+    allowed_mentions = discord.AllowedMentions(everyone=False, users=True, roles=False)
+    bot = Bot(command_prefix=config.PREFIX, allowed_mentions=allowed_mentions)
     bot.run(config.BOT_TOKEN)

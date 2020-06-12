@@ -201,8 +201,15 @@ class Bot(commands.Bot):
 
             ret = self.prefixes.get(message.guild.id)
             if not ret:
-                ret = self.prefixes[message.guild.id] = [config.PREFIX]
-            return ret
+                if ret := await self.pool.fetchval('SELECT prefixes FROM guild_config WHERE guild_id = $1', message.guild.id):
+                    self.prefixes[message.guild.id] = ret
+                else:
+                    await self.pool.execute('''INSERT INTO guild_config (guild_id, prefixes)
+                                                VALUES ($1, $2) 
+                                                ON CONFLICT (guild_id) 
+                                                DO UPDATE SET prefixes = $2;''', message.guild.id, [config.PREFIX])
+                    self.prefixes[message.guild.id] = [config.PREFIX]
+            return self.prefixes[message.guild.id]
 
         else:
 

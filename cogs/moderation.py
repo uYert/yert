@@ -105,6 +105,10 @@ class Moderation(commands.Cog):
 
             raise commands.BadArgument('The prefix cannot be less than 1 character')
 
+        await self.bot.pool.execute('''UPDATE guild_config
+                                       SET prefixes = $1
+                                       WHERE guild_id = $2''', [prefix], ctx.guild.id)
+
         self.bot.prefixes[ctx.guild.id] = [prefix]
         await ctx.send(f'Set the prefix to `{prefix}`')
 
@@ -128,6 +132,9 @@ class Moderation(commands.Cog):
 
             raise commands.BadArgument('You cannot have the same prefix twice')
 
+        await self.bot.pool.execute('''UPDATE guild_config
+                                       SET prefixes = prefixes || $1 
+                                       WHERE guild_id = $2''', [prefix], ctx.guild.id)
         self.bot.prefixes[ctx.guild.id].append(prefix)
         await ctx.send(f'Added `{prefix}` to the list of prefixes')
 
@@ -143,6 +150,9 @@ class Moderation(commands.Cog):
         if not prefix:
             raise commands.BadArgument('That was not a prefix')
 
+        await self.bot.pool.execute('''UPDATE guild_config
+                                       SET prefixes = array_remove(prefixes, $1) 
+                                       WHERE guild_id = $2''', prefix[0][1], ctx.guild.id)
         self.bot.prefixes[ctx.guild.id].pop(prefix[0][0])
         await ctx.send(f'Removed `{prefix[0][1]}` from the list of prefixes')
 
@@ -150,3 +160,6 @@ class Moderation(commands.Cog):
 def setup(bot):
     """ Cog entrypoint. """
     bot.add_cog(Moderation(bot))
+
+
+# 'insert into guild_config(guild_id, stats_enabled, prefixes) values($1, $2, $3)', 710235595733074111, False, ['fucking ', 'scree '])

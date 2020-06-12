@@ -26,7 +26,7 @@ from collections.abc import Hashable
 from datetime import datetime, timedelta, timezone
 import os
 import traceback
-from typing import Any, Union
+from typing import Any, Tuple, Union
 
 from aiohttp import ClientSession
 import discord
@@ -52,7 +52,8 @@ COGS = (
     "cogs.meta",
     "cogs.moderation",
     "cogs.practical",
-    "cogs.other"
+    "cogs.other",
+    "cogs.stats",
 )
 
 
@@ -61,8 +62,8 @@ class NewCtx(commands.Context):
 
     # typehinted copypaste of the default init ## pylint: disable=super-init-not-called
     def __init__(self, **attrs):
-        self.message: Union[discord.Message, None] = attrs.pop('message', None)
-        self.bot: Union[Bot, None] = attrs.pop('bot', None)
+        self.message: discord.Message = attrs.pop('message', None)
+        self.bot: Bot = attrs.pop('bot', None)
 
         self.args: list = attrs.pop('args', [])
         self.kwargs: dict = attrs.pop('kwargs', {})
@@ -83,12 +84,12 @@ class NewCtx(commands.Context):
 
         self._altered_cache_key = None
 
-    async def webhook_send(self, content: str, *, webhook: discord.Webhook,  # more elegant
-                           skip_wh: bool = False, skip_ctx: bool = False) -> None:
+    async def webhook_send(self, short: str, full: str,
+                           exc_info: Tuple[str, str, str],
+                           *, webhook: discord.Webhook) -> None:
         """ This is a custom ctx addon for sending to the webhook and/or the ctx.channel. """
-        content = content.strip("```")
 
-        embed = BetterEmbed(title="Error", description=f"```py\n{content}```",
+        embed = BetterEmbed(title="Error", description=f"```py\n{short}```",
                             timestamp=datetime.now(tz=timezone.utc))
 
         embed.add_field(name="Invoking command",
@@ -96,11 +97,11 @@ class NewCtx(commands.Context):
 
         embed.add_field(name="Author", value=f"{str(self.author)}")
 
-        if not skip_ctx:
-            await super().send(embed=embed)
+        embed.add_field(name=f"File: {exc_info[0]}",
+                        value=f"Line: {exc_info[1]} || Func: {exc_info[2]}", inline=True)
 
-        if not skip_wh:
-            await webhook.send(embed=embed)
+        await self.send(embed=embed)
+        await webhook.send(full)
 
     @property
     def qname(self) -> Union[str, None]:
@@ -147,7 +148,7 @@ class Bot(commands.Bot):
 
     def __init__(self, **options):
         super().__init__(**options)
-        if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):  # ! no idea about why it can't connect
+        if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None): 
             self._pool = asyncio.get_event_loop().create_task(
                 Table.create_pool(
                     PSQL_DETAILS, command_timeout=60
@@ -166,12 +167,24 @@ class Bot(commands.Bot):
         for extension in COGS:
             try:
                 self.load_extension(extension)
-            except Exception:
-                traceback.print_exc()  # ! TODO: webhook the print_exc
+            except Exception as e:
+                wh_id, wh_token = config.WEBHOOK
+                full_exc = traceback.format_exception(type(e), e, e.__traceback__)
+                hook = discord.Webhook.partial(
+                    id = wh_id, token = wh_token, adapter = discord.AsyncWebhookAdapter(self.session))
+                full_exc = [line.replace('/home/moogs', '', 1) for line in full_exc]
+                full_exc = [line.replace('C:\\Users\\aaron', '', 1) for line in full_exc]
+                output = '\n'.join(full_exc)
+                idx = 0
+                while len(output) >= 1990:
+                    idx -= 1
+                    output = '\n'.join(full_exc[:idx])
+                output = f"```{output}```"
+                await hook.send(output)
 
         return await super().connect(reconnect=reconnect)
 
-    async def before_invoke(self, ctx):
+    async def before_invoke(self, ctx: NewCtx):
         """Nothing too important"""
         await ctx.trigger_typing()
 
@@ -197,11 +210,11 @@ class Bot(commands.Bot):
     @property
     def pool(self):
         """ Let's not rewrite internals... """
-        if self._pool:  # ? what are we checking there
-            return self._pool
-        return None
+        return getattr(self, '_pool', None)
+    
 
 
 if __name__ == '__main__':
-    bot = Bot(command_prefix=config.PREFIX)
+    allowed_mentions = discord.AllowedMentions(everyone=False, users=True, roles=False)
+    bot = Bot(command_prefix=config.PREFIX, allowed_mentions=allowed_mentions)
     bot.run(config.BOT_TOKEN)

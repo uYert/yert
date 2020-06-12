@@ -27,7 +27,7 @@ from collections import namedtuple
 from contextlib import suppress
 from datetime import datetime
 from io import BytesIO
-from typing import Any
+from typing import Any, Iterable, Mapping
 
 import discord
 from discord.ext import commands
@@ -66,10 +66,29 @@ def maybe_url(url: Any, /) -> str:
 
 def to_human_datetime(text: str, template: str):
     """
-    Formats using the template (%D %H) 
+    Formats using the template e.g (%D %H) 
     used by the datetime lib and returns a naturaldate
     """
     return naturaldate(datetime.strptime(text, template))
+
+
+class GuildConverter(commands.IDConverter):
+    async def convert(self, ctx, argument: str) -> discord.Guild:
+        bot = ctx.bot
+        match = self._get_id_match(argument) or re.match(r'<#([0-9]+)>$', argument)
+        result = None
+
+        if match is None:
+            def check(g): return isinstance(g, discord.Guild) and g.name == argument
+            result = discord.utils.find(check, bot.guilds)
+        else:
+            guild_id = int(match.group(1))
+            result = bot.get_guild(guild_id)
+
+        if not isinstance(result, discord.Guild):
+            raise commands.BadArgument(f"Guild {argument} not found.")
+
+        return result
 
 
 class LinkConverter(commands.PartialEmojiConverter):
@@ -97,3 +116,9 @@ class LinkConverter(commands.PartialEmojiConverter):
                     return img_bytes
             else:
                 raise commands.BadArgument("Unable to verify the link was an png or jpg")
+
+def try_unpack_class(*,  class_: object, iterable: Iterable[Mapping]):
+    """Tries to unpack the mapping in the class' constructor"""
+    for mapping in iterable:
+        with suppress(Exception):
+            yield class_(**mapping)

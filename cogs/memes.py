@@ -29,7 +29,9 @@ import string
 from typing import Any, List
 from textwrap import shorten
 
-from discord import Embed
+import contextlib
+from discord import Embed  # needs fix :tm:
+import discord
 from discord.ext import commands, menus
 
 from main import NewCtx
@@ -55,7 +57,6 @@ class Memes(commands.Cog):
         self.bot = bot
         self.webhook = bot.get_cog("Events").webhook
 
-    @staticmethod
     def _gen_embeds(self, requester: str, iterable: List[Any]) -> List[Embed]:
         embeds = []
 
@@ -92,7 +93,7 @@ class Memes(commands.Cog):
         return embeds[:15]
 
     @commands.command()
-    @commands.max_concurrency(3, commands.BucketType.channel, wait=False)
+    @commands.max_concurrency(1, commands.BucketType.channel, wait=False)
     async def reddit(self, ctx: NewCtx,
                      sub: str = 'memes',
                      sort: str = 'hot'):
@@ -156,8 +157,7 @@ class Memes(commands.Cog):
                             )
 
             posts.add(_post)
-        embeds = self._gen_embeds(
-            ctx.author, list(posts))
+        embeds = self._gen_embeds(ctx.author, list(posts))
         pages = menus.MenuPages(PagedEmbedMenu(embeds))
         await pages.start(ctx)
 
@@ -174,17 +174,20 @@ class Memes(commands.Cog):
 
     @commands.command(name='mock')
     async def _mock(self, ctx: NewCtx, *, message: str):
-        await ctx.message.delete()
+        with contextlib.suppress(discord.Forbidden):
+            await ctx.message.delete()
         output = ''
         for counter, char in enumerate(message):
-            if not char == string.whitespace:
+            if char != string.whitespace:
                 if counter % 2 == 0:
                     output += char.upper()
                 else:
                     output += char
             else:
                 output += string.whitespace
-        await ctx.send(output)
+        
+        mentions = discord.AllowedMentions(everyone=False, users=False, roles=False)
+        await ctx.send(output, allowed_mentions=mentions)
 
 
 def setup(bot):

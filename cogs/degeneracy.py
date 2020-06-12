@@ -22,51 +22,79 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from datetime import timedelta
-from random import shuffle as rng_shuffle
-from re import findall as re_findall
+import datetime
+import random
+import re
+from typing import Union, Tuple
 
-import discord
 from discord.ext import commands, menus
 
-from main import BetterEmbed, Bot, NewCtx
-from packages.r34 import AioRule34, R34Source
+import main
+from packages import r34, aionhentai
+from utils import formatters
 
+class Degeneracy(commands.Cog):
+    def __init__(self, bot: main.Bot):
+        self.bot = bot
+        self.aiorule34 = r34.AioRule34(session=bot.session, loop=bot.loop)
+        self.aionhentai = aionhentai.Client(loop=bot.loop)
 
-class Hentai(commands.Cog):
-    def __init__(self, bot):
-        self.bot: Bot = bot
-        self.aiorule34 = AioRule34(session=bot.session, loop=bot.loop)
-        
-        
-    @commands.command(name='sixdigits')
-    async def sixdigits(self, ctx: NewCtx):
-        """Provides you a magical six digits number"""
-        async with self.bot.session.head("https://nhentai.net/random", 
+    async def _get_random_nhentai(self) -> Tuple[str, int]:
+        """Returns a random nhentai doujin index"""
+        async with self.bot.session.head("https://nhentai.net/random",
                                          allow_redirects=True) as resp:
             url = str(resp.url)
-        
-        digits = re_findall(r'\d+', url)[0]
-        
+
+        return url, int(re.findall(r'\d+', url)[0])
+
+    @commands.command(name='sixdigits')
+    async def sixdigits(self, ctx: main.NewCtx):
+        """Provides you a magical six digits number"""
+        url, digits = await self._get_random_nhentai()
+
         if ctx.channel.is_nsfw():
-            return await ctx.send(embed=BetterEmbed(title=digits, url=url))
-        
+            return await ctx.send(embed=formatters.BetterEmbed(title=digits, url=url))
+
         await ctx.send(digits)
-            
-    @commands.command(name='r34')
+
+    @commands.command(name='nhentai', aliases=['doujin', 'doujins'])
+    @commands.is_nsfw()
+    async def nhentai(self, ctx, doujin: Union[int, str] = None):
+        """
+        Displays a doujin from nhentai
+        If no doujin is provided, a random one will be selected
+        """
+        if doujin is None:
+            while not doujin:
+                _, doujin_id = await self._get_random_nhentai()
+                response = await self.aionhentai.search(doujin_id)
+                doujin = [*self.aionhentai.filter_doujins(response)]
+        else:
+            response = await self.aionhentai.search(doujin)
+            doujin = [*self.aionhentai.filter_doujins(response)] or ['No results']
+        
+        source = aionhentai.Source(doujin)
+        
+        menu = aionhentai.Menu(source, delete_message_after=True)
+        await menu.start(ctx)
+
+
+    @commands.command(name='r34', aliases=['rule34'])
     @commands.is_nsfw()
     @commands.cooldown(1, 10, commands.BucketType.user)
-    async def r34(self, ctx: NewCtx, *, query: str, fuzzy: bool = False):
+    async def r34(self, ctx: main.NewCtx, *, query: str, fuzzy: bool = False):
         """Searches a post on r34"""
         if not (source := ctx.cached_data):
             results = await self.aiorule34.getImages(query, fuzzy=fuzzy)
-            ctx.add_to_cache(results, timeout=timedelta(minutes=60))
-            
-        rng_shuffle(results)  # the api returns a *lot* of results
-        source = R34Source(results, query)
-        menu = menus.MenuPages(source, clear_reactions_after=True)
+            ctx.add_to_cache(results, timeout=datetime.timedelta(minutes=60))
+
+        random.shuffle(results)  # the api returns a *lot* of results
+        source = r34.R34Source(results, query)
+        menu = menus.MenuPages(source, delete_message_after=True)
         await menu.start(ctx)
-    
-    
+
+
+
+
 def setup(bot):
-    bot.add_cog(Hentai(bot))
+    bot.add_cog(Degeneracy(bot))

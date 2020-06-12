@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+
 from datetime import datetime
 from math import ceil
 from random import random, uniform
@@ -64,7 +65,13 @@ class BetterEmbed(Embed):
         self.color = random_colour()
         self._empty_field = "**⚠️ MISSING FIELD ⚠️**"
 
-    def fill_fields(self) -> 'ColoredEmbed':
+    def __call__(self, **kwargs):
+        """Allows us to call the constructor again"""
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        return self
+
+    def fill_fields(self):
         """Fill the remaining fields so they are lined up properly"""
         inlines = len(self.fields[max(i for i, _ in enumerate(self.fields)):]) + 1
         for _ in range(ceil(inlines / 3) * 3 - inlines):
@@ -81,91 +88,9 @@ class BetterEmbed(Embed):
                                  value=str(value) or self._empty_field,  # a bit clearer than the missing field error
                                  inline=inline)
 
-    def add_fields(self, fields: Iterator[Tuple[str, str, bool]]) -> 'ColoredEmbed':
+    def add_fields(self, fields: Iterator[Tuple[str, str, bool]]):
         """Adds all fields at once"""
         for field in fields:
             self.add_field(name=field[0], value=field[1],
                            inline=get_index(field, 2, True))
         return self
-
-
-class Flags:
-    def __init__(self, value):
-        self.value = value
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__} value={self.value}>"
-
-    def __contains__(self, item):
-        return getattr(self, item) if isinstance(item, str) else getattr(self, item.fget.__name__)
-
-    def has_flag(self, v):
-        return (self.value & v) == v
-
-    @property
-    def staff(self):
-        return self.has_flag(1)
-
-    @property
-    def partner(self):
-        return self.has_flag(2)
-
-    @property
-    def hypesquad_events(self):
-        return self.has_flag(4)
-
-    @property
-    def bug_hunter_level_1(self):
-        return self.has_flag(8)
-
-    @property
-    def mfa_sms(self):
-        return self.has_flag(16)
-
-    @property
-    def premium_promo_dismissed(self):
-        return self.has_flag(32)
-
-    @property
-    def hypesquad_bravery(self):
-        return self.has_flag(64)
-
-    @property
-    def hypesquad_brilliance(self):
-        return self.has_flag(128)
-
-    @property
-    def hypesquad_balance(self):
-        return self.has_flag(256)
-
-    @property
-    def early_supporter(self):
-        return self.has_flag(512)
-
-    @property
-    def team_user(self):
-        return self.has_flag(1024)
-
-    @property
-    def system(self):
-        return self.has_flag(4096)
-
-    @property
-    def unread_sys_msg(self):
-        return self.has_flag(8192)
-
-    @property
-    def bug_hunter_level_2(self):
-        return self.has_flag(16384)
-
-    @property
-    def underage_deleted(self):
-        return self.has_flag(32768)
-
-    @property
-    def verified_bot(self):
-        return self.has_flag(65536)
-
-    @property
-    def verified_bot_developer(self):
-        return self.has_flag(131072)

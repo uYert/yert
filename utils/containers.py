@@ -170,9 +170,8 @@ class NestedNamespace(SimpleNamespace):  # Thanks, cy
         _attrs = attrs  # do this to avoid changing the size of the dict whilst iterating
         return _attrs
 
-    def __repr__(self) -> repr:
-        attrs = ' '.join(
-            f'{k}={v}' for k, v in self.__dict__.items() if not k.startswith('_'))
+    def __repr__(self) -> str:
+        attrs = ' '.join(f'{k}={v}' for k, v in self.__dict__.items() if not k.startswith('_'))
         return f'<{self.__class__.__name__} {attrs}>'
 
     def to_dict(self) -> MappingProxyType:

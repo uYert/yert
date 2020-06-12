@@ -21,17 +21,41 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
-from inspect import signature
+from collections import namedtuple
+from functools import lru_cache, wraps
 import traceback
 import typing
+import itertools
 
 import discord
 from discord import Message
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 import config
 from main import NewCtx
+from utils.converters import GuildConverter
+from utils import formatters
+
+Event_Data = namedtuple('Event_Data', ['guilds', 'totals'])
+
+
+def event_caching():
+    def wrapper(func):
+        @wraps(func)
+        async def wrapped(*args, **kwargs):
+            guild = args[1].guild
+            if args[0].tracked.guilds.get(guild.id, False):
+                return await func(*args, **kwargs)
+            async with args[0].bot.pool.acquire() as con:
+                query = "SELECT stats_enabled FROM guild_config WHERE guild_id = $1 and stats_enabled = True;"
+                activated = await con.fetchrow(query, guild.id)
+            if activated["activated"]:
+                args[0].tracked.guilds[guild.id] = {'joined': 0, 'left': 0}
+                return await func(*args, **kwargs)
+
+        return wrapped
+
+    return wrapper
 
 
 class Events(commands.Cog):
@@ -39,26 +63,56 @@ class Events(commands.Cog):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.webhook = self._webhook()
+        self.webhook = self._webhook
 
         self.ignored = [commands.CommandNotFound, ]
+        self.tracking = True
+        self.tracked = Event_Data(dict(), {'joined': 0, 'left': 0})
 
+        self.cache_loop.start()
+
+    @property
     def _webhook(self) -> discord.Webhook:
         wh_id, wh_token = config.WEBHOOK
         hook = discord.Webhook.partial(
             id=wh_id, token=wh_token, adapter=discord.AsyncWebhookAdapter(self.bot.session))
         return hook
 
-    async def any_role_converter(self, ctx: NewCtx,
-                                 args: typing.List[typing.Union[int, str]]
-                                 ) -> typing.List[str]:
-        """ Converts to a role object. """
-        for idx, item in enumerate(args):
-            if isinstance(item, int):
-                args[idx] = await commands.RoleConverter().convert(ctx, str(item))
-        return args
+    @lru_cache(maxsize=15)
+    def tracy_beaker_fmt(self, error: Exception) -> typing.Tuple[str, str, typing.Tuple[str, str, str]]:
+        full_exc = traceback.format_exception(
+            type(error), error, error.__traceback__)
+        listed_exc = full_exc[-2].split()
+        filename = listed_exc[1].replace('/', '\\')
+        filename = '\\'.join(filename.split('\\')[-3:])[:-1]
+        linenumber = str(listed_exc[3])[:-1]
+        funcname = listed_exc[5]
+        exc_info = (filename, linenumber, funcname)
+        short_exc = full_exc[-1]
+        full_exc = [line.replace('/home/moogs', '', 1) for line in full_exc]
+        full_exc = [line.replace('C:\\Users\\aaron', '', 1)
+                    for line in full_exc]
+        output = '\n'.join(full_exc)
+        idx = 0
+        while len(output) >= 1990:
+            idx -= 1
+            output = '\n'.join(full_exc[:idx])
+        output = f"```\n{output}```"
+        return short_exc, output, exc_info
 
-    @commands.group(invoke_without_command=True, name="ignored")
+    @tasks.loop(hours=24)
+    async def cache_loop(self):
+        query = ""
+        await self.bot.pool.execute(query, )
+
+    @commands.command(name="toggle")
+    @commands.has_permissions(administrator=True)
+    async def _toggle_tracker(self, ctx: NewCtx):
+        """Toggles watching events like `on_member_join/remove` for server info"""
+        query = "UPDATE guild_config SET stats_enabled = True WHERE guild_id = $1;"
+        await self.bot.pool.execute(query, ctx.guild.id)
+
+    @commands.group(invoke_without_command=True, name="ignored", hidden=True)
     @commands.is_owner()
     async def _ignored(self, ctx: NewCtx) -> None:
         """
@@ -71,7 +125,7 @@ class Events(commands.Cog):
     @_ignored.command()
     @commands.is_owner()
     async def add(self, ctx: NewCtx, exc: str):
-        """Adds an exception to the list of ingored exceptions"""
+        """Adds an exception to the list of ignored exceptions"""
         if hasattr(commands, exc):
             if getattr(commands, exc) not in self.ignored:
                 self.ignored.append(getattr(commands, exc))
@@ -107,7 +161,18 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command(self, ctx: NewCtx):
-        """ On command invokation. """
+        """ On command invocation. """
+        if 'jishaku' in (qname := ctx.qname):
+            return
+
+        embed = formatters.BetterEmbed(title=f'Command launched : {qname}',
+                                       description=f'{ctx.guild.name} / {ctx.channel.name} / {ctx.author}')
+
+        for key, value in itertools.zip_longest(ctx.command.clean_params.keys(), ctx.all_args):
+            embed.add_field(name=key, value=value)
+
+        await self.webhook.send(embed=embed)
+
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: NewCtx, error: Exception):
@@ -120,119 +185,50 @@ class Events(commands.Cog):
 
         error = getattr(error, 'original', error)
 
-        if isinstance(error, commands.MissingPermissions):
-            message = (f"{ctx.author.mention}, you're missing the "
-                       f"following persissions to use that command; {error.missing_perms}")
-            return await ctx.webhook_send(message, webhook=self.webhook)
-
-        if isinstance(error, commands.BotMissingPermissions):
-            message = (f"{ctx.author.mention}, I'm missing permissions "
-                       f"for that command; {error.missing_perms}")
-            return await ctx.webhook_send(message, webhook=self.webhook)
-
         if isinstance(error, commands.CommandOnCooldown):
-            message = (f"{ctx.author.mention}, that command is on cooldown"
-                       f" for another {error.retry_after}s.")
-            
             if await self.bot.is_owner(ctx.author):
                 return await ctx.reinvoke()
-            
-            return await ctx.webhook_send(message, webhook=self.webhook, skip_ctx=True)
 
-        if isinstance(error, commands.MissingRequiredArgument):
-            message = (f"{ctx.author.mention}, you were missing at least one"
-                       f" argument from that command; {error.param}")
-            return await ctx.webhook_send(message, webhook=self.webhook)
+        short, full, exc_info = self.tracy_beaker_fmt(error)
 
-        if isinstance(error, commands.BadArgument):
-            bad_argument = list(ctx.command.clean_params)[len(ctx.args[2:])]
-            bad_typehint = signature(
-                ctx.command.callback).parameters[bad_argument].annotation
-            message = "{0.display_name}, argument {1} was expecting {2}".format(
-                ctx.author, bad_argument, bad_typehint)
-            await ctx.send(message)
-            tracy_beaker = traceback.format_exception(
-                type(error), error, error.__traceback__
-            )
-            message = "\n".join(tracy_beaker)
-            idx = 0
-            while len(message) >= 1990:
-                idx -= 1
-                message = "\n".join(tracy_beaker[:idx])
-            message = "```{0}```".format(message)
-            return await self.webhook.send(message)
-
-
-        if isinstance(error, commands.BadUnionArgument):
-            bad_argument = error.param
-            bad_typehints = error.converters
-            message = "{0.mention}, argument {1} was expecting {2}".format(
-                ctx.author, bad_argument, *bad_typehints)
-            return await ctx.webhook_send(message, webhook=self.webhook)
-
-        if isinstance(error, commands.MaxConcurrencyReached):
-            max_conc = error.number
-            message = (f"{ctx.author.mention}, {ctx.command.name} has reached"
-                       f" maximum concurrent uses at {max_conc}")
-            return await ctx.webhook_send(message, webhook=self.webhook)
-
-        if isinstance(error, commands.MissingRole):
-            if isinstance(error.missing_role, int):
-                role_name = commands.RoleConverter().convert(ctx, str(error.missing_role))
-            else:
-                role_name = error.missing_role
-            message = "{0.mention}, you're missing the role {1}".format(
-                ctx.author, role_name)
-            return await ctx.webhook_send(message, webhook=self.webhook)
-
-        if isinstance(error, commands.BotMissingRole):
-            if isinstance(error.missing_role, int):
-                role_name = commands.RoleConverter().convert(ctx, str(error.missing_role))
-            else:
-                role_name = error.missing_role
-            message = "{0.mention}, I'm missing the role {1}".format(
-                ctx.author, role_name)
-            return await ctx.webhook_send(message, webhook=self.webhook)
-
-        if isinstance(error, commands.MissingAnyRole):
-            role_names = await self.any_role_converter(ctx, error.missing_roles)
-            message = "{0.mention}, you're missing these roles for that command {1}".format(
-                ctx.author, ', '.join(role_names))
-            return await ctx.webhook_send(message, webhook=self.webhook)
-
-        if isinstance(error, commands.BotMissingAnyRole):
-            role_names = await self.any_role_converter(ctx, error.missing_roles)
-            message = "{0.mention}, I'm missing these roles for {1}".format(
-                ctx.author, ', '.join(role_names))
-            return await ctx.webhook_send(message, webhook=self.webhook)
-
-        if isinstance(error, commands.ConversionError):
-            converter_name = error.converter.__name__
-            cause = error.__cause__
-            message = "{0.mention}, a conversion error occured with the {1} due to {2}".format(
-                ctx.author, converter_name, cause)
-            return await ctx.webhook_send(message, webhook=self.webhook)
-
-        if isinstance(error, AssertionError):
-            message = "AssertionError : {0}".format(error.args[0])
-            return await ctx.webhook_send(message, webhook=self.webhook, skip_ctx=True)
-
-        else:
-            tracy_beaker = traceback.format_exception(
-                type(error), error, error.__traceback__)
-            tracy_beaker = [bork.replace('/home/moogs', '', 1) for bork in tracy_beaker]
-            tracy_beaker = [bork.replace(r'C:\\Users\\aaron', '', 1) for bork in tracy_beaker]
-            message = "\n".join(tracy_beaker)
-            idx = 0
-            while len(message) >= 1990:
-                idx -= 1
-                message = "\n".join(tracy_beaker[:idx])
-            message = "```{0}```".format(message)
-            return await ctx.webhook_send(message, webhook=self.webhook)
+        await ctx.webhook_send(short, full, exc_info, webhook=self.webhook)
 
     @commands.Cog.listener()
     async def on_command_completion(self, ctx: NewCtx):
         """ On command completion. """
+
+    @event_caching()
+    @commands.Cog.listener()
+    async def on_member_join(self, member: discord.Member):
+        await self.bot.pool.execute("CALL evaluate_data($1, true);", member.guild.id)
+
+    @event_caching()
+    @commands.Cog.listener()
+    async def on_member_remove(self, member: discord.Member):
+        await self.bot.pool.execute("CALL evaluate_data($1, false);", member.guild.id)
+
+    @commands.Cog.listener()
+    async def on_guild_join(self, guild):
+        embed = discord.Embed(title="New Guild", colour=discord.Colour.green())
+        embed.add_field(name='Name', value=guild.name)
+        embed.add_field(name='ID', value=guild.id)
+        embed.add_field(name='Shard ID', value=guild.shard_id or 'N/A')
+        embed.add_field(name='Owner', value=f'{guild.owner} (ID: {guild.owner.id})')
+
+        bots = sum(m.bot for m in guild.members)
+        total = guild.member_count
+        online = sum(m.status is discord.Status.online for m in guild.members)
+        embed.add_field(name='Members', value=str(total))
+        embed.add_field(name='Bots', value=f'{bots} ({bots/total:.2%})')
+        embed.add_field(name='Online', value=f'{online} ({online/total:.2%})')
+
+        if guild.icon:
+            embed.set_thumbnail(url=guild.icon_url)
+
+        if guild.me:
+            embed.timestamp = guild.me.joined_at
+
+        await self.webhook.send(embed=embed)
 
 
 def setup(bot):

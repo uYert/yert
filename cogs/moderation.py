@@ -87,7 +87,6 @@ class Moderation(commands.Cog):
         await ctx.send_help(ctx.command)
 
     @config.group(name='prefix', invoke_without_command=True)
-    @commands.has_permissions(manage_roles=True)
     async def config_prefix(self, ctx):
 
         fmt = ', '.join(await self.bot.get_prefix(ctx.message))

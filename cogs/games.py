@@ -152,6 +152,14 @@ class Games(commands.Cog):
             raise commands.BadArgument(f"`{difficulty} is not a valid difficulty. Please choose a valid one.")
         await GuessWordGame(ctx,difficulty.lower()).play()
 
+    @guess_word.error
+    async def guess_word_error(self, ctx, error):
+        if isinstance(error, commands.BadArgument):
+            ctx.command.reset_cooldown(ctx)
+            return await ctx.send('The difficulty level must be in : easy - medium - hard')
+        return self.bot.dispatch('command_error', ctx, error)
+
+
     @commands.command(name='blackjack', aliases=['21'], hidden=True)
     @commands.max_concurrency(1, commands.BucketType.channel, wait=False)
     async def _blackjack(self, ctx: NewCtx, bet: int = 30):

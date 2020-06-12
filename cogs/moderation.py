@@ -160,6 +160,3 @@ class Moderation(commands.Cog):
 def setup(bot):
     """ Cog entrypoint. """
     bot.add_cog(Moderation(bot))
-
-
-# 'insert into guild_config(guild_id, stats_enabled, prefixes) values($1, $2, $3)', 710235595733074111, False, ['fucking ', 'scree '])

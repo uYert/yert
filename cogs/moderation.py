@@ -98,26 +98,42 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_roles=True)
     async def prefix_set(self, ctx, prefix):
 
-        self.bot.test[ctx.guild.id] = [prefix]
+        self.bot.prefixes[ctx.guild.id] = [prefix]
         await ctx.send(f'Set the prefix to `{prefix}`')
 
     @config_prefix.command(name='add')
     @commands.has_permissions(manage_roles=True)
     async def prefix_add(self, ctx, prefix):
 
-        self.bot.test[ctx.guild.id].append(prefix)
+        if len(self.bot.prefixes[ctx.guild.id]) >= 7:
+
+            raise commands.BadArgument('You cannot have more than 7 prefixes')
+
+        if len(prefix) > 12:
+
+            raise commands.BadArgument('The prefix cannot be longer than 12 characters')
+
+        if prefix in self.bot.prefixes[ctx.guild.id]:
+
+            raise commands.BadArgument('You cannot have the same prefix twice')
+
+        self.bot.prefixes[ctx.guild.id].append(prefix)
         await ctx.send(f'Added `{prefix}` to the list of prefixes')
 
     @config_prefix.command(name='remove')
     @commands.has_permissions(manage_roles=True)
     async def prefix_remove(self, ctx, prefix):
 
-        prefix = [a for a in enumerate(self.bot.test[ctx.guild.id]) if a[1] == prefix]
-        if prefix:
-            self.bot.test[ctx.guild.id].pop(prefix[0][0])
-            await ctx.send(f'Removed `{prefix[0][1]}` from the list of prefixes')
-        else:
-            await ctx.send('That was not a prefix!')
+        if len(self.bot.prefixes[ctx.guild.id]) <= 1:
+
+            raise commands.BadArgument('You cannot remove all of your prefixes')
+
+        prefix = [a for a in enumerate(self.bot.prefixes[ctx.guild.id]) if a[1] == prefix]
+        if not prefix:
+            raise commands.BadArgument('That was not a prefix')
+
+        self.bot.prefixes[ctx.guild.id].pop(prefix[0][0])
+        await ctx.send(f'Removed `{prefix[0][1]}` from the list of prefixes')
 
 
 def setup(bot):

@@ -97,6 +97,14 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_roles=True)
     async def prefix_set(self, ctx, prefix):
 
+        if len(prefix) > 12:
+
+            raise commands.BadArgument('The prefix cannot be longer than 12 characters')
+
+        if len(prefix) <= 0:
+
+            raise commands.BadArgument('The prefix cannot be less than 1 character')
+
         self.bot.prefixes[ctx.guild.id] = [prefix]
         await ctx.send(f'Set the prefix to `{prefix}`')
 
@@ -111,6 +119,10 @@ class Moderation(commands.Cog):
         if len(prefix) > 12:
 
             raise commands.BadArgument('The prefix cannot be longer than 12 characters')
+
+        if len(prefix) <= 0:
+
+            raise commands.BadArgument('The prefix cannot be less than 1 character')
 
         if prefix in self.bot.prefixes[ctx.guild.id]:
 

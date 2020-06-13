@@ -21,19 +21,17 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from collections import namedtuple
-from functools import lru_cache, wraps
+from functools import lru_cache
 import traceback
 import typing
 import itertools
 
 import discord
 from discord import Message
-from discord.ext import commands, tasks
+from discord.ext import commands
 
 import config
 from main import NewCtx
-from utils.converters import GuildConverter
 from utils import formatters
 
 
@@ -45,9 +43,6 @@ class Events(commands.Cog):
         self.webhook = self._webhook
         self.ignored = [commands.CommandNotFound, ]
         self.tracking = True
-        self.tracked = Event_Data(dict(), {'joined': 0, 'left': 0})
-
-        self.cache_loop.start()
 
     @property
     def _webhook(self) -> discord.Webhook:
@@ -100,6 +95,9 @@ class Events(commands.Cog):
     @commands.is_owner()
     async def add(self, ctx: NewCtx, exc: str):
         """Adds an exception to the list of ignored exceptions"""
+        cmd_exc = getattr(commands, exc.casefold())
+        self.ignored.append()
+
         if hasattr(commands, exc):
             if getattr(commands, exc) not in self.ignored:
                 self.ignored.append(getattr(commands, exc))
@@ -171,12 +169,10 @@ class Events(commands.Cog):
     async def on_command_completion(self, ctx: NewCtx):
         """ On command completion. """
 
-    @event_caching()
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         await self.bot.pool.execute("CALL evaluate_data($1, true);", member.guild.id)
 
-    @event_caching()
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
         await self.bot.pool.execute("CALL evaluate_data($1, false);", member.guild.id)

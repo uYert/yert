@@ -26,6 +26,7 @@ import re
 from collections import namedtuple
 from contextlib import suppress
 from datetime import datetime
+from functools import lru_cache
 from io import BytesIO
 from typing import Any, Iterable, Mapping
 
@@ -116,6 +117,16 @@ class LinkConverter(commands.PartialEmojiConverter):
                     return img_bytes
             else:
                 raise commands.BadArgument("Unable to verify the link was an png or jpg")
+
+
+class CommandConverter(commands.Converter):
+    @lru_cache(maxsize=5)
+    async def convert(self, ctx, argument: str) -> commands.Command:
+        cmd = ctx.bot.get_command(argument)
+        if cmd:
+            return cmd
+        raise commands.BadArgument('Command name/alias not found')
+
 
 def try_unpack_class(*,  class_: object, iterable: Iterable[Mapping]):
     """Tries to unpack the mapping in the class' constructor"""

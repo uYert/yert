@@ -112,8 +112,6 @@ class ConnectMenu(menus.Menu):
                 await maybecoro
 
         async def on_french(self, payload: discord.RawReactionActionEvent):  # not very dry, but we clear the buttons everytime
-            self.current_player = next(self.cycle_players)
-            self.is_timeout_win = False
             self.stop()
 
         maybecoro = self.add_button(menus.Button(self.white_flag, on_french), react=react)
@@ -267,8 +265,8 @@ class ConnectMenu(menus.Menu):
         await self.check_filled_grid(self.grid)
 
     async def finalize(self) -> None:
-
-        self.current_player = next(self.cycle_players)
+        if self.is_timeout_win:
+            self.current_player = next(self.cycle_players)
 
         await self.message.edit(embed=self.embed_template(description=self.format_grid(self.grid)),
                                 content=self.current_player.mention + ' won ! ')

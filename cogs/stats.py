@@ -56,7 +56,7 @@ class Stats(commands.Cog):
         self.tracked = []
         
     @commands.command()
-    @commands.has_permissions(administrator=True)
+    @commands.has_permissions(manage_guild=True)
     async def enable_stats(self, ctx):
         self.tracked.append(ctx.guild.id)
         query = """
@@ -69,7 +69,7 @@ class Stats(commands.Cog):
         await ctx.send("The stats were successfully activated for this server.")
 
     @commands.command()
-    @commands.has_permissions(administrator=True)
+    @commands.has_permissions(manage_guild=True)
     async def disable_stats(self, ctx):
         self.tracked.remove(ctx.guild.id)
         query = """
@@ -170,8 +170,6 @@ class Stats(commands.Cog):
         if isinstance(error, DataNotFound):
             return await ctx.send("No member joining or leaving have been recorded")
         return self.bot.dispatch('command_error', ctx, error)
-
-
 
     @caching()
     @commands.Cog.listener()

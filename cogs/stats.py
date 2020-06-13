@@ -25,7 +25,7 @@ from datetime import datetime
 from functools import wraps
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 
 class DataNotFound(commands.CommandError):
@@ -54,6 +54,12 @@ class Stats(commands.Cog):
         self.bot = bot
         self.tracking = True
         self.tracked = []
+        self.db_task.start()
+        
+    @tasks.loop(minutes=15)
+    async def db_task(self):
+    	async with self.bot.pool.acquire() as conn:
+    		await conn.executemany("CALL evaluate_data($1)",[(x) for x in self.tracked])
         
     @commands.command()
     @commands.has_permissions(manage_guild=True)

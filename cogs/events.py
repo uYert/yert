@@ -36,27 +36,6 @@ from main import NewCtx
 from utils.converters import GuildConverter
 from utils import formatters
 
-Event_Data = namedtuple('Event_Data', ['guilds', 'totals'])
-
-
-def event_caching():
-    def wrapper(func):
-        @wraps(func)
-        async def wrapped(*args, **kwargs):
-            guild = args[1].guild
-            if args[0].tracked.guilds.get(guild.id, False):
-                return await func(*args, **kwargs)
-            async with args[0].bot.pool.acquire() as con:
-                query = "SELECT stats_enabled FROM guild_config WHERE guild_id = $1 and stats_enabled = True;"
-                activated = await con.fetchrow(query, guild.id)
-            if activated["activated"]:
-                args[0].tracked.guilds[guild.id] = {'joined': 0, 'left': 0}
-                return await func(*args, **kwargs)
-
-        return wrapped
-
-    return wrapper
-
 
 class Events(commands.Cog):
     """ Event handler cog. Mostly errors and stuff rn. """
@@ -64,7 +43,6 @@ class Events(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.webhook = self._webhook
-
         self.ignored = [commands.CommandNotFound, ]
         self.tracking = True
         self.tracked = Event_Data(dict(), {'joined': 0, 'left': 0})
@@ -100,10 +78,6 @@ class Events(commands.Cog):
         output = f"```\n{output}```"
         return short_exc, output, exc_info
 
-    @tasks.loop(hours=24)
-    async def cache_loop(self):
-        query = ""
-        await self.bot.pool.execute(query, )
 
     @commands.command(name="toggle")
     @commands.has_permissions(administrator=True)

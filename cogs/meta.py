@@ -167,7 +167,6 @@ class Meta(commands.Cog):
         self.bot.help_command = self.old_help
 
     @commands.command(name='source', aliases=['src', 's'])
-    @commands.max_concurrency(1, commands.BucketType.channel, wait=False)
     async def _source(self, ctx: NewCtx, *, target: CommandConverter=None):
         command = target or ctx.command
         source_lines = inspect.getsource(command.callback)

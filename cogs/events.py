@@ -91,7 +91,7 @@ class Events(commands.Cog):
         """
         await ctx.send(", ".join([exc.__name__ for exc in self.ignored]))
 
-    @_ignored.command()
+    @_ignored.command(hidden=True)
     @commands.is_owner()
     async def add(self, ctx: NewCtx, exc: str):
         """Adds an exception to the list of ignored exceptions"""
@@ -108,7 +108,7 @@ class Events(commands.Cog):
             raise AttributeError(
                 "commands module has no attribute {0}, command aborted".format(exc))
 
-    @_ignored.command()
+    @_ignored.command(hidden=True)
     @commands.is_owner()
     async def remove(self, ctx: NewCtx, exc: str):
         """Removes an exception from the list of ingored exceptions"""

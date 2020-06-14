@@ -21,9 +21,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-
+import base64
 import inspect
 import itertools
+import re
 from contextlib import suppress
 from textwrap import dedent
 from time import perf_counter
@@ -188,9 +189,25 @@ class Meta(commands.Cog):
         await m.edit(embed=BetterEmbed(
             description=f'**API** {endocrine_title-sabertooth_tiger:.2f}s\n**WS** {self.bot.latency:.2f}s'
         ))
-
+        
     @commands.command()
-    async def userinfo(self, ctx, *, user = None):
+    async def parsetoken(self, ctx, *, token:str):
+    	if re.match(r"([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})", token) is not None:
+    		user_id = base64.b64decode(token.split(".")[0]).decode('utf8')
+    		user = self.bot.get_user(user_id)
+    		if user is None:
+    			await ctx.send("Either i can't see that user or his account got deleted.")
+    		else:
+    			embed = discord.Embed(
+    				color=discord.Color.blurple(),
+    				description=f"User: {str(user)}{'<:bot:711628618912104488>' if user.bot else ''}\n"
+    					f"ID: {str(user.id)}\n"
+    					f"Created at: {humanize.naturaltime(user.created_at)}"
+    			).set_thumbnail(url=user.avatar_url)
+    			await ctx.send(embed=embed)
+    			
+    @commands.command()
+    async def userinfo(self, ctx, *, user=None):
         user = (await BetterUserConverter().convert(ctx, user)).obj
         flags = [flag for flag, value in [*user.public_flags] if value]
         user_info = UserInfo(user)

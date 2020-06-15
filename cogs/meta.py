@@ -21,30 +21,30 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import base64
+
+import contextlib
 import inspect
 import itertools
-import re
-from contextlib import suppress
+
 from textwrap import dedent
 from time import perf_counter
 
-import config
 import discord
-from discord.ext import commands
-import humanize
-import main
+from discord.ext import commands, menus
 
+import config
+import main
+from main import NewCtx
 from utils.formatters import BetterEmbed
-from utils.converters import BetterUserConverter
+from utils.converters import BetterUserConverter, CommandConverter
 
 checked_perms = ['is_owner', 'guild_only', 'dm_only', 'is_nsfw']
 checked_perms.extend([p[0] for p in discord.Permissions()])
 
 
-def retrieve_checks(command):
+def retrieve_checks(command: commands.Command):
     req = []
-    with suppress(Exception):
+    with contextlib.suppress(Exception):
         for line in inspect.getsource(command.callback).splitlines():
             for permi in checked_perms:
                 if permi in line and line.lstrip().startswith('@'):
@@ -52,18 +52,16 @@ def retrieve_checks(command):
     return ', '.join(req)
 
 
-badge_mapping = {
-    'staff': '<:staff:711628736977567776>',
-    'partner': '<:partner:711628720963715096>',
-    'hypesquad': '<:events:711628678748045483>',
-    'hypesquad_balance': '<:balance:711628592081272943>',
-    'hypesquad_bravery': '<:bravery:711628626742870026>',
-    'hypesquad_brilliance': '<:brilliance:711628635152318475>',
-    'bug_hunter': '<:bug1:711628644518461540>',
-    'bug_hunter_level_2': '<:bug2:711628652340707408>',
-    'verified_bot_developer': '<:dev:711628661077573644>',
-    'early_supporter': '<:early:711628670032150568>'
-}
+class SrcPages(menus.ListPageSource):
+    def __init__(self, data):
+        super().__init__(data, per_page=1950)
+
+    async def format_page(self, menu, entries):
+        out = '```py\n'
+        out += ''.join(entries).replace('```', '\u200b`\u200b`\u200b`')
+        out += '\n```'
+        return out
+
 
 class UserInfo:
     def __init__(self, user):
@@ -154,79 +152,57 @@ class Meta(commands.Cog):
     def cog_unload(self):
         self.bot.help_command = self.old_help
 
+    @commands.command(name='source', aliases=['src', 's'])
+    async def _source(self, ctx: NewCtx, *, target: CommandConverter = None):
+        command = target or ctx.command
+        source_lines = inspect.getsource(command.callback)
+        pages = menus.MenuPages(source=SrcPages(source_lines), clear_reactions_after=True)
+        await pages.start(ctx)
+
+
+
     @commands.command()
-    async def about(self, ctx):
+    async def about(self, ctx: NewCtx):
         """ This is the 'about the bot' command. """
         description = dedent(f"""\
                              A ~~shit~~ fun bot that was thrown together by a team of complete nincompoops.
                              In definitely no particular order:\n
                             {', '.join([self.bot.get_user(i).__str__() for i in self.bot.owner_ids])}
                              """)
-        # uniq_mem_count = set(
-        #     member for member in guild.members if not member.bot for guild in self.bot.guilds) #! TODO fix set comp
+
         uniq_mem_count = set()
         for guild in self.bot.guilds:
             for member in guild.members:
                 if not member.bot:
-                    uniq_mem_count.add(member)
-
-        # {member for member in ctx.bot.get_all_members() if not member.bot}
+                    uniq_mem_count.add(member)  # can't we just filter bot.users there ?
 
         embed = BetterEmbed(title=f"About {ctx.guild.me.display_name}")
         embed.description = description
         embed.set_author(name=ctx.me.display_name, icon_url=ctx.me.avatar_url)
         embed.add_field(name="Current guilds",
-                        value=f'{len(self.bot.guilds):,}')
+                        value=f'{len(self.bot.guilds):,}', inline=False)
         embed.add_field(name="Total fleshy people being memed",
-                        value=f'{len(uniq_mem_count):,}')
+                        value=f'{len(uniq_mem_count):,}', inline=False)
+        embed.add_field(name='Come check out our source at ;',
+                        value='https://github.com/uYert/yert', inline=False)
         await ctx.send(embed=embed)
 
     @commands.command()
-    async def ping(self, ctx):
+    async def ping(self, ctx: NewCtx):
         sabertooth_tiger = perf_counter()
         m = await ctx.send('_ _')
         endocrine_title = perf_counter()
         await m.edit(embed=BetterEmbed(
             description=f'**API** {endocrine_title-sabertooth_tiger:.2f}s\n**WS** {self.bot.latency:.2f}s'
         ))
-        
+
     @commands.command()
-    async def parsetoken(self, ctx, *, token:str):
-    	if re.match(r"([a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84})", token) is not None:
-    		user_id = base64.b64decode(token.split(".")[0]).decode('utf8')
-    		user = self.bot.get_user(user_id)
-    		if user is None:
-    			await ctx.send("Either i can't see that user or his account got deleted.")
-    		else:
-    			embed = discord.Embed(
-    				color=discord.Color.blurple(),
-    				description=f"User: {str(user)}{'<:bot:711628618912104488>' if user.bot else ''}\n"
-    					f"ID: {str(user.id)}\n"
-    					f"Created at: {humanize.naturaltime(user.created_at)}"
-    			).set_thumbnail(url=user.avatar_url)
-    			await ctx.send(embed=embed)
-    			
-    @commands.command()
-    async def userinfo(self, ctx, *, user=None):
-        user = (await BetterUserConverter().convert(ctx, user)).obj
-        flags = [flag for flag, value in [*user.public_flags] if value]
-        user_info = UserInfo(user)
-        badges = [badge_mapping.get(f) for f in flags]
-        if user_info.is_nitro:
-            badges.append('<:nitro:711628687455420497>')
-        embed = BetterEmbed(
-            title=user.__str__(), description=' '.join(badges))\
-            .set_thumbnail(url=user.avatar_url_as(static_format='png'))
-        embed.add_field(name='Info', value=f'Account Created: {humanize.naturaltime(user.created_at)}')
-        await ctx.send(embed=embed)
-        
-    @commands.command()
-    async def suggest(self, ctx: main.NewCtx, *, suggestion: str):
+    async def suggest(self, ctx: NewCtx, *, suggestion: str):
         if len(suggestion) >= 1000:
             raise commands.BadArgument(message="Cannot forward suggestions longer than 1000 characters")
-        
+
         embed = BetterEmbed(title='Suggestion', description=suggestion)
-        
+
         fields = (
             ('Guild', f"{ctx.guild.name} ({ctx.guild.id})"),
             ('Channel', f"{ctx.channel.name} ({ctx.channel.id})"),
@@ -236,12 +212,12 @@ class Meta(commands.Cog):
         channel = self.bot.get_channel(config.SUGGESTION)
         await channel.send(embed=embed.add_fields(fields))
 
-        with suppress(discord.DiscordException):
+        with contextlib.suppress(discord.DiscordException):
             await ctx.message.delete()
-        
+
         await ctx.send('Thank you for your suggestion')
 
 
 def setup(bot):
-    """ Cog Entrypoint """
+    """ Cog entry point """
     bot.add_cog(Meta(bot))

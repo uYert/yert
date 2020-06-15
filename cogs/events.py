@@ -21,41 +21,18 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from collections import namedtuple
-from functools import lru_cache, wraps
+from functools import lru_cache
 import traceback
 import typing
 import itertools
 
 import discord
 from discord import Message
-from discord.ext import commands, tasks
+from discord.ext import commands
 
 import config
 from main import NewCtx
-from utils.converters import GuildConverter
 from utils import formatters
-
-Event_Data = namedtuple('Event_Data', ['guilds', 'totals'])
-
-
-def event_caching():
-    def wrapper(func):
-        @wraps(func)
-        async def wrapped(*args, **kwargs):
-            guild = args[1].guild
-            if args[0].tracked.guilds.get(guild.id, False):
-                return await func(*args, **kwargs)
-            async with args[0].bot.pool.acquire() as con:
-                query = "SELECT stats_enabled FROM guild_config WHERE guild_id = $1 and stats_enabled = True;"
-                activated = await con.fetchrow(query, guild.id)
-            if activated["activated"]:
-                args[0].tracked.guilds[guild.id] = {'joined': 0, 'left': 0}
-                return await func(*args, **kwargs)
-
-        return wrapped
-
-    return wrapper
 
 
 class Events(commands.Cog):
@@ -64,12 +41,8 @@ class Events(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.webhook = self._webhook
-
         self.ignored = [commands.CommandNotFound, ]
         self.tracking = True
-        self.tracked = Event_Data(dict(), {'joined': 0, 'left': 0})
-
-        self.cache_loop.start()
 
     @property
     def _webhook(self) -> discord.Webhook:
@@ -100,10 +73,6 @@ class Events(commands.Cog):
         output = f"```\n{output}```"
         return short_exc, output, exc_info
 
-    @tasks.loop(hours=24)
-    async def cache_loop(self):
-        query = ""
-        await self.bot.pool.execute(query, )
 
     @commands.command(name="toggle")
     @commands.has_permissions(administrator=True)
@@ -122,10 +91,13 @@ class Events(commands.Cog):
         """
         await ctx.send(", ".join([exc.__name__ for exc in self.ignored]))
 
-    @_ignored.command()
+    @_ignored.command(hidden=True)
     @commands.is_owner()
     async def add(self, ctx: NewCtx, exc: str):
         """Adds an exception to the list of ignored exceptions"""
+        cmd_exc = getattr(commands, exc.casefold())
+        self.ignored.append()
+
         if hasattr(commands, exc):
             if getattr(commands, exc) not in self.ignored:
                 self.ignored.append(getattr(commands, exc))
@@ -136,7 +108,7 @@ class Events(commands.Cog):
             raise AttributeError(
                 "commands module has no attribute {0}, command aborted".format(exc))
 
-    @_ignored.command()
+    @_ignored.command(hidden=True)
     @commands.is_owner()
     async def remove(self, ctx: NewCtx, exc: str):
         """Removes an exception from the list of ingored exceptions"""
@@ -197,12 +169,10 @@ class Events(commands.Cog):
     async def on_command_completion(self, ctx: NewCtx):
         """ On command completion. """
 
-    @event_caching()
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         await self.bot.pool.execute("CALL evaluate_data($1, true);", member.guild.id)
 
-    @event_caching()
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
         await self.bot.pool.execute("CALL evaluate_data($1, false);", member.guild.id)

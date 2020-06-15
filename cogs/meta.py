@@ -52,20 +52,6 @@ def retrieve_checks(command):
     return ', '.join(req)
 
 
-badge_mapping = {
-    'staff': '<:staff:711628736977567776>',
-    'partner': '<:partner:711628720963715096>',
-    'hypesquad': '<:events:711628678748045483>',
-    'hypesquad_balance': '<:balance:711628592081272943>',
-    'hypesquad_bravery': '<:bravery:711628626742870026>',
-    'hypesquad_brilliance': '<:brilliance:711628635152318475>',
-    'bug_hunter': '<:bug1:711628644518461540>',
-    'bug_hunter_level_2': '<:bug2:711628652340707408>',
-    'verified_bot_developer': '<:dev:711628661077573644>',
-    'early_supporter': '<:early:711628670032150568>'
-}
-
-
 class SrcPages(menus.ListPageSource):
     def __init__(self, data):
         super().__init__(data, per_page=1950)
@@ -209,20 +195,6 @@ class Meta(commands.Cog):
         await m.edit(embed=BetterEmbed(
             description=f'**API** {endocrine_title-sabertooth_tiger:.2f}s\n**WS** {self.bot.latency:.2f}s'
         ))
-
-    @commands.command()
-    async def userinfo(self, ctx: NewCtx, *, user=None):
-        user = (await BetterUserConverter().convert(ctx, user)).obj
-        flags = [flag for flag, value in [*user.public_flags] if value]
-        user_info = UserInfo(user)
-        badges = [badge_mapping.get(f) for f in flags]
-        if user_info.is_nitro:
-            badges.append('<:nitro:711628687455420497>')
-        embed = BetterEmbed(
-            title=user.__str__(), description=' '.join(badges))\
-            .set_thumbnail(url=user.avatar_url_as(static_format='png'))
-        embed.add_field(name='Info', value=f'Account Created: {humanize.naturaltime(user.created_at)}')
-        await ctx.send(embed=embed)
         
     @commands.command()
     async def suggest(self, ctx: NewCtx, *, suggestion: str):

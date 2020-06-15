@@ -25,12 +25,12 @@ SOFTWARE.
 import contextlib
 import inspect
 import itertools
+
 from textwrap import dedent
 from time import perf_counter
 
 import discord
 from discord.ext import commands, menus
-import humanize
 
 import config
 import main
@@ -42,7 +42,7 @@ checked_perms = ['is_owner', 'guild_only', 'dm_only', 'is_nsfw']
 checked_perms.extend([p[0] for p in discord.Permissions()])
 
 
-def retrieve_checks(command):
+def retrieve_checks(command: commands.Command):
     req = []
     with contextlib.suppress(Exception):
         for line in inspect.getsource(command.callback).splitlines():
@@ -153,7 +153,7 @@ class Meta(commands.Cog):
         self.bot.help_command = self.old_help
 
     @commands.command(name='source', aliases=['src', 's'])
-    async def _source(self, ctx: NewCtx, *, target: CommandConverter=None):
+    async def _source(self, ctx: NewCtx, *, target: CommandConverter = None):
         command = target or ctx.command
         source_lines = inspect.getsource(command.callback)
         pages = menus.MenuPages(source=SrcPages(source_lines), clear_reactions_after=True)
@@ -174,7 +174,7 @@ class Meta(commands.Cog):
         for guild in self.bot.guilds:
             for member in guild.members:
                 if not member.bot:
-                    uniq_mem_count.add(member)
+                    uniq_mem_count.add(member)  # can't we just filter bot.users there ?
 
         embed = BetterEmbed(title=f"About {ctx.guild.me.display_name}")
         embed.description = description
@@ -195,14 +195,14 @@ class Meta(commands.Cog):
         await m.edit(embed=BetterEmbed(
             description=f'**API** {endocrine_title-sabertooth_tiger:.2f}s\n**WS** {self.bot.latency:.2f}s'
         ))
-        
+
     @commands.command()
     async def suggest(self, ctx: NewCtx, *, suggestion: str):
         if len(suggestion) >= 1000:
             raise commands.BadArgument(message="Cannot forward suggestions longer than 1000 characters")
-        
+
         embed = BetterEmbed(title='Suggestion', description=suggestion)
-        
+
         fields = (
             ('Guild', f"{ctx.guild.name} ({ctx.guild.id})"),
             ('Channel', f"{ctx.channel.name} ({ctx.channel.id})"),
@@ -214,7 +214,7 @@ class Meta(commands.Cog):
 
         with contextlib.suppress(discord.DiscordException):
             await ctx.message.delete()
-        
+
         await ctx.send('Thank you for your suggestion')
 
 

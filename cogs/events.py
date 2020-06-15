@@ -193,10 +193,11 @@ class Events(commands.Cog):
         embed.add_field(name='Bots', value=f'{bots} ({bots/total:.2%})')
         embed.add_field(name='Online', value=f'{online} ({online/total:.2%})')
 
-        if action := discord.utils.get(
-                [a async for a in guild.audit_logs(limit=5)],
-                action=discord.AuditLogAction.member_update)
-            embed.add_field(name='Added By', value=action.user)
+        with suppress(discord.DiscordException):
+            if action := discord.utils.get(
+                    [a async for a in guild.audit_logs(limit=5)],
+                    action=discord.AuditLogAction.member_update)
+                embed.add_field(name='Added By', value=action.user)
 
         if guild.icon:
             embed.set_thumbnail(url=guild.icon_url)

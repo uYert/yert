@@ -212,9 +212,6 @@ class Meta(commands.Cog):
         channel = self.bot.get_channel(config.SUGGESTION)
         await channel.send(embed=embed.add_fields(fields))
 
-        with contextlib.suppress(discord.DiscordException):
-            await ctx.message.delete()
-
         await ctx.send('Thank you for your suggestion')
 
 

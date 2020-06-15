@@ -134,7 +134,8 @@ class Other(commands.Cog):
         if not(0 <= target <= 8101):
             return await ctx.send('PEPs only exist between 0 and 8101.')
         url = f"https://www.python.org/dev/peps/pep-{target:04d}/"
-        assert (await self.bot.session.get(url)).status == 200, 'PEP not found'
+        if not (await self.bot.session.get(url)).status == 200:
+            return await ctx.send(f'PEP not found')
         await ctx.send(f"Here you go, pep {target:04d} \n{url}")
 
     @commands.command(name='visualise', aliases=['vis', 'colour', 'color', 'show'])

@@ -155,6 +155,8 @@ class Bot(commands.Bot):
                 ))
 
     async def connect(self, *, reconnect=True):
+        self.prefixes = {}
+
         self._session = ClientSession(loop=self.loop)
         self._headers = {"Range": "bytes=0-10"}
         self._cache = TimedCache(loop=self.loop)
@@ -192,6 +194,26 @@ class Bot(commands.Bot):
     async def get_context(self, message: discord.Message, *, cls=None):
         """Custom context stuff hahayes"""
         return await super().get_context(message, cls=cls or NewCtx)
+
+    async def get_prefix(self, message):
+
+        if message.guild:
+
+            ret = self.prefixes.get(message.guild.id)
+            if not ret:
+                if ret := await self.pool.fetchval('SELECT prefixes FROM guild_config WHERE guild_id = $1', message.guild.id):
+                    self.prefixes[message.guild.id] = ret
+                else:
+                    await self.pool.execute('''INSERT INTO guild_config (guild_id, prefixes)
+                                                VALUES ($1, $2) 
+                                                ON CONFLICT (guild_id) 
+                                                DO UPDATE SET prefixes = $2;''', message.guild.id, [config.PREFIX])
+                    self.prefixes[message.guild.id] = [config.PREFIX]
+            return self.prefixes[message.guild.id]
+
+        else:
+
+            return config.PREFIX
 
     async def on_ready(self):
         """ We're online. """

@@ -80,7 +80,7 @@ class Practical(commands.Cog):
 
             source = await self.aiogoogle.do_search(ctx, query=query, is_nsfw=is_nsfw)
 
-        menu = menus.MenuPages(source, clear_reactions_after=True)
+        menu = menus.MenuPages(source, delete_message_after=True)
         await menu.start(ctx)
 
     @google.command(name='image', aliases=['-i'])

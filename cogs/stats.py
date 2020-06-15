@@ -25,7 +25,7 @@ from datetime import datetime
 from functools import wraps
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 
 class DataNotFound(commands.CommandError):
@@ -54,9 +54,15 @@ class Stats(commands.Cog):
         self.bot = bot
         self.tracking = True
         self.tracked = []
+        self.db_task.start()
+        
+    @tasks.loop(minutes=15)
+    async def db_task(self):
+    	async with self.bot.pool.acquire() as conn:
+    		await conn.executemany("CALL evaluate_data($1)",[(x) for x in self.tracked])
         
     @commands.command()
-    @commands.has_permissions(administrator=True)
+    @commands.has_permissions(manage_guild=True)
     async def enable_stats(self, ctx):
         self.tracked.append(ctx.guild.id)
         query = """
@@ -69,7 +75,7 @@ class Stats(commands.Cog):
         await ctx.send("The stats were successfully activated for this server.")
 
     @commands.command()
-    @commands.has_permissions(administrator=True)
+    @commands.has_permissions(manage_guild=True)
     async def disable_stats(self, ctx):
         self.tracked.remove(ctx.guild.id)
         query = """
@@ -83,7 +89,6 @@ class Stats(commands.Cog):
     
     @commands.command()
     @commands.cooldown(1, 15, commands.BucketType.guild)
-    @commands.has_permissions(administrator=True)
     @caching()
     async def show_stats(self, ctx):
         query = """
@@ -166,6 +171,12 @@ class Stats(commands.Cog):
         )
         await ctx.send(embed=embed)
   
+    @show_stats.error
+    async def show_stats_error(self, ctx, error):
+        if isinstance(error, DataNotFound):
+            return await ctx.send("No member joining or leaving have been recorded")
+        return self.bot.dispatch('command_error', ctx, error)
+
     @caching()
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):

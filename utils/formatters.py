@@ -56,6 +56,7 @@ def fmt(daytee: Union[datetime, int], stringform: Optional[str]):
     stringform = stringform or "%Y %b %d: %H:%M"
     return daytee.strftime(stringform)
 
+
 class BetterEmbed(Embed):
     """Haha yes"""
 
@@ -64,7 +65,13 @@ class BetterEmbed(Embed):
         self.color = random_colour()
         self._empty_field = "**⚠️ MISSING FIELD ⚠️**"
 
-    def fill_fields(self) -> 'ColoredEmbed':
+    def __call__(self, **kwargs):
+        """Allows us to call the constructor again"""
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        return self
+
+    def fill_fields(self):
         """Fill the remaining fields so they are lined up properly"""
         inlines = len(self.fields[max(i for i, _ in enumerate(self.fields)):]) + 1
         for _ in range(ceil(inlines / 3) * 3 - inlines):
@@ -81,10 +88,9 @@ class BetterEmbed(Embed):
                                  value=str(value) or self._empty_field,  # a bit clearer than the missing field error
                                  inline=inline)
 
-    def add_fields(self, fields: Iterator[Tuple[str, str, bool]]) -> 'ColoredEmbed':
+    def add_fields(self, fields: Iterator[Tuple[str, str, bool]]):
         """Adds all fields at once"""
         for field in fields:
             self.add_field(name=field[0], value=field[1],
                            inline=get_index(field, 2, True))
         return self
-

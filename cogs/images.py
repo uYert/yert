@@ -182,15 +182,15 @@ class Images(commands.Cog):
     @commands.command(name='morejpeg', aliases=['jpeg', 'jpegify', 'more'])
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
-    async def _morejpeg(self, ctx: NewCtx, severity: int = 15):
-        """Adds jpeg compression proportional to severity to an uploaded image or the author's profile picture"""
+    async def _morejpeg(self, ctx: NewCtx, severity: int = 15, img_bytes: LinkConverter = None):
+        """Adds jpeg compression proportional to severity to an uploaded or linked image or the author's profile picture"""
 
         if not (0 <= severity <= 100):
             raise commands.BadArgument(
                 "severity parameter must be between 0 and 100 inclusive")
         severity = 101 - severity
 
-        attachment_file, _, _ = await self._get_image(ctx)
+        attachment_file = img_bytes or (await self._get_image(ctx))[0]
 
         start = time.time()
         new_file = await self.bot.loop.run_in_executor(
@@ -203,7 +203,7 @@ class Images(commands.Cog):
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
     async def diff(self, ctx: NewCtx, *img_bytes: Optional[LinkConverter]):
-        """Returns the difference between two images"""
+        """Returns the difference between two images, both must be attached or as links"""
 
         if len(ctx.message.attachments) == 2:
             file_a, _, file_a_size = await self._get_image(ctx, 0)
@@ -226,7 +226,7 @@ class Images(commands.Cog):
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
     async def _invert(self, ctx: NewCtx, *img_bytes: Optional[LinkConverter]):
-        """Inverts a given image to negative"""
+        """Inverts a uploaded image, link to an image or the authors profile picture to negative"""
 
         file_a, file_size = await self._image_ops_func(ctx, img_bytes)
 
@@ -250,7 +250,7 @@ class Images(commands.Cog):
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
     async def _poster(self, ctx: NewCtx, bits: int = 8, *img_bytes: Optional[LinkConverter]):
-        """Changes the number of bits (1 - 8 inc) dedicated to each channel"""
+        """Changes the number of bits (1 - 8 inc) dedicated to each colour channel, image must be attached, linked or the authors profile picture"""
 
         if not (1 <= bits <= 8):
             raise commands.BadArgument("Bits argument should be between 1 and 8 inclusive")
@@ -277,7 +277,7 @@ class Images(commands.Cog):
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
     async def _filter(self, ctx: NewCtx, filter_type: str, *img_bytes: Optional[LinkConverter]):
-        """Applies a filter to a given image"""
+        """Applies a filter to an uploaded image, linked image or the authors profile pic"""
 
         filter_type = filter_type.lower()
 
@@ -306,7 +306,7 @@ class Images(commands.Cog):
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
     async def _rotate(self, ctx: NewCtx, degrees: int, *img_bytes: Optional[LinkConverter]):
-        """Rotates an image some degrees, 360 returns it to original position"""
+        """Rotates an uploaded or linked image or the authors profile picture some degrees, 360 returns it to original position"""
         degrees = degrees % 360 if degrees > 360 else degrees
 
         file_a, file_size = await self._image_ops_func(ctx, img_bytes)

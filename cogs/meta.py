@@ -22,20 +22,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import contextlib
 import inspect
 import itertools
-from contextlib import suppress
 from textwrap import dedent
 from time import perf_counter
 
-import config
 import discord
-from discord.ext import commands
+from discord.ext import commands, menus
 import humanize
-import main
 
-from utils.formatters import BetterEmbed, Flags
-from utils.converters import BetterUserConverter
+import config
+import main
+from main import NewCtx
+from utils.formatters import BetterEmbed
+from utils.converters import BetterUserConverter, CommandConverter
 
 checked_perms = ['is_owner', 'guild_only', 'dm_only', 'is_nsfw']
 checked_perms.extend([p[0] for p in discord.Permissions()])
@@ -43,7 +44,7 @@ checked_perms.extend([p[0] for p in discord.Permissions()])
 
 def retrieve_checks(command):
     req = []
-    with suppress(Exception):
+    with contextlib.suppress(Exception):
         for line in inspect.getsource(command.callback).splitlines():
             for permi in checked_perms:
                 if permi in line and line.lstrip().startswith('@'):
@@ -63,6 +64,18 @@ badge_mapping = {
     'verified_bot_developer': '<:dev:711628661077573644>',
     'early_supporter': '<:early:711628670032150568>'
 }
+
+
+class SrcPages(menus.ListPageSource):
+    def __init__(self, data):
+        super().__init__(data, per_page=1950)
+
+    async def format_page(self, menu, entries):
+        out = '```py\n'
+        out += ''.join(entries).replace('```', '\u200b`\u200b`\u200b`')
+        out += '\n```'
+        return out
+
 
 class UserInfo:
     def __init__(self, user):
@@ -153,35 +166,43 @@ class Meta(commands.Cog):
     def cog_unload(self):
         self.bot.help_command = self.old_help
 
+    @commands.command(name='source', aliases=['src', 's'])
+    async def _source(self, ctx: NewCtx, *, target: CommandConverter=None):
+        command = target or ctx.command
+        source_lines = inspect.getsource(command.callback)
+        pages = menus.MenuPages(source=SrcPages(source_lines), clear_reactions_after=True)
+        await pages.start(ctx)
+
+
+
     @commands.command()
-    async def about(self, ctx):
+    async def about(self, ctx: NewCtx):
         """ This is the 'about the bot' command. """
         description = dedent(f"""\
                              A ~~shit~~ fun bot that was thrown together by a team of complete nincompoops.
                              In definitely no particular order:\n
                             {', '.join([self.bot.get_user(i).__str__() for i in self.bot.owner_ids])}
                              """)
-        # uniq_mem_count = set(
-        #     member for member in guild.members if not member.bot for guild in self.bot.guilds) #! TODO fix set comp
+
         uniq_mem_count = set()
         for guild in self.bot.guilds:
             for member in guild.members:
                 if not member.bot:
                     uniq_mem_count.add(member)
 
-        # {member for member in ctx.bot.get_all_members() if not member.bot}
-
         embed = BetterEmbed(title=f"About {ctx.guild.me.display_name}")
         embed.description = description
         embed.set_author(name=ctx.me.display_name, icon_url=ctx.me.avatar_url)
         embed.add_field(name="Current guilds",
-                        value=f'{len(self.bot.guilds):,}')
+                        value=f'{len(self.bot.guilds):,}', inline=False)
         embed.add_field(name="Total fleshy people being memed",
-                        value=f'{len(uniq_mem_count):,}')
+                        value=f'{len(uniq_mem_count):,}', inline=False)
+        embed.add_field(name='Come check out our source at ;',
+                        value='https://github.com/uYert/yert', inline=False)
         await ctx.send(embed=embed)
 
     @commands.command()
-    async def ping(self, ctx):
+    async def ping(self, ctx: NewCtx):
         sabertooth_tiger = perf_counter()
         m = await ctx.send('_ _')
         endocrine_title = perf_counter()
@@ -190,7 +211,7 @@ class Meta(commands.Cog):
         ))
 
     @commands.command()
-    async def userinfo(self, ctx, *, user = None):
+    async def userinfo(self, ctx: NewCtx, *, user=None):
         user = (await BetterUserConverter().convert(ctx, user)).obj
         flags = [flag for flag, value in [*user.public_flags] if value]
         user_info = UserInfo(user)
@@ -204,7 +225,7 @@ class Meta(commands.Cog):
         await ctx.send(embed=embed)
         
     @commands.command()
-    async def suggest(self, ctx: main.NewCtx, *, suggestion: str):
+    async def suggest(self, ctx: NewCtx, *, suggestion: str):
         if len(suggestion) >= 1000:
             raise commands.BadArgument(message="Cannot forward suggestions longer than 1000 characters")
         
@@ -219,12 +240,12 @@ class Meta(commands.Cog):
         channel = self.bot.get_channel(config.SUGGESTION)
         await channel.send(embed=embed.add_fields(fields))
 
-        with suppress(discord.DiscordException):
+        with contextlib.suppress(discord.DiscordException):
             await ctx.message.delete()
         
         await ctx.send('Thank you for your suggestion')
 
 
 def setup(bot):
-    """ Cog Entrypoint """
+    """ Cog entry point """
     bot.add_cog(Meta(bot))

@@ -74,7 +74,6 @@ class Events(commands.Cog):
         output = f"```\n{output}```"
         return short_exc, output, exc_info
 
-
     @commands.command(name="toggle")
     @commands.has_permissions(administrator=True)
     async def _toggle_tracker(self, ctx: NewCtx):
@@ -146,7 +145,6 @@ class Events(commands.Cog):
 
         await self.webhook.send(embed=embed)
 
-
     @commands.Cog.listener()
     async def on_command_error(self, ctx: NewCtx, error: Exception):
         """ On command errors. """
@@ -184,7 +182,8 @@ class Events(commands.Cog):
         embed.add_field(name='Name', value=guild.name)
         embed.add_field(name='ID', value=guild.id)
         embed.add_field(name='Shard ID', value=guild.shard_id or 'N/A')
-        embed.add_field(name='Owner', value=f'{guild.owner} (ID: {guild.owner.id})')
+        embed.add_field(
+            name='Owner', value=f'{guild.owner} (ID: {guild.owner.id})')
 
         bots = sum(m.bot for m in guild.members)
         total = guild.member_count
@@ -195,8 +194,8 @@ class Events(commands.Cog):
 
         with suppress(discord.DiscordException):
             if action := discord.utils.get(
-                    [a async for a in guild.audit_logs(limit=5)],
-                    action=discord.AuditLogAction.member_update)
+                [a async for a in guild.audit_logs(limit=5)],
+                action=discord.AuditLogAction.member_update):
                 embed.add_field(name='Added By', value=action.user)
 
         if guild.icon:

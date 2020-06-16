@@ -55,7 +55,6 @@ class Memes(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.webhook = bot.get_cog("Events").webhook
 
     def _gen_embeds(self, requester: str, iterable: List[Any]) -> List[Embed]:
         embeds = []
@@ -185,7 +184,7 @@ class Memes(commands.Cog):
                     output += char
             else:
                 output += string.whitespace
-        
+
         mentions = discord.AllowedMentions(everyone=False, users=False, roles=False)
         await ctx.send(output, allowed_mentions=mentions)
 

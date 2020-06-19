@@ -39,9 +39,18 @@ from utils import formatters
 
 class Prompt(menus.Menu):
     accepted = None
-    def __init__(self, msg: typing.Union[str, discord.Embed], **kwargs):
+    def __init__(self, msg: typing.Union[str, discord.Embed], other: typing.Union[discord.User, discord.Member], **kwargs):
         super().__init__(**kwargs)
         self.msg = msg
+        self.other_id = other.id
+
+    def reaction_check(self, payload):
+        if payload.message_id != self.message.id:
+            return False
+        if payload.user_id not in (self.bot.owner_id, self.other_id):
+            return False
+
+        return payload.emoji in self.buttons
 
     async def send_initial_message(self, ctx: main.NewCtx, channel: discord.abc.Messageable):
         if isinstance(self.msg, discord.Embed):
@@ -50,6 +59,10 @@ class Prompt(menus.Menu):
             return await channel.send(content=self.msg)
         else:
             raise TypeError(f"Expected Embed or string, got {self.message.__class__.__name__}")
+        
+    async def start(self, ctx, *, channel=None, wait=False):
+        await super().start(ctx, channel=channel, wait=wait)
+
 
     @menus.button('✔️')
     async def on_green(self, payload: discord.RawReactionActionEvent):
@@ -118,36 +131,9 @@ class ConnectMenu(menus.Menu):
         if maybecoro is not None:
             await maybecoro
 
-    async def prevent_burying(self) -> None:
-        """
-        Checks if the menu hasn't been burried too far into messages
-        """
-        def check(m: discord.Message):
-            return m.channel == self.ctx.channel
-
-        counter = 0
-        while self._running:
-            try:
-                msg = await self.bot.wait_for('message', check=check, timeout=5)
-            except asyncio.TimeoutError:
-                continue
-
-            else:
-                counter += len(msg.content.split('\n'))
-                if msg.embeds or msg.attachments:
-                    counter += 9
-
-                if counter >= 12:
-                    await self.message.delete()
-                    self.clear_buttons()
-                    self.message = await self.ctx.send(**self.to_send(self.grid, self.current_player))
-                    await self.make_buttons(react=True)
-                    counter = 0
-
     async def start(self, ctx, *, channel=None, wait=False) -> None:
         await self.make_buttons()
         await super().start(ctx, channel=channel, wait=wait)
-        self.bury_task = self.bot.loop.create_task(self.prevent_burying())
 
     def get_emoji(self, id_: int) -> str:
         """Gets the emoji corresponding to the id"""

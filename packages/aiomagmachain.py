@@ -46,7 +46,7 @@ class AioMagmaChain:
     def __init__(self, *, session: ClientSession, google_client: AioSearchEngine):
         self.session = session
         self.google_client = google_client
-        self.screener = "http://magmachain.herokuapp.com/api/v1"
+        self.screener = "http://magmafuck.herokuapp.com/api/v1"
 
     async def check_url(self, *, url: str, is_nsfw: bool) -> str:
         """checks if the result is a proper sfw one"""

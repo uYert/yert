@@ -25,12 +25,12 @@ SOFTWARE.
 import contextlib
 import inspect
 import itertools
+
 from textwrap import dedent
 from time import perf_counter
 
 import discord
 from discord.ext import commands, menus
-import humanize
 
 import config
 import main
@@ -42,7 +42,7 @@ checked_perms = ['is_owner', 'guild_only', 'dm_only', 'is_nsfw']
 checked_perms.extend([p[0] for p in discord.Permissions()])
 
 
-def retrieve_checks(command):
+def retrieve_checks(command: commands.Command):
     req = []
     with contextlib.suppress(Exception):
         for line in inspect.getsource(command.callback).splitlines():
@@ -50,20 +50,6 @@ def retrieve_checks(command):
                 if permi in line and line.lstrip().startswith('@'):
                     req.append(permi)
     return ', '.join(req)
-
-
-badge_mapping = {
-    'staff': '<:staff:711628736977567776>',
-    'partner': '<:partner:711628720963715096>',
-    'hypesquad': '<:events:711628678748045483>',
-    'hypesquad_balance': '<:balance:711628592081272943>',
-    'hypesquad_bravery': '<:bravery:711628626742870026>',
-    'hypesquad_brilliance': '<:brilliance:711628635152318475>',
-    'bug_hunter': '<:bug1:711628644518461540>',
-    'bug_hunter_level_2': '<:bug2:711628652340707408>',
-    'verified_bot_developer': '<:dev:711628661077573644>',
-    'early_supporter': '<:early:711628670032150568>'
-}
 
 
 class SrcPages(menus.ListPageSource):
@@ -189,7 +175,7 @@ class Meta(commands.Cog):
         for guild in self.bot.guilds:
             for member in guild.members:
                 if not member.bot:
-                    uniq_mem_count.add(member)
+                    uniq_mem_count.add(member)  # can't we just filter bot.users there ?
 
         embed = BetterEmbed(title=f"About {ctx.guild.me.display_name}")
         embed.description = description
@@ -212,26 +198,12 @@ class Meta(commands.Cog):
         ))
 
     @commands.command()
-    async def userinfo(self, ctx: NewCtx, *, user=None):
-        user = (await BetterUserConverter().convert(ctx, user)).obj
-        flags = [flag for flag, value in [*user.public_flags] if value]
-        user_info = UserInfo(user)
-        badges = [badge_mapping.get(f) for f in flags]
-        if user_info.is_nitro:
-            badges.append('<:nitro:711628687455420497>')
-        embed = BetterEmbed(
-            title=user.__str__(), description=' '.join(badges))\
-            .set_thumbnail(url=user.avatar_url_as(static_format='png'))
-        embed.add_field(name='Info', value=f'Account Created: {humanize.naturaltime(user.created_at)}')
-        await ctx.send(embed=embed)
-        
-    @commands.command()
     async def suggest(self, ctx: NewCtx, *, suggestion: str):
         if len(suggestion) >= 1000:
             raise commands.BadArgument(message="Cannot forward suggestions longer than 1000 characters")
-        
+
         embed = BetterEmbed(title='Suggestion', description=suggestion)
-        
+
         fields = (
             ('Guild', f"{ctx.guild.name} ({ctx.guild.id})"),
             ('Channel', f"{ctx.channel.name} ({ctx.channel.id})"),
@@ -241,9 +213,6 @@ class Meta(commands.Cog):
         channel = self.bot.get_channel(config.SUGGESTION)
         await channel.send(embed=embed.add_fields(fields))
 
-        with contextlib.suppress(discord.DiscordException):
-            await ctx.message.delete()
-        
         await ctx.send('Thank you for your suggestion')
 
 

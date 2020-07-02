@@ -517,11 +517,12 @@ class Games(commands.Cog):
             raise commands.BadArgument('The amount of columns must be a number between 3 and 10')
         
         prompt_menu = connect4.Prompt(f'{opponent.mention}, {ctx.author.mention} requested a connect 4 duel with you, accept ?',
+                                      other=opponent,
                                       delete_message_after=True)
         
         await prompt_menu.start(ctx, wait=True)
         if not prompt_menu.accepted:
-            return await ctx.send(f"{opponent} didn't accept the duel")
+            return await ctx.send(f"{opponent.mention} didn't accept the duel", allowed_mentions=discord.AllowedMentions(users=False))
         
         main_menu = connect4.ConnectMenu(p1=ctx.author, 
                                          p2=opponent, 

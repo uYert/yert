@@ -80,6 +80,82 @@ class Moderation(commands.Cog):
         reason = reason or self.def_reason
         await target.edit(mute=False, reason=reason)
 
+    @commands.group(invoke_without_command=True)
+    @commands.has_permissions(manage_roles=True)
+    async def config(self, ctx):
+
+        await ctx.send_help(ctx.command)
+
+    @config.group(name='prefix', invoke_without_command=True)
+    async def config_prefix(self, ctx):
+
+        fmt = ', '.join(await self.bot.get_prefix(ctx.message))
+
+        await ctx.send(f'The prefixes for `{ctx.guild}` are `{fmt}`')
+
+    @config_prefix.command(name='set')
+    @commands.has_permissions(manage_roles=True)
+    async def prefix_set(self, ctx, prefix):
+
+        if len(prefix) > 12:
+
+            raise commands.BadArgument('The prefix cannot be longer than 12 characters')
+
+        if len(prefix) <= 0:
+
+            raise commands.BadArgument('The prefix cannot be less than 1 character')
+
+        await self.bot.pool.execute('''UPDATE guild_config
+                                       SET prefixes = $1
+                                       WHERE guild_id = $2''', [prefix], ctx.guild.id)
+
+        self.bot.prefixes[ctx.guild.id] = [prefix]
+        await ctx.send(f'Set the prefix to `{prefix}`')
+
+    @config_prefix.command(name='add')
+    @commands.has_permissions(manage_roles=True)
+    async def prefix_add(self, ctx, prefix):
+
+        if len(self.bot.prefixes[ctx.guild.id]) >= 7:
+
+            raise commands.BadArgument('You cannot have more than 7 prefixes')
+
+        if len(prefix) > 12:
+
+            raise commands.BadArgument('The prefix cannot be longer than 12 characters')
+
+        if len(prefix) <= 0:
+
+            raise commands.BadArgument('The prefix cannot be less than 1 character')
+
+        if prefix in self.bot.prefixes[ctx.guild.id]:
+
+            raise commands.BadArgument('You cannot have the same prefix twice')
+
+        await self.bot.pool.execute('''UPDATE guild_config
+                                       SET prefixes = prefixes || $1 
+                                       WHERE guild_id = $2''', [prefix], ctx.guild.id)
+        self.bot.prefixes[ctx.guild.id].append(prefix)
+        await ctx.send(f'Added `{prefix}` to the list of prefixes')
+
+    @config_prefix.command(name='remove')
+    @commands.has_permissions(manage_roles=True)
+    async def prefix_remove(self, ctx, prefix):
+
+        if len(self.bot.prefixes[ctx.guild.id]) <= 1:
+
+            raise commands.BadArgument('You cannot remove all of your prefixes')
+
+        prefix = [a for a in enumerate(self.bot.prefixes[ctx.guild.id]) if a[1] == prefix]
+        if not prefix:
+            raise commands.BadArgument('That was not a prefix')
+
+        await self.bot.pool.execute('''UPDATE guild_config
+                                       SET prefixes = array_remove(prefixes, $1) 
+                                       WHERE guild_id = $2''', prefix[0][1], ctx.guild.id)
+        self.bot.prefixes[ctx.guild.id].pop(prefix[0][0])
+        await ctx.send(f'Removed `{prefix[0][1]}` from the list of prefixes')
+
 
 def setup(bot):
     """ Cog entrypoint. """

@@ -32,11 +32,62 @@ from discord.ext import commands
 
 
 from main import Bot, NewCtx
+from fuzzywuzzy import process
 from packages import blackjack, roulette, connect4
 from utils import db
 from utils.formatters import BetterEmbed
 
 random.seed(datetime.utcnow())
+
+
+class List_holder:
+
+    @property
+    def mages(self) -> list:
+        return [
+            'Agni', 'Ah Puch', 'Anubis', 'Ao Kuang', 'Aphrodite', 'Baron Samedi', "Chang'e", 'Chronos', 'Discordia', 'Freya', 'Hades', 'He Bo',
+            'Hel', 'Hera', 'Isis', 'Janus', 'Kukulkan', 'Merlin', 'Nox', 'Nu Wa', 'Olorun', 'Persephone', 'Poseidon', 'Ra', 'Raijin', 'Scylla',
+            'Sol', 'The Morrigan', 'Thoth', 'Vulcan', 'Zeus', 'Zhong Kui'
+        ]
+
+    @property
+    def assassins(self) -> list:
+        return [
+            'Arachne', 'Awilix', 'Bakasura', 'Bastet', 'Camazotz', 'Da Ji', 'Fenrir', 'Hun Batz', 'Kali', 'Loki', 'Mercury', 'Ne Zha', 'Nemesis',
+            'Pele', 'Ratatoskr', 'Ravana', 'Serqet', 'Set',	'Susano', 'Thanatos', 'Thor'
+        ]
+
+    @property
+    def warriors(self) -> list:
+        return [
+            'Achilles', 'Amaterasu', 'Bellona', 'Chaac', 'Cu Chulainn', 'Erlang Shen', 'Guan Yu', 'Hercules', 'Horus', 'King Arthur', 'Nike',
+            'Odin', 'Osiris', 'Sun Wukong', 'Tyr', 'Vamana'
+        ]
+
+    @property
+    def hunters(self) -> list:
+        return [
+            'Ah Muzen Cab', 'Anhur', 'Apollo', 'Artemis', 'Cernunnos', 'Chernobog', 'Chiron', 'Cupid', 'Hachiman', 'Hou Yi', 'Izanami', 'Jing Wei',
+            'Medusa', 'Neith', 'Rama', 'Skadi', 'Ullr', 'Xbalanque'
+        ]
+
+    @property
+    def guardians(self) -> list:
+        return [
+            'Ares', 'Artio', 'Athena', 'Bacchus', 'Cabrakan', 'Cerberus', 'Cthulhu', 'Fafnir', 'Ganesha', 'Geb', 'Jormungandr', 'Khepri',
+            'Kumbhakarna', 'Kuzenbo', 'Sobek', 'Sylvanus', 'Terra', 'Xing Tian', 'Yemoja', 'Ymir'
+        ]
+
+    @property
+    def all_gods(self) -> list:
+        gods = []
+        for selection in self.lists:
+            gods.extend(selection)
+        return gods
+
+    @property
+    def lists(self) -> list:
+        return [list for list in dir(self) if list.endswith('_list')]
 
 
 class GuessWordGame:
@@ -127,6 +178,7 @@ class Games(commands.Cog):
     def __init__(self, bot: Bot):
         self.bot = bot
         self.timeout = 30
+        self.lists = List_holder()
         self.roulette_options = ['firstcol', 'secondcol', 'thirdcol', 'red', 'black',
                                  'first12', 'second12', 'third12', 'even', 'odd',
                                  'low', 'high']
@@ -138,10 +190,27 @@ class Games(commands.Cog):
 
         self.roulette_games = dict()
 
+    async def changer(self, message: discord.Message, picked_list: list) -> None:
+        for _ in range(2):
+            await asyncio.sleep(0.5)
+            await message.edit(content=f"Your god will be `{random.choice(picked_list)}`")
+        await asyncio.sleep(0.5)
+        await message.edit(content=f"Your god is `{random.choice(picked_list)}`")
+
     async def db_query(self, bot: Bot, query: str, *args: tuple):
         query = self.queries[query]
         result = await bot.pool.fetchrow(query, *args)
         return result
+
+    @commands.command(hidden=True)
+    async def pick(self, ctx: NewCtx, target_list: Optional[str]):
+        """Selects a random god from smite to play as, can take a specific class (assassin, mage, etc) or leave blank for any class"""
+        if target_list:
+            god_list = process.extractOne(target_list, self.lists.lists)
+        else:
+            god_list = self.lists.all_gods
+        message = await ctx.send('Your god will be `...`')
+        await self.changer(message, god_list)
 
     @commands.command()
     @commands.cooldown(1,30, commands.BucketType.user)
@@ -158,7 +227,6 @@ class Games(commands.Cog):
             ctx.command.reset_cooldown(ctx)
             return await ctx.send('The difficulty level must be in : easy - medium - hard')
         return self.bot.dispatch('command_error', ctx, error)
-
 
     @commands.command(name='blackjack', aliases=['21'], hidden=True)
     @commands.max_concurrency(1, commands.BucketType.channel, wait=False)

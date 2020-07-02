@@ -169,7 +169,7 @@ class Images(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
     async def shift(self, ctx: NewCtx, *img_bytes: Optional[LinkConverter]):
-        """Shifts the RGB bands in an attached image or the author's profile picture"""
+        """Shifts the RGB bands in an attached image, link or authors profile picture"""
 
         attachment_file, file_size = await self._image_ops_func(ctx, img_bytes)
 
@@ -183,7 +183,7 @@ class Images(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
     async def _morejpeg(self, ctx: NewCtx, severity: int = 15, img_bytes: LinkConverter = None):
-        """Adds jpeg compression proportional to severity to an uploaded or linked image or the author's profile picture"""
+        """Adds jpeg compression proportional to severity to an attached image, link or the author's profile picture"""
 
         if not (0 <= severity <= 100):
             raise commands.BadArgument(
@@ -226,7 +226,7 @@ class Images(commands.Cog):
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
     async def _invert(self, ctx: NewCtx, *img_bytes: Optional[LinkConverter]):
-        """Inverts a uploaded image, link to an image or the authors profile picture to negative"""
+        """Inverts a uploaded image, link or the authors profile picture to negative"""
 
         file_a, file_size = await self._image_ops_func(ctx, img_bytes)
 
@@ -250,7 +250,7 @@ class Images(commands.Cog):
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
     async def _poster(self, ctx: NewCtx, bits: int = 8, *img_bytes: Optional[LinkConverter]):
-        """Changes the number of bits (1 - 8 inc) dedicated to each colour channel, image must be attached, linked or the authors profile picture"""
+        """Changes the number of bits (1 - 8 inc) dedicated to each colour channel, image must be an attachment, a link or the authors profile picture"""
 
         if not (1 <= bits <= 8):
             raise commands.BadArgument("Bits argument should be between 1 and 8 inclusive")
@@ -277,7 +277,7 @@ class Images(commands.Cog):
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
     async def _filter(self, ctx: NewCtx, filter_type: str, *img_bytes: Optional[LinkConverter]):
-        """Applies a filter to an uploaded image, linked image or the authors profile pic"""
+        """Applies a filter to an uploaded image, link or the authors profile picture"""
 
         filter_type = filter_type.lower()
 
@@ -306,7 +306,7 @@ class Images(commands.Cog):
     @commands.cooldown(1, 10, commands.BucketType.user)
     @commands.max_concurrency(1, commands.BucketType.guild, wait=False)
     async def _rotate(self, ctx: NewCtx, degrees: int, *img_bytes: Optional[LinkConverter]):
-        """Rotates an uploaded or linked image or the authors profile picture some degrees, 360 returns it to original position"""
+        """Rotates an attached image, link or the authors profile picture some degrees, 360 returns it to original position"""
         degrees = degrees % 360 if degrees > 360 else degrees
 
         file_a, file_size = await self._image_ops_func(ctx, img_bytes)

@@ -153,13 +153,14 @@ class Meta(commands.Cog):
         self.bot.help_command = self.old_help
 
     @commands.command(name='source', aliases=['src', 's'])
-    async def _source(self, ctx: NewCtx, *, target: CommandConverter = None):
-        command = target or ctx.command
-        source_lines = inspect.getsource(command.callback)
-        pages = menus.MenuPages(source=SrcPages(source_lines), clear_reactions_after=True)
-        await pages.start(ctx)
-
-
+    async def _source(self, ctx: NewCtx, target: CommandConverter = None):
+        """Shows the source code for a given command, or general information if a command name isn't provided"""
+        if target:
+            source_lines = inspect.getsource(target.callback)
+            pages = menus.MenuPages(source=SrcPages(source_lines), clear_reactions_after=True)
+            await pages.start(ctx)
+        else:
+            await self.bot.get_command('about')(ctx)
 
     @commands.command()
     async def about(self, ctx: NewCtx):

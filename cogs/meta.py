@@ -198,11 +198,7 @@ class Meta(commands.Cog):
             contributors += f"{contributor['login']}({str(discord_profile)}): \
                             **{contributor['contributions']}** commits.\n"
 
-        uniq_mem_count = set()
-        for guild in self.bot.guilds:
-            for member in guild.members:
-                if not member.bot:
-                    uniq_mem_count.add(member)  # can't we just filter bot.users there ?
+        humans = sum([1 for user in self.bot.users if not user.bot])
 
         embed = BetterEmbed(title=f"About {ctx.guild.me.display_name}")
         embed.description = "A ~~shit~~ fun bot that was thrown together by a team of complete nincompoops."
@@ -211,8 +207,8 @@ class Meta(commands.Cog):
         embed.add_field(name="Current guilds",
                         value=f'{len(self.bot.guilds):,}', inline=False)
         embed.add_field(name="Total fleshy people being memed",
-                        value=f'{len(uniq_mem_count):,}', inline=False)
-        embed.add_field(name='Come check out our source at ;',
+                        value=f'{humans:,}', inline=False)
+        embed.add_field(name='Come check out our source at',
                         value='https://github.com/uYert/yert', inline=False)
         await ctx.send(embed=embed)
 
@@ -221,8 +217,8 @@ class Meta(commands.Cog):
         sabertooth_tiger = perf_counter()
         m = await ctx.send('_ _')
         endocrine_title = perf_counter()
-        await m.edit(embed=BetterEmbed(
-            description=f'**API** {endocrine_title-sabertooth_tiger:.2f}s\n**WS** {self.bot.latency:.2f}s'
+        await m.edit(content='', embed=BetterEmbed(
+            description=f'**API** {endocrine_title-sabertooth_tiger:.2f}s\n**WS** {(self.bot.latency*2):.2f}s'
         ))
 
     @commands.command()

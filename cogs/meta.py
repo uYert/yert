@@ -26,9 +26,11 @@ import contextlib
 import inspect
 import itertools
 
+from datetime import datetime
 from textwrap import dedent
 from time import perf_counter
 
+import aiohttp
 import discord
 from discord.ext import commands, menus
 
@@ -148,6 +150,7 @@ class Meta(commands.Cog):
         self.old_help = self.bot.help_command
         self.bot.help_command = EmbeddedHelpCommand()
         self.bot.help_command.cog = self
+        self.git_cache = None
 
     def cog_unload(self):
         self.bot.help_command = self.old_help
@@ -162,14 +165,38 @@ class Meta(commands.Cog):
         else:
             await self.bot.get_command('about')(ctx)
 
+    async def get_profiles(self):
+        # Because the endpoint gives data that is a few hours old, we will get it each 4 hours
+        # so that it's somewhat correct
+        if self.git_cache is None or (datetime.now() - self.git_cache[-1]).hours >= 4:
+            async with aiohttp.ClientSession() as session:
+                async with session.get("https://api.github.com/repos/uYert/yert/contributors",
+                                        params={"anon": "true"}) as r:
+                    self.git_cache = await r.json()
+        return self.git_cache
+
     @commands.command()
     async def about(self, ctx: NewCtx):
         """ This is the 'about the bot' command. """
-        description = dedent(f"""\
-                             A ~~shit~~ fun bot that was thrown together by a team of complete nincompoops.
-                             In definitely no particular order:\n
-                            {', '.join([self.bot.get_user(i).__str__() for i in self.bot.owner_ids])}
-                             """)
+        # Github id of the contributors and their corresponding discord id
+        DISCORD_GIT_ACCOUNTS = {
+            64285270: 361158149371199488, 
+            16031716: 155863164544614402,
+            4181102: 273035520840564736,
+            54324533: 737985288605007953,
+            60761231: 723268667579826267
+        }
+
+        contributors = ""
+        for contributor in await self.get_profiles():
+            if contributor["type"] == "Anonymous":
+                contributor["login"] = contributor["name"]
+                discord_profile = "unknown"
+            else:
+                discord_profile = DISCORD_GIT_ACCOUNTS.get(contributor["id"], "unkown")
+            if discord_profile != "unknown":
+                discord_profile = self.bot.get_user(discord_profile)
+            contributors += f"{contributor['login']}({str(discord_profile)}): **{contributor['contributions']}** commits."
 
         uniq_mem_count = set()
         for guild in self.bot.guilds:
@@ -178,8 +205,9 @@ class Meta(commands.Cog):
                     uniq_mem_count.add(member)  # can't we just filter bot.users there ?
 
         embed = BetterEmbed(title=f"About {ctx.guild.me.display_name}")
-        embed.description = description
+        embed.description = "A ~~shit~~ fun bot that was thrown together by a team of complete nincompoops."
         embed.set_author(name=ctx.me.display_name, icon_url=ctx.me.avatar_url)
+        embed.add_field(name="Contributors", value=contributors, inline=False)
         embed.add_field(name="Current guilds",
                         value=f'{len(self.bot.guilds):,}', inline=False)
         embed.add_field(name="Total fleshy people being memed",

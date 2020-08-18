@@ -30,7 +30,6 @@ from datetime import datetime
 from textwrap import dedent
 from time import perf_counter
 
-import aiohttp
 import discord
 from discord.ext import commands, menus
 
@@ -169,10 +168,9 @@ class Meta(commands.Cog):
         # Because the endpoint gives data that is a few hours old, we will get it each 4 hours
         # so that it's somewhat correct
         if self.git_cache is None or (datetime.now() - self.git_cache[-1]).hours >= 4:
-            async with aiohttp.ClientSession() as session:
-                async with session.get("https://api.github.com/repos/uYert/yert/contributors",
-                                        params={"anon": "true"}) as r:
-                    self.git_cache = await r.json()
+            async with self.bot.session.get("https://api.github.com/repos/uYert/yert/contributors",
+                                            params={"anon": "true"}) as repo_info:
+                self.git_cache = await repo_info.json()
         return self.git_cache
 
     @commands.command()

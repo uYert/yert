@@ -170,7 +170,7 @@ class Meta(commands.Cog):
         if self.git_cache is None or (datetime.now() - self.git_cache[-1]).hours >= 4:
             async with self.bot.session.get("https://api.github.com/repos/uYert/yert/contributors",
                                             params={"anon": "true"}) as repo_info:
-                self.git_cache = await repo_info.json()
+                self.git_cache = (await repo_info.json()).append(datetime.now())
         return self.git_cache
 
     @commands.command()
@@ -182,7 +182,7 @@ class Meta(commands.Cog):
             16031716: 155863164544614402,
             4181102: 273035520840564736,
             54324533: 737985288605007953,
-            60761231: 723268667579826267
+            60761231: 723268667579826267,
         }
 
         contributors = ""

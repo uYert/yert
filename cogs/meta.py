@@ -170,8 +170,9 @@ class Meta(commands.Cog):
         if self.git_cache is None or (datetime.now() - self.git_cache[-1]).hours >= 4:
             async with self.bot.session.get("https://api.github.com/repos/uYert/yert/contributors",
                                             params={"anon": "true"}) as repo_info:
-                self.git_cache = (await repo_info.json()).append(datetime.now())
-        return self.git_cache
+                self.git_cache = await repo_info.json()
+                self.git_cache.append(datetime.now())
+        return self.git_cache[:-1]
 
     @commands.command()
     async def about(self, ctx: NewCtx):
@@ -192,9 +193,10 @@ class Meta(commands.Cog):
                 discord_profile = "unknown"
             else:
                 discord_profile = DISCORD_GIT_ACCOUNTS.get(contributor["id"], "unkown")
-            if discord_profile != "unknown":
-                discord_profile = self.bot.get_user(discord_profile)
-            contributors += f"{contributor['login']}({str(discord_profile)}): **{contributor['contributions']}** commits."
+                if discord_profile != "unknown":
+                    discord_profile = self.bot.get_user(discord_profile)
+            contributors += f"{contributor['login']}({str(discord_profile)}): \
+                            **{contributor['contributions']}** commits.\n"
 
         uniq_mem_count = set()
         for guild in self.bot.guilds:

@@ -147,12 +147,13 @@ class Bot(commands.Bot):
     """ Our main bot-ty bot. """
 
     def __init__(self, **options):
-        super().__init__(**options)
-        if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None): 
+        super().__init__(intents=discord.Intents.all(), **options)
+        if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):
             self._pool = asyncio.get_event_loop().create_task(
                 Table.create_pool(
                     PSQL_DETAILS, command_timeout=60
                 ))
+
 
     async def connect(self, *, reconnect=True):
         self.prefixes = {}
@@ -205,8 +206,8 @@ class Bot(commands.Bot):
                     self.prefixes[message.guild.id] = ret
                 else:
                     await self.pool.execute('''INSERT INTO guild_config (guild_id, prefixes)
-                                                VALUES ($1, $2) 
-                                                ON CONFLICT (guild_id) 
+                                                VALUES ($1, $2)
+                                                ON CONFLICT (guild_id)
                                                 DO UPDATE SET prefixes = $2;''', message.guild.id, [config.PREFIX])
                     self.prefixes[message.guild.id] = [config.PREFIX]
             return self.prefixes[message.guild.id]
@@ -233,7 +234,7 @@ class Bot(commands.Bot):
     def pool(self):
         """ Let's not rewrite internals... """
         return getattr(self, '_pool', None)
-    
+
 
 
 if __name__ == '__main__':

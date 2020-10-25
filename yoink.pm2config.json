@@ -1,0 +1,21 @@
+{
+    "apps": [
+        {
+            "name": "Yoink",
+            "cwd": "/home/yert/yert/",
+            "script": "main.py",
+            "autorestart": true,
+            "max_restart": 5,
+            "instances": 1,
+            "env": {
+                "JISHAKU_HIDE": "True",
+                "JISHAKU_NO_UNDERSCRE": "True",
+                "JISHAKU_RETAIN": "True",
+                "JISHAKU_NO_DM_TRACEBACK": "True"
+            },
+            "interpreter": "/home/yert/.poetry/bin/poetry",
+            "interpreter_args": ["run", "python"],
+            "log_date_format": "DD-MM-YYYY HH:mm:ss"
+        }
+    ]
+}

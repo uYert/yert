@@ -37,9 +37,6 @@ from utils.containers import TimedCache
 from utils.db import Table
 from utils.formatters import BetterEmbed
 
-for env in ('NO_UNDERSCORE', 'NO_DM_TRACEBACK', 'HIDE', 'RETAIN'):
-    os.environ['JISHAKU_' + env] = 'True'
-
 COGS = (
     "jishaku",
     "cogs.anime",

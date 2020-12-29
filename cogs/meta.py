@@ -25,19 +25,18 @@ SOFTWARE.
 import contextlib
 import inspect
 import itertools
+import json
 
 from datetime import datetime
-from textwrap import dedent
 from time import perf_counter
 
 import discord
 from discord.ext import commands, menus
 
 import config
-import main
 from main import NewCtx
 from utils.formatters import BetterEmbed
-from utils.converters import BetterUserConverter, CommandConverter
+from utils.converters import CommandConverter
 
 checked_perms = ['is_owner', 'guild_only', 'dm_only', 'is_nsfw']
 checked_perms.extend([p[0] for p in discord.Permissions()])
@@ -173,6 +172,22 @@ class Meta(commands.Cog):
                 self.git_cache = await repo_info.json()
                 self.git_cache.append(datetime.now())
         return self.git_cache[:-1]
+
+    @commands.command()
+    async def notify(self, ctx: NewCtx):
+        """ Has the bot DM you when derek posts a cat picture, since they're determined to not do it"""
+        if ctx.author.id not in self.bot._cached_ids['catpost']:
+            self.bot._cached_ids['catpost'].append(ctx.author.id)
+            return
+        return await ctx.send("Your id has already been added to the list.")
+
+    @commands.command(name='stop')
+    async def _stop_catposts(self, ctx: NewCtx):
+        """ Stops the bot DM'ing you when a cat post detected"""
+        if ctx.author.id in self.bot._cached_ids['catpost']:
+            self.bot._cached_ids['catpost'].pop(ctx.author.id)
+            return
+        return await ctx.send("Your id wasn't in the list.")
 
     @commands.command()
     async def about(self, ctx: NewCtx):

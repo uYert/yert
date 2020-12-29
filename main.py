@@ -24,13 +24,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 import asyncio
 from collections.abc import Hashable
 from datetime import datetime, timedelta, timezone
-import os
+import json
 import traceback
 from typing import Any, Tuple, Union
 
 from aiohttp import ClientSession
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 import config
 from utils.containers import TimedCache
@@ -41,7 +41,6 @@ COGS = (
     "jishaku",
     "cogs.anime",
     "cogs.events",
-    "cogs.fun",
     "cogs.games",
     "cogs.degeneracy",
     "cogs.images",
@@ -145,6 +144,8 @@ class Bot(commands.Bot):
 
     def __init__(self, **options):
         super().__init__(intents=discord.Intents.all(), **options)
+        with open('catpost.json') as file:
+            self._cached_ids = json.load(file)
         if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):
             self._pool = asyncio.get_event_loop().create_task(
                 Table.create_pool(
@@ -181,6 +182,11 @@ class Bot(commands.Bot):
                     output = '\n'.join(full_exc[:idx])
                 output = f"```{output}```"
                 await hook.send(output)
+
+        with open('catpost.json') as file:
+            data = json.load(file)
+        self._cached_ids = data
+        self.store_catposts.start()
 
         return await super().connect(reconnect=reconnect)
 
@@ -231,6 +237,20 @@ class Bot(commands.Bot):
     def pool(self):
         """ Let's not rewrite internals... """
         return getattr(self, '_pool', None)
+
+    async def close(self):
+        with open('catpost.json', 'w') as file:
+            json.dump(self._cached_ids, file, indent=4)
+        await super().close()
+
+    @tasks.loop(hours=5)
+    async def store_catposts(self):
+        with open('catpost.json', 'w') as file:
+            json.dump(self._cached_ids, file, indent=4)
+
+    @store_catposts.before_loop
+    async def pre_store(self):
+        await self.wait_until_ready()
 
 
 

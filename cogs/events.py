@@ -52,6 +52,22 @@ class Events(commands.Cog):
             id=wh_id, token=wh_token, adapter=discord.AsyncWebhookAdapter(self.bot.session))
         return hook
 
+    def prepare_embed(self, message: Message) -> typing.Tuple[str, formatters.BetterEmbed]:
+        ret = formatters.BetterEmbed('Catpost detetected')
+        ret.add_field(name='Derek catpost;', value="[Jump!]({0.jump_url})".format(message), inline=False)
+        return 'A cat post was detected, come have a look', ret
+
+    async def catpost(self, message: Message):
+        ids: dict = self.bot._cached_ids
+        content, embed = self.prepare_embed(message)
+        for uid in ids['catpost']:
+            user = self.bot.get_user(uid)
+            try:
+                await user.send(content, embed=embed)
+            except Exception as e:
+                await self.bot.get_user(273035520840564736).send("Failed to send a dm to {} for reason: \n{}\n{}".format(user.name, type(e), e))
+
+
     @lru_cache(maxsize=15)
     def tracy_beaker_fmt(self, error: Exception) -> typing.Tuple[str, str, typing.Tuple[str, str, str]]:
         full_exc = traceback.format_exception(
@@ -129,7 +145,11 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: Message):
-        """ On any message. """
+        """ Derek catposting detector """
+        snake_pit_id = 448285120634421278
+        derek_id = 230696474734755841
+        if message.attachments and message.channel.id == snake_pit_id and message.author.id == derek_id:
+            await self.catpost(message)
 
     @commands.Cog.listener()
     async def on_command(self, ctx: NewCtx):

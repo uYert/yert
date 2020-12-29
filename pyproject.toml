@@ -7,28 +7,27 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-"discord.py" = {git = "https://github.com/Rapptz/discord.py.git", rev = "master"}
+"discord.py" = {git = "https://github.com/Rapptz/discord.py", rev = "master"}
 discord-ext-menus = {git = "https://github.com/Rapptz/discord-ext-menus", rev = "master"}
-jishaku = "^1.19.0"
-aiogoogletrans = {git = "https://github.com/Fogapod/aiogoogletrans", rev = "master"}
-asyncpg = "^0.21.0"
-async_cleverbot = "^0.2.2"
-async_cse = "^0.3.0"
-bs4 = "^0.0.1"
-fuzzywuzzy = "^0.18.0"
-gtts_token = "^1.1.3"
-jikanpy = "^4.2.2"
-lxml = "^4.5.2"
-numpy = "^1.19.1"
-"nhentai.py" = "^1.0.5"
-pillow = "^7.2.0"
-psutil = "^5.7.2"
-rule34 = "^1.7.4"
-uwuify = "^1.0.1"
+jishaku = {git = "https://github.com/Gorialis/jishaku/", rev = "master"}
+asyncpg = "*"
+async_cleverbot = "*"
+async_cse = "*"
+bs4 = "*"
+fuzzywuzzy = "*"
+jikanpy = "*"
+lxml = "*"
+numpy = "*"
+nhentaio = "*"
+psutil = "*"
+rule34 = "*"
+Pillow = "*"
+googletrans = "3.1.0a0"
 
 [tool.poetry.dev-dependencies]
-pylint = "^2.5.3"
-autopep8 = "^1.5.4"
+black = "*"
+flake8 = "*"
+"discord.py-stubs" = "^1.5.1"
 
 [build-system]
 requires = ["poetry>=0.12"]

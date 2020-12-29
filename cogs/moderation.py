@@ -40,9 +40,14 @@ class Moderation(commands.Cog):
     @commands.command()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
-    async def ban(self, ctx: commands.Context,
-                  target: Union[discord.Member, discord.Object], days: Optional[int],
-                  *, reason: Optional[str]) -> None:
+    async def ban(
+        self,
+        ctx: commands.Context,
+        target: Union[discord.Member, discord.Object],
+        days: Optional[int],
+        *,
+        reason: Optional[str],
+    ) -> None:
         """Bans the given <target> for [reason], deleting [days] of messages"""  # that good?
         days = days or self.def_days
         reason = reason or self.def_reason
@@ -51,7 +56,9 @@ class Moderation(commands.Cog):
     @commands.command()
     @commands.has_permissions(kick_members=True)
     @commands.bot_has_permissions(kick_members=True)
-    async def kick(self, ctx: commands.Context, target: discord.Member, *, reason: Optional[str]) -> None:
+    async def kick(
+        self, ctx: commands.Context, target: discord.Member, *, reason: Optional[str]
+    ) -> None:
         """Kicks the given target for a reason"""
         reason = reason or self.def_reason
         await target.kick(reason=reason)
@@ -59,7 +66,9 @@ class Moderation(commands.Cog):
     @commands.command()
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
-    async def unban(self, ctx: commands.Context, target: int, *, reason: Optional[str]) -> None:
+    async def unban(
+        self, ctx: commands.Context, target: int, *, reason: Optional[str]
+    ) -> None:
         """Unbans the given target"""
         reason = reason or self.def_reason
         await ctx.guild.unban(discord.Object(id=target), reason=reason)
@@ -67,7 +76,9 @@ class Moderation(commands.Cog):
     @commands.command()
     @commands.has_guild_permissions(mute_members=True)
     @commands.bot_has_guild_permissions(mute_members=True)
-    async def mute(self, ctx: commands.Context, target: discord.Member, *, reason: Optional[str]) -> None:
+    async def mute(
+        self, ctx: commands.Context, target: discord.Member, *, reason: Optional[str]
+    ) -> None:
         """Mutes the given target with a reason"""
         reason = reason or self.def_reason
         await target.edit(mute=True, reason=reason)
@@ -75,7 +86,9 @@ class Moderation(commands.Cog):
     @commands.command()
     @commands.has_guild_permissions(mute_members=True)
     @commands.bot_has_guild_permissions(mute_members=True)
-    async def unmute(self, ctx: commands.Context, target: discord.Member, *, reason: Optional[str]) -> None:
+    async def unmute(
+        self, ctx: commands.Context, target: discord.Member, *, reason: Optional[str]
+    ) -> None:
         """ Unmutes the given target with optional reason. """
         reason = reason or self.def_reason
         await target.edit(mute=False, reason=reason)
@@ -86,75 +99,89 @@ class Moderation(commands.Cog):
 
         await ctx.send_help(ctx.command)
 
-    @config.group(name='prefix', invoke_without_command=True)
+    @config.group(name="prefix", invoke_without_command=True)
     async def config_prefix(self, ctx):
 
-        fmt = ', '.join(await self.bot.get_prefix(ctx.message))
+        fmt = ", ".join(await self.bot.get_prefix(ctx.message))
 
-        await ctx.send(f'The prefixes for `{ctx.guild}` are `{fmt}`')
+        await ctx.send(f"The prefixes for `{ctx.guild}` are `{fmt}`")
 
-    @config_prefix.command(name='set')
+    @config_prefix.command(name="set")
     @commands.has_permissions(manage_roles=True)
     async def prefix_set(self, ctx, prefix):
 
         if len(prefix) > 12:
 
-            raise commands.BadArgument('The prefix cannot be longer than 12 characters')
+            raise commands.BadArgument("The prefix cannot be longer than 12 characters")
 
         if len(prefix) <= 0:
 
-            raise commands.BadArgument('The prefix cannot be less than 1 character')
+            raise commands.BadArgument("The prefix cannot be less than 1 character")
 
-        await self.bot.pool.execute('''UPDATE guild_config
+        await self.bot.pool.execute(
+            """UPDATE guild_config
                                        SET prefixes = $1
-                                       WHERE guild_id = $2''', [prefix], ctx.guild.id)
+                                       WHERE guild_id = $2""",
+            [prefix],
+            ctx.guild.id,
+        )
 
         self.bot.prefixes[ctx.guild.id] = [prefix]
-        await ctx.send(f'Set the prefix to `{prefix}`')
+        await ctx.send(f"Set the prefix to `{prefix}`")
 
-    @config_prefix.command(name='add')
+    @config_prefix.command(name="add")
     @commands.has_permissions(manage_roles=True)
     async def prefix_add(self, ctx, prefix):
 
         if len(self.bot.prefixes[ctx.guild.id]) >= 7:
 
-            raise commands.BadArgument('You cannot have more than 7 prefixes')
+            raise commands.BadArgument("You cannot have more than 7 prefixes")
 
         if len(prefix) > 12:
 
-            raise commands.BadArgument('The prefix cannot be longer than 12 characters')
+            raise commands.BadArgument("The prefix cannot be longer than 12 characters")
 
         if len(prefix) <= 0:
 
-            raise commands.BadArgument('The prefix cannot be less than 1 character')
+            raise commands.BadArgument("The prefix cannot be less than 1 character")
 
         if prefix in self.bot.prefixes[ctx.guild.id]:
 
-            raise commands.BadArgument('You cannot have the same prefix twice')
+            raise commands.BadArgument("You cannot have the same prefix twice")
 
-        await self.bot.pool.execute('''UPDATE guild_config
-                                       SET prefixes = prefixes || $1 
-                                       WHERE guild_id = $2''', [prefix], ctx.guild.id)
+        await self.bot.pool.execute(
+            """UPDATE guild_config
+                                       SET prefixes = prefixes || $1
+                                       WHERE guild_id = $2""",
+            [prefix],
+            ctx.guild.id,
+        )
         self.bot.prefixes[ctx.guild.id].append(prefix)
-        await ctx.send(f'Added `{prefix}` to the list of prefixes')
+        await ctx.send(f"Added `{prefix}` to the list of prefixes")
 
-    @config_prefix.command(name='remove')
+    @config_prefix.command(name="remove")
     @commands.has_permissions(manage_roles=True)
     async def prefix_remove(self, ctx, prefix):
 
         if len(self.bot.prefixes[ctx.guild.id]) <= 1:
 
-            raise commands.BadArgument('You cannot remove all of your prefixes')
+            raise commands.BadArgument("You cannot remove all of your prefixes")
 
-        prefix = [a for a in enumerate(self.bot.prefixes[ctx.guild.id]) if a[1] == prefix]
+        prefix = [
+            a for a in enumerate(self.bot.prefixes[ctx.guild.id]) if a[1] == prefix
+        ]
         if not prefix:
-            raise commands.BadArgument('That was not a prefix')
+            raise commands.BadArgument("That was not a prefix")
 
-        await self.bot.pool.execute('''UPDATE guild_config
-                                       SET prefixes = array_remove(prefixes, $1) 
-                                       WHERE guild_id = $2''', prefix[0][1], ctx.guild.id)
+        await self.bot.pool.execute(
+            """UPDATE guild_config
+                                       SET prefixes = array_remove(prefixes, $1)
+                                       WHERE guild_id = $2""",
+            prefix[0][1],
+            ctx.guild.id,
+        )
         self.bot.prefixes[ctx.guild.id].pop(prefix[0][0])
-        await ctx.send(f'Removed `{prefix[0][1]}` from the list of prefixes')
+        await ctx.send(f"Removed `{prefix[0][1]}` from the list of prefixes")
 
 
 def setup(bot):

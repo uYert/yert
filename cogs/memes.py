@@ -22,18 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from collections import namedtuple
-from datetime import datetime
+import contextlib
 import random
 import string
-from typing import Any, List
+from collections import namedtuple
+from datetime import datetime
 from textwrap import shorten
+from typing import Any, List
 
-import contextlib
-from discord import Embed  # needs fix :tm:
 import discord
+from discord import Embed  # needs fix :tm:
 from discord.ext import commands, menus
-
 from main import NewCtx
 
 random.seed(datetime.utcnow())
@@ -63,8 +62,8 @@ class Memes(commands.Cog):
             embed = Embed(
                 title=item.title,
                 description=item.self_text,
-                colour=random.randint(0, 0xffffff),
-                url=item.url
+                colour=random.randint(0, 0xFFFFFF),
+                url=item.url,
             )
             embed.set_author(name=item.author)
 
@@ -75,17 +74,16 @@ class Memes(commands.Cog):
                 embed.add_field(
                     name="Vidya!",
                     value=f"[Click here!]({item.video_link})",
-                    inline=False
+                    inline=False,
                 )
-            embed.add_field(
-                name="Updoots", value=item.upvotes, inline=True
-            )
+            embed.add_field(name="Updoots", value=item.upvotes, inline=True)
             embed.add_field(
                 name="Total comments", value=item.comment_count, inline=True
             )
             page_counter = f"Result {iterable.index(item)+1} of {len(iterable)}"
             embed.set_footer(
-                text=f"{page_counter} | {item.subreddit} | Requested by {requester}")
+                text=f"{page_counter} | {item.subreddit} | Requested by {requester}"
+            )
 
             embeds.append(embed)
 
@@ -93,67 +91,87 @@ class Memes(commands.Cog):
 
     @commands.command()
     @commands.max_concurrency(1, commands.BucketType.channel, wait=False)
-    async def reddit(self, ctx: NewCtx,
-                     sub: str = 'memes',
-                     sort: str = 'hot'):
+    async def reddit(self, ctx: NewCtx, sub: str = "memes", sort: str = "hot"):
         """Gets the <sub>reddits <amount> of posts sorted by <method>"""
         if sort.lower() not in ("top", "hot", "best", "controversial", "new", "rising"):
             return await ctx.send("Not a valid sort-by type.")
 
-        PostObj = namedtuple('PostObj', ['title', 'self_text', 'url', 'author',
-                                         'image_link', 'video_link', 'upvotes',
-                                         'comment_count', 'subreddit'])
+        PostObj = namedtuple(
+            "PostObj",
+            [
+                "title",
+                "self_text",
+                "url",
+                "author",
+                "image_link",
+                "video_link",
+                "upvotes",
+                "comment_count",
+                "subreddit",
+            ],
+        )
 
         posts = set()
 
         subr_url = f"https://www.reddit.com/r/{sub}/about.json"
         base_url = f"https://www.reddit.com/r/{sub}/{sort}.json"
 
-        async with self.bot.session.get(subr_url, headers={"User-Agent": "Yoink discord bot"}) as subr_resp:
+        async with self.bot.session.get(
+            subr_url, headers={"User-Agent": "Yoink discord bot"}
+        ) as subr_resp:
             subr_deets = await subr_resp.json()
 
-        if 'data' not in subr_deets:
+        if "data" not in subr_deets:
             raise commands.BadArgument("Subreddit does not exist.")
-        if subr_deets['data'].get('over18', None) and not ctx.channel.is_nsfw():
+        if subr_deets["data"].get("over18", None) and not ctx.channel.is_nsfw():
             raise commands.NSFWChannelRequired(ctx.channel)
 
         async with self.bot.session.get(base_url) as res:
             page_json = await res.json()
 
         idx = 0
-        for post_data in page_json['data']['children']:
+        for post_data in page_json["data"]["children"]:
             image_url = None
             video_url = None
 
             if idx == 20:
                 break
 
-            post = post_data['data']
-            if post['stickied'] or (post['over_18'] and not ctx.channel.is_nsfw()):
+            post = post_data["data"]
+            if post["stickied"] or (post["over_18"] and not ctx.channel.is_nsfw()):
                 idx += 1
                 continue
 
-            title = shorten(post['title'], width=250)
-            self_text = shorten(post['selftext'], width=1500)
+            title = shorten(post["title"], width=250)
+            self_text = shorten(post["selftext"], width=1500)
             url = f"https://www.reddit.com{post['permalink']}"
-            author = post['author']
-            image_url = post['url'] if post['url'].endswith((
-                ".jpg", ".png", ".jpeg", ".gif", ".webp")) else None
-            if "v.redd.it" in post['url']:
-                image_url = post['thumbnail']
+            author = post["author"]
+            image_url = (
+                post["url"]
+                if post["url"].endswith((".jpg", ".png", ".jpeg", ".gif", ".webp"))
+                else None
+            )
+            if "v.redd.it" in post["url"]:
+                image_url = post["thumbnail"]
                 if post.get("media", None):
-                    video_url = post['url']
+                    video_url = post["url"]
                 else:
                     continue
-            upvotes = post['score']
-            comment_count = post['num_comments']
-            subreddit = post['subreddit']
+            upvotes = post["score"]
+            comment_count = post["num_comments"]
+            subreddit = post["subreddit"]
 
-            _post = PostObj(title=title, self_text=self_text,
-                            url=url, author=author, image_link=image_url,
-                            video_link=video_url, upvotes=upvotes,
-                            comment_count=comment_count, subreddit=subreddit
-                            )
+            _post = PostObj(
+                title=title,
+                self_text=self_text,
+                url=url,
+                author=author,
+                image_link=image_url,
+                video_link=video_url,
+                upvotes=upvotes,
+                comment_count=comment_count,
+                subreddit=subreddit,
+            )
 
             posts.add(_post)
         embeds = self._gen_embeds(ctx.author, list(posts))
@@ -167,15 +185,17 @@ class Memes(commands.Cog):
         if isinstance(error, commands.NSFWChannelRequired):
             return await ctx.send("This ain't an NSFW channel.")
         elif isinstance(error, commands.BadArgument):
-            msg = ("There seems to be no Reddit posts to show, common cases are:\n"
-                   "- Not a real subreddit.\n")
+            msg = (
+                "There seems to be no Reddit posts to show, common cases are:\n"
+                "- Not a real subreddit.\n"
+            )
             return await ctx.send(msg)
 
-    @commands.command(name='mock')
+    @commands.command(name="mock")
     async def _mock(self, ctx: NewCtx, *, message: str):
         with contextlib.suppress(discord.Forbidden):
             await ctx.message.delete()
-        output = ''
+        output = ""
         for counter, char in enumerate(message):
             if char != string.whitespace:
                 if counter % 2 == 0:

@@ -45,7 +45,9 @@ def caching():
             if activated and activated["activated"]:
                 args[0].tracked.append(guild.id)
                 return await func(*args, **kwargs)
+
         return wrapped
+
     return wrapper
 
 
@@ -55,12 +57,14 @@ class Stats(commands.Cog):
         self.tracking = True
         self.tracked = []
         self.db_task.start()
-        
+
     @tasks.loop(minutes=15)
     async def db_task(self):
-    	async with self.bot.pool.acquire() as conn:
-    		await conn.executemany("CALL evaluate_data($1)",[(x) for x in self.tracked])
-        
+        async with self.bot.pool.acquire() as conn:
+            await conn.executemany(
+                "CALL evaluate_data($1)", [(x) for x in self.tracked]
+            )
+
     @commands.command()
     @commands.has_permissions(manage_guild=True)
     async def enable_stats(self, ctx):
@@ -86,14 +90,14 @@ class Stats(commands.Cog):
                 """
         await self.bot.pool.execute(query, ctx.guild.id)
         await ctx.send("The stats were successfully disabled for this server.")
-    
+
     @commands.command()
     @commands.cooldown(1, 15, commands.BucketType.guild)
     @caching()
     async def show_stats(self, ctx):
         query = """
         WITH one_day AS(
-            SELECT guild_id, 
+            SELECT guild_id,
             joined_numb AS "day_joined",
             left_numb AS "day_left",
             joined_numb - (SELECT joined_numb FROM stats WHERE  age(now(), days) BETWEEN INTERVAL '1 DAY' AND '2 DAYS') AS "difference_join",
@@ -121,7 +125,7 @@ class Stats(commands.Cog):
             WHERE age(now(), days) <= INTERVAL '30 days'
             GROUP BY guild_id
         )
-        SELECT 
+        SELECT
         one_day.*,
         left_days.*,
         seven_days.*
@@ -140,12 +144,12 @@ class Stats(commands.Cog):
         down_arrow = "<:down:715574958176337920>"
         stats_joined = ""
         stats_left = ""
-        if d_join := (result['difference_join']):
+        if d_join := (result["difference_join"]):
             if d_join < 0:
                 stats_joined = f"{down_arrow} {d_join}"
             else:
                 stats_joined = f"{up_arrow} {d_join}"
-        if d_left := (result['difference_left']):
+        if d_left := (result["difference_left"]):
             if d_left < 0:
                 stats_left = f"{down_arrow} {d_left}"
             else:
@@ -153,39 +157,39 @@ class Stats(commands.Cog):
         embed.add_field(
             name="\U0001f55aStats for the last 24 hours",
             value=f"Members who have joined:{result['day_joined']} {stats_joined}\n"
-                  f"Members who have left: {result['day_left']}{stats_left}"
+            f"Members who have left: {result['day_left']}{stats_left}",
         )
         embed.add_field(
             name="\U0000231bStats for the last 7 days",
             value=f"Members who have joined:{result['seven_joined']:.1f}\n"
-                  f"Members who have left:{result['seven_left']:.1f}\n"
-                  f"Average joins:{result['avg_joined_seven']:.1f}\n"
-                  f"Average quits:{result['avg_joined_seven']:.1f}"
+            f"Members who have left:{result['seven_left']:.1f}\n"
+            f"Average joins:{result['avg_joined_seven']:.1f}\n"
+            f"Average quits:{result['avg_joined_seven']:.1f}",
         )
         embed.add_field(
             name="\U0001f5d3 Stats for the last 30 days",
             value=f"Members who have joined:{result['left_joined']:.1f}\n"
-                  f"Members who have left:{result['left_left']:.1f}\n"
-                  f"Average joins:{result['avg_joined_left']:.1f}\n"
-                  f"Average quits:{result['avg_left_left']:.1f}"
+            f"Members who have left:{result['left_left']:.1f}\n"
+            f"Average joins:{result['avg_joined_left']:.1f}\n"
+            f"Average quits:{result['avg_left_left']:.1f}",
         )
         await ctx.send(embed=embed)
-  
+
     @show_stats.error
     async def show_stats_error(self, ctx, error):
         if isinstance(error, DataNotFound):
             return await ctx.send("No member joining or leaving have been recorded")
-        return self.bot.dispatch('command_error', ctx, error)
+        return self.bot.dispatch("command_error", ctx, error)
 
     @caching()
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
-        await self.bot.pool.execute("CALL evaluate_data($1, true)",member.guild.id)
+        await self.bot.pool.execute("CALL evaluate_data($1, true)", member.guild.id)
 
     @caching()
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
-        await self.bot.pool.execute("CALL evaluate_data($1, false)",member.guild.id)
+        await self.bot.pool.execute("CALL evaluate_data($1, false)", member.guild.id)
 
 
 def setup(bot):

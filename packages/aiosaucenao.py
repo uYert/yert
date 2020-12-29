@@ -1,4 +1,3 @@
-
 """
 MIT License
 
@@ -30,9 +29,9 @@ from aiohttp import ClientSession, FormData
 from discord import Message, User
 from discord.ext.commands import BadArgument
 from discord.ext.menus import ListPageSource
-
-from utils.formatters import BetterEmbed
 from utils.converters import maybe_url
+from utils.formatters import BetterEmbed
+
 
 @dataclass
 class MainHeader:  # todo: check the rate limit
@@ -54,6 +53,7 @@ class MainHeader:  # todo: check the rate limit
     def __post_init__(self):
         del self.index  # useless data
 
+
 @dataclass
 class ResultHeader:
     similarity: str  # percentage
@@ -73,16 +73,20 @@ class Result:
 
 class Response:
     def __init__(self, data: dict, /):
-        self.header = MainHeader(**data.pop('header'))
-        self.results = [Result(**result) for result in data.pop('results')]
+        self.header = MainHeader(**data.pop("header"))
+        self.results = [Result(**result) for result in data.pop("results")]
         self.extra_data = data  # keeping extra stuff there, in case the api updates
+
 
 class Client:
     """Provides informations about images using saucenao's api"""
+
     def __init__(self, *, session: ClientSession, api_key: str):
         self.session = session
         self.api_key = api_key
-        self.url = f'http://saucenao.com/search.php?output_type=2&api_key={self.api_key}'
+        self.url = (
+            f"http://saucenao.com/search.php?output_type=2&api_key={self.api_key}"
+        )
 
     async def select_image(self, *, ctx, target: Union[User, Message, None]) -> bytes:
         """Converts into bytes suitable to send with saucenao"""
@@ -91,22 +95,24 @@ class Client:
         else:
             msg = ctx.message
 
-        if (imgs:= msg.attachments):
-            if (img:= imgs[0]).size > 8000000:
-                raise BadArgument(message='Images must be smaller than 8 mb')
-            elif getattr(img, 'height', None) and img.filename.endswith(('webp', 'jpg', 'png', 'jpeg')):
+        if (imgs := msg.attachments):
+            if (img := imgs[0]).size > 8000000:
+                raise BadArgument(message="Images must be smaller than 8 mb")
+            elif getattr(img, "height", None) and img.filename.endswith(
+                ("webp", "jpg", "png", "jpeg")
+            ):
                 return await imgs[0].read()
             else:
-                raise BadArgument(message='Invalid image type')
+                raise BadArgument(message="Invalid image type")
         elif target is None:
-            return await ctx.author.avatar_url_as(format='png', size=4096).read()
+            return await ctx.author.avatar_url_as(format="png", size=4096).read()
         else:
-            return await target.avatar_url_as(format='png', size=4096).read()
+            return await target.avatar_url_as(format="png", size=4096).read()
 
     async def search(self, image: bytes, /) -> Response:
         """Sends the image to the api"""
         data = FormData()
-        data.add_field('file', image, filename='image.png')
+        data.add_field("file", image, filename="image.png")
         async with self.session.post(url=self.url, data=data) as r:
             return Response(await r.json())
 
@@ -122,12 +128,18 @@ class Source(ListPageSource):
 
         embed = BetterEmbed(title=f"{header.index_name} | {header.similarity}%")
         embed.set_thumbnail(url=header.thumbnail)
-        embed.add_field(name='External urls',
-                        value='\n'.join([maybe_url(url) for url in data.get('ext_urls', ['Empty'])]))
+        embed.add_field(
+            name="External urls",
+            value="\n".join(
+                [maybe_url(url) for url in data.get("ext_urls", ["Empty"])]
+            ),
+        )
 
         for key, value in data.items():
             if not isinstance(value, list):
                 if url := maybe_url(value):
-                    embed.add_field(name=key, value=url)  # no idea about what it will return
+                    embed.add_field(
+                        name=key, value=url
+                    )  # no idea about what it will return
 
         return embed.fill_fields()

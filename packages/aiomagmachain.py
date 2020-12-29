@@ -27,9 +27,8 @@ from dataclasses import dataclass
 from aiohttp import ClientSession
 from async_cse.search import NoResults
 from discord.ext.commands import BadArgument
-
-from utils.formatters import BetterEmbed
 from utils.converters import maybe_url
+from utils.formatters import BetterEmbed
 
 from .aiogooglesearch import AioSearchEngine
 
@@ -43,6 +42,7 @@ class MagmaChainResponse:
 
 class AioMagmaChain:
     """Screenshots some websites"""
+
     def __init__(self, *, session: ClientSession, google_client: AioSearchEngine):
         self.session = session
         self.google_client = google_client
@@ -56,17 +56,21 @@ class AioMagmaChain:
             raise BadArgument(message="Couldn't find the url you're looking for")
         else:
             return results[0].url
-        
+
     async def fetch_snapshot(self, url: str) -> MagmaChainResponse:
         """Takes a screenshot using the magmachain api"""
-        async with self.session.post(self.screener, headers={'website': url}) as r:
+        async with self.session.post(self.screener, headers={"website": url}) as r:
             return MagmaChainResponse(**await r.json())
 
-    def format_snapshot(self, *, response: MagmaChainResponse, is_nsfw: bool) -> BetterEmbed:
+    def format_snapshot(
+        self, *, response: MagmaChainResponse, is_nsfw: bool
+    ) -> BetterEmbed:
         """Formats the snaphot into an embed"""
-        embed = BetterEmbed(title=f"Screenshot | Safe : {'OFF' if is_nsfw else 'ON'}",
-                            url=response.website)
+        embed = BetterEmbed(
+            title=f"Screenshot | Safe : {'OFF' if is_nsfw else 'ON'}",
+            url=response.website,
+        )
 
-        embed.add_field(name='Link', value=maybe_url(response.website))
+        embed.add_field(name="Link", value=maybe_url(response.website))
 
         return embed.set_image(url=response.snapshot)

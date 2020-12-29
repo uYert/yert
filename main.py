@@ -22,14 +22,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 """
 
 import asyncio
+import traceback
 from collections.abc import Hashable
 from datetime import datetime, timedelta, timezone
-import os
-import traceback
 from typing import Any, Tuple, Union
 
-from aiohttp import ClientSession
 import discord
+from aiohttp import ClientSession
 from discord.ext import commands
 
 import config
@@ -43,7 +42,7 @@ COGS = (
     "cogs.events",
     "cogs.fun",
     "cogs.games",
-    "cogs.degeneracy",
+    # "cogs.degeneracy",
     "cogs.images",
     "cogs.memes",
     "cogs.meta",
@@ -59,43 +58,56 @@ class NewCtx(commands.Context):
 
     # typehinted copypaste of the default init ## pylint: disable=super-init-not-called
     def __init__(self, **attrs):
-        self.message: discord.Message = attrs.pop('message', None)
-        self.bot: Bot = attrs.pop('bot', None)
+        self.message: discord.Message = attrs.pop("message", None)
+        self.bot: Bot = attrs.pop("bot", None)
 
-        self.args: list = attrs.pop('args', [])
-        self.kwargs: dict = attrs.pop('kwargs', {})
-        self.prefix: str = attrs.pop('prefix')
-        self.command: Union[commands.Command,
-                            None] = attrs.pop('command', None)
+        self.args: list = attrs.pop("args", [])
+        self.kwargs: dict = attrs.pop("kwargs", {})
+        self.prefix: str = attrs.pop("prefix")
+        self.command: Union[commands.Command, None] = attrs.pop("command", None)
 
-        self.view = attrs.pop('view', None)  # no idea about what that is
+        self.view = attrs.pop("view", None)  # no idea about what that is
 
-        self.invoked_with: str = attrs.pop('invoked_with', None)
+        self.invoked_with: str = attrs.pop("invoked_with", None)
         self.invoked_subcommand: commands.Command = attrs.pop(
-            'invoked_subcommand', None)
-        self.subcommand_passed: Union[str, None] = attrs.pop(
-            'subcommand_passed', None)
-        self.command_failed: bool = attrs.pop('command_failed', False)
+            "invoked_subcommand", None
+        )
+        self.subcommand_passed: Union[str, None] = attrs.pop("subcommand_passed", None)
+        self.command_failed: bool = attrs.pop("command_failed", False)
 
         self._state = self.message._state
 
         self._altered_cache_key = None
 
-    async def webhook_send(self, short: str, full: str,
-                           exc_info: Tuple[str, str, str],
-                           *, webhook: discord.Webhook) -> None:
+    async def webhook_send(
+        self,
+        short: str,
+        full: str,
+        exc_info: Tuple[str, str, str],
+        *,
+        webhook: discord.Webhook,
+    ) -> None:
         """ This is a custom ctx addon for sending to the webhook and/or the ctx.channel. """
 
-        embed = BetterEmbed(title="Error", description=f"```py\n{short}```",
-                            timestamp=datetime.now(tz=timezone.utc))
+        embed = BetterEmbed(
+            title="Error",
+            description=f"```py\n{short}```",
+            timestamp=datetime.now(tz=timezone.utc),
+        )
 
-        embed.add_field(name="Invoking command",
-                        value=f"{self.prefix}{self.invoked_with}", inline=True)
+        embed.add_field(
+            name="Invoking command",
+            value=f"{self.prefix}{self.invoked_with}",
+            inline=True,
+        )
 
         embed.add_field(name="Author", value=f"{str(self.author)}")
 
-        embed.add_field(name=f"File: {exc_info[0]}",
-                        value=f"Line: {exc_info[1]} || Func: {exc_info[2]}", inline=True)
+        embed.add_field(
+            name=f"File: {exc_info[0]}",
+            value=f"Line: {exc_info[1]} || Func: {exc_info[2]}",
+            inline=True,
+        )
 
         await self.send(embed=embed)
         await webhook.send(full)
@@ -103,13 +115,16 @@ class NewCtx(commands.Context):
     @property
     def qname(self) -> Union[str, None]:
         """Shortcut to get the command's qualified name"""
-        return getattr(self.command, 'qualified_name', None)
+        return getattr(self.command, "qualified_name", None)
 
     @property
     def all_args(self) -> list:
         """Retrieves a list of all args and kwargs passed into the command"""  # ctx.args returns self too
-        args = [arg for arg in self.args if not isinstance(
-            arg, (commands.Cog, commands.Context))]
+        args = [
+            arg
+            for arg in self.args
+            if not isinstance(arg, (commands.Cog, commands.Context))
+        ]
         # there should be only one
         kwargs = [val for val in self.kwargs.values()]
         return args + kwargs
@@ -134,10 +149,13 @@ class NewCtx(commands.Context):
         """Tries to retrieve cached data"""
         return self.cache.get(key=tuple(self.cache_key))
 
-    def add_to_cache(self, value: Any, *, timeout: Union[int, timedelta] = None,
-                     key: Hashable = None) -> Any:
+    def add_to_cache(
+        self, value: Any, *, timeout: Union[int, timedelta] = None, key: Hashable = None
+    ) -> Any:
         """Sets an item into the cache using the the provided keys"""
-        return self.cache.set(key=tuple(key or self.cache_key), value=value, timeout=timeout)
+        return self.cache.set(
+            key=tuple(key or self.cache_key), value=value, timeout=timeout
+        )
 
 
 class Bot(commands.Bot):
@@ -145,12 +163,10 @@ class Bot(commands.Bot):
 
     def __init__(self, **options):
         super().__init__(intents=discord.Intents.all(), **options)
-        if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):
+        if PSQL_DETAILS := getattr(config, "PSQL_DETAILS", None):
             self._pool = asyncio.get_event_loop().create_task(
-                Table.create_pool(
-                    PSQL_DETAILS, command_timeout=60
-                ))
-
+                Table.create_pool(PSQL_DETAILS, command_timeout=60)
+            )
 
     async def connect(self, *, reconnect=True):
         self.prefixes = {}
@@ -159,9 +175,8 @@ class Bot(commands.Bot):
         self._headers = {"Range": "bytes=0-10"}
         self._cache = TimedCache(loop=self.loop)
         self._before_invoke = self.before_invoke
-        if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):
-            self._pool = await Table.create_pool(
-                    config.PSQL_DETAILS, command_timeout=60)
+        if PSQL_DETAILS := getattr(config, "PSQL_DETAILS", None):
+            self._pool = await Table.create_pool(PSQL_DETAILS, command_timeout=60)
 
         # Extension load
         for extension in COGS:
@@ -171,14 +186,19 @@ class Bot(commands.Bot):
                 wh_id, wh_token = config.WEBHOOK
                 full_exc = traceback.format_exception(type(e), e, e.__traceback__)
                 hook = discord.Webhook.partial(
-                    id = wh_id, token = wh_token, adapter = discord.AsyncWebhookAdapter(self.session))
-                full_exc = [line.replace('/home/moogs', '', 1) for line in full_exc]
-                full_exc = [line.replace('C:\\Users\\aaron', '', 1) for line in full_exc]
-                output = '\n'.join(full_exc)
+                    id=wh_id,
+                    token=wh_token,
+                    adapter=discord.AsyncWebhookAdapter(self.session),
+                )
+                full_exc = [line.replace("/home/moogs", "", 1) for line in full_exc]
+                full_exc = [
+                    line.replace("C:\\Users\\aaron", "", 1) for line in full_exc
+                ]
+                output = "\n".join(full_exc)
                 idx = 0
                 while len(output) >= 1990:
                     idx -= 1
-                    output = '\n'.join(full_exc[:idx])
+                    output = "\n".join(full_exc[:idx])
                 output = f"```{output}```"
                 await hook.send(output)
 
@@ -196,21 +216,26 @@ class Bot(commands.Bot):
     async def get_prefix(self, message):
 
         if message.guild:
-
             ret = self.prefixes.get(message.guild.id)
             if not ret:
-                if ret := await self.pool.fetchval('SELECT prefixes FROM guild_config WHERE guild_id = $1', message.guild.id):
+                if ret := await self.pool.fetchval(
+                    "SELECT prefixes FROM guild_config WHERE guild_id = $1",
+                    message.guild.id,
+                ):
                     self.prefixes[message.guild.id] = ret
                 else:
-                    await self.pool.execute('''INSERT INTO guild_config (guild_id, prefixes)
+                    await self.pool.execute(
+                        """INSERT INTO guild_config (guild_id, prefixes)
                                                 VALUES ($1, $2)
                                                 ON CONFLICT (guild_id)
-                                                DO UPDATE SET prefixes = $2;''', message.guild.id, [config.PREFIX])
+                                                DO UPDATE SET prefixes = $2;""",
+                        message.guild.id,
+                        [config.PREFIX],
+                    )
                     self.prefixes[message.guild.id] = [config.PREFIX]
             return self.prefixes[message.guild.id]
 
         else:
-
             return config.PREFIX
 
     async def on_ready(self):
@@ -230,11 +255,10 @@ class Bot(commands.Bot):
     @property
     def pool(self):
         """ Let's not rewrite internals... """
-        return getattr(self, '_pool', None)
+        return getattr(self, "_pool", None)
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     allowed_mentions = discord.AllowedMentions(everyone=False, users=True, roles=False)
     bot = Bot(command_prefix=config.PREFIX, allowed_mentions=allowed_mentions)
     bot.run(config.BOT_TOKEN)

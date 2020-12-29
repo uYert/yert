@@ -21,11 +21,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-import asyncio
-from collections import deque, namedtuple
-from datetime import datetime, timedelta
-from enum import Enum
 import random
+from collections import deque, namedtuple
+from datetime import datetime
+from enum import Enum
 from typing import List
 
 random.seed(datetime.utcnow())
@@ -56,32 +55,34 @@ class Player:
         self.bets = deque()
 
     def place_bet(self, **kwargs):
-        bet = kwargs.get('bet')
+        bet = kwargs.get("bet")
         try:
             bet = int(bet)
         except ValueError:
             bet = bet
-        amount = kwargs.get('amount', 15)
+        amount = kwargs.get("amount", 15)
         self.bets.append((bet, amount))
 
     def __repr__(self) -> str:
         return f"<Player name={self.name} id={self.id} bets={len(self.bets)}>"
 
-    def __str__(self) -> str: return self.name
+    def __str__(self) -> str:
+        return self.name
 
-    def __int__(self) -> int: return self.id
+    def __int__(self) -> int:
+        return self.id
 
 
-Bet = namedtuple('Bet', ['name', 'winners'])
+Bet = namedtuple("Bet", ["name", "winners"])
 
 
 class Tile:
     def __init__(self, name, **kwargs):
         self.name = name
-        self.colour = kwargs.get('colour', None)
-        self.column = kwargs.get('column', None)
-        self.dozen = kwargs.get('dozen', None)
-        self.half = kwargs.get('half', None)
+        self.colour = kwargs.get("colour", None)
+        self.column = kwargs.get("column", None)
+        self.dozen = kwargs.get("dozen", None)
+        self.half = kwargs.get("half", None)
 
     def __repr__(self) -> str:
         return f"<Tile name={self.name} colour={self.colour}>"
@@ -95,38 +96,64 @@ class Table:
         self.tiles = []
         self.tiles.append(Tile(0))
         for number in range(1, 37):
-            column = 'first'
-            dozen = 'first'
-            colour = 'black'
-            half = 'low'
+            column = "first"
+            dozen = "first"
+            colour = "black"
+            half = "low"
             if (number % 2) == 0:
-                colour = 'red'
+                colour = "red"
             if 19 <= number <= 36:
-                half = 'high'
+                half = "high"
             if 13 <= number <= 24:
-                dozen = 'second'
+                dozen = "second"
             if 25 <= number <= 36:
-                dozen = 'third'
+                dozen = "third"
             if (number % 3) == 0:
-                column = 'third'
-            if (number+1) % 3 == 0:
-                column = 'second'
-            self.tiles.append(Tile(number, colour=colour, column=column, half=half, dozen=dozen))
-        self.firstcol = Bet('firstcol', [t.name for t in self.tiles if t.column == 'first'])
-        self.secondcol = Bet('secondcol', [t.name for t in self.tiles if t.column == 'second'])
-        self.thirdcol = Bet('thirdcol', [t.name for t in self.tiles if t.column == 'third'])
-        self.first12 = Bet('first12', [t.name for t in self.tiles if t.dozen == 'first'])
-        self.second12 = Bet('second12', [t.name for t in self.tiles if t.dozen == 'second'])
-        self.third12 = Bet('third12', [t.name for t in self.tiles if t.dozen == 'third'])
-        self.odd = Bet('odd', [t.name for t in self.tiles if t.name % 2 != 0])
-        self.even = Bet('even', [t.name for t in self.tiles if t.name % 2 == 0])
-        self.red = Bet('red', [t.name for t in self.tiles if t.colour == 'red'])
-        self.black = Bet('black', [t.name for t in self.tiles if t.colour == 'black'])
-        self.high = Bet('high', [t.name for t in self.tiles if t.half == 'high'])
-        self.low = Bet('low', [t.name for t in self.tiles if t.half == 'low'])
+                column = "third"
+            if (number + 1) % 3 == 0:
+                column = "second"
+            self.tiles.append(
+                Tile(number, colour=colour, column=column, half=half, dozen=dozen)
+            )
+        self.firstcol = Bet(
+            "firstcol", [t.name for t in self.tiles if t.column == "first"]
+        )
+        self.secondcol = Bet(
+            "secondcol", [t.name for t in self.tiles if t.column == "second"]
+        )
+        self.thirdcol = Bet(
+            "thirdcol", [t.name for t in self.tiles if t.column == "third"]
+        )
+        self.first12 = Bet(
+            "first12", [t.name for t in self.tiles if t.dozen == "first"]
+        )
+        self.second12 = Bet(
+            "second12", [t.name for t in self.tiles if t.dozen == "second"]
+        )
+        self.third12 = Bet(
+            "third12", [t.name for t in self.tiles if t.dozen == "third"]
+        )
+        self.odd = Bet("odd", [t.name for t in self.tiles if t.name % 2 != 0])
+        self.even = Bet("even", [t.name for t in self.tiles if t.name % 2 == 0])
+        self.red = Bet("red", [t.name for t in self.tiles if t.colour == "red"])
+        self.black = Bet("black", [t.name for t in self.tiles if t.colour == "black"])
+        self.high = Bet("high", [t.name for t in self.tiles if t.half == "high"])
+        self.low = Bet("low", [t.name for t in self.tiles if t.half == "low"])
 
-        self.bets = [self.low, self.high, self.black, self.red, self.odd, self.even,
-                     self.first12, self.second12, self.third12, self.firstcol, self.secondcol, self.thirdcol]
+        self.bets = [
+            self.low,
+            self.high,
+            self.black,
+            self.red,
+            self.odd,
+            self.even,
+            self.first12,
+            self.second12,
+            self.third12,
+            self.firstcol,
+            self.secondcol,
+            self.thirdcol,
+        ]
 
 
 class Wheel:

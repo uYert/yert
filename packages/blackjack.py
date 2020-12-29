@@ -22,15 +22,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import asyncio
+import random
 from dataclasses import dataclass
 from datetime import datetime
-import random
 
 from discord import Message
-
 from main import BetterEmbed, NewCtx
 
 random.seed(datetime.utcnow())
+
 
 class Card:
     def __init__(self, name: str, suit: str):
@@ -39,17 +39,20 @@ class Card:
         try:
             self._value = int(name)
         except ValueError:
-            if name in ['J', 'Q', 'K']:
+            if name in ["J", "Q", "K"]:
                 self._value = 10
             else:
                 self._value = 1
 
     @property
-    def value(self) -> int: return self._value
+    def value(self) -> int:
+        return self._value
 
-    def ace(self) -> None: self._value = 11
+    def ace(self) -> None:
+        self._value = 11
 
-    def __repr__(self) -> str: return str(self)
+    def __repr__(self) -> str:
+        return str(self)
 
     def __str__(self) -> str:
         return "{0.name} of {0.suit} ({0.value})".format(self)
@@ -57,8 +60,8 @@ class Card:
 
 class Deck:
     def __init__(self) -> None:
-        names = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
-        suits = ['Clubs', 'Spades', 'Hearts', 'Diamonds']
+        names = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
+        suits = ["Clubs", "Spades", "Hearts", "Diamonds"]
         self.cards = []
         for suit in suits:
             for name in names:
@@ -90,16 +93,18 @@ class Player:
         embed.set_field_at(
             1,
             name="Your hand :",
-            value='\n'.join([str(c) for c in self.hand]),
-            inline=True
+            value="\n".join([str(c) for c in self.hand]),
+            inline=True,
         )
         await original.edit(embed=embed)
         return embed
 
 
 class Blackjack:
-    def __init__(self, ctx: NewCtx, original: Message, embed: BetterEmbed, timeout: int = 30) -> None:
-        self.move_options = ['h', 'hit', 's', 'stay', 'q', 'quit']
+    def __init__(
+        self, ctx: NewCtx, original: Message, embed: BetterEmbed, timeout: int = 30
+    ) -> None:
+        self.move_options = ["h", "hit", "s", "stay", "q", "quit"]
 
         self.move_counter = 0
         self.timeout = timeout
@@ -117,30 +122,29 @@ class Blackjack:
 
         self.deck = Deck()
 
-        self.player = Player(ctx.author.display_name, [], 0,
-                             ctx.author.id, True, False)
+        self.player = Player(ctx.author.display_name, [], 0, ctx.author.id, True, False)
         self.player.add_cards(self.deck.get())
         self.player.add_cards(self.deck.get())
         self.embed.set_field_at(
             self.player_field,
-            name=f"Your hand :",
-            value='\n'.join([str(c) for c in self.player.hand]),
-            inline=True
+            name="Your hand :",
+            value="\n".join([str(c) for c in self.player.hand]),
+            inline=True,
         )
 
-        self.dealer = Player('Dealer', [], 0, 0, False, False)
+        self.dealer = Player("Dealer", [], 0, 0, False, False)
         self.dealer.add_cards(self.deck.get())
         self.dealer.add_cards(self.deck.get())
         self.embed.set_field_at(
             self.dealer_field,
-            name=f"Dealer's face up card :",
+            name="Dealer's face up card :",
             value=str(self.dealer.hand[0]),
-            inline=True
+            inline=True,
         )
 
     def create_placeholders(self, embed: BetterEmbed):
-        embed.insert_field_at(1, name='\u200b', value='\u200b', inline=True)
-        embed.insert_field_at(2, name='\u200b', value='\u200b', inline=True)
+        embed.insert_field_at(1, name="\u200b", value="\u200b", inline=True)
+        embed.insert_field_at(2, name="\u200b", value="\u200b", inline=True)
         return embed
 
     async def calculate_score(self, target: Player) -> int:
@@ -148,24 +152,28 @@ class Blackjack:
         hand_val = 0
 
         def ace_check(m):
-            return m.author.id == self.player.id and \
-                m.channel == self.ctx.channel and \
-                m.content in ['1', '11']
+            return (
+                m.author.id == self.player.id
+                and m.channel == self.ctx.channel
+                and m.content in ["1", "11"]
+            )
 
         for card in cards:
-            if card.name != 'A':
+            if card.name != "A":
                 hand_val += card.value
             else:
                 if target.id == 0:
                     hand_val += 11
                 else:
-                    self.embed.insert_field_at(self.ace_field,
-                        name='\u200b',
-                        value="You got an ace, do you want it to be 1 or 11?")
+                    self.embed.insert_field_at(
+                        self.ace_field,
+                        name="\u200b",
+                        value="You got an ace, do you want it to be 1 or 11?",
+                    )
                     await self.original.edit(embed=self.embed)
                     try:
                         reply = await self.bot.wait_for(
-                            'message', check=ace_check, timeout=self.timeout
+                            "message", check=ace_check, timeout=self.timeout
                         )
                         reply = int(reply.content)
                         hand_val += reply
@@ -174,7 +182,9 @@ class Blackjack:
                             card.ace()
 
                         self.embed.remove_field(self.ace_field)
-                        self.embed = await self.player.update_hand(self.original, self.embed)
+                        self.embed = await self.player.update_hand(
+                            self.original, self.embed
+                        )
                         await self.original.edit(embed=self.embed)
 
                     except asyncio.TimeoutError:
@@ -188,7 +198,7 @@ class Blackjack:
 
         if hand_val == 21:
             if len(target.hand) == 2:
-                self.embed.add_field(name="Blackjack!", value='\u200b')
+                self.embed.add_field(name="Blackjack!", value="\u200b")
                 await self.original.edit(embed=self.embed)
             target.is_winner = True
 
@@ -196,9 +206,11 @@ class Blackjack:
 
     async def player_turn(self):
         def move_check(m):
-            return m.author.id == self.player.id and \
-                m.channel == self.original.channel and \
-                m.content.lower() in self.move_options
+            return (
+                m.author.id == self.player.id
+                and m.channel == self.original.channel
+                and m.content.lower() in self.move_options
+            )
 
         self.dealer.score = await self.calculate_score(self.dealer)
 
@@ -209,34 +221,36 @@ class Blackjack:
             if self.player.score < 21:
                 try:
                     reply = await self.bot.wait_for(
-                        'message', check=move_check, timeout=self.timeout
+                        "message", check=move_check, timeout=self.timeout
                     )
                     choice = reply.content.lower()
-                    if choice in ['h', 'hit']:
+                    if choice in ["h", "hit"]:
                         card = self.deck.get()
                         await asyncio.sleep(1)
                         self.embed.add_field(
-                            name='\u200b',
+                            name="\u200b",
                             value=f"**You got : {str(card)}**",
-                            inline=False
+                            inline=False,
                         )
                         self.player.add_cards(card)
-                        self.embed = await self.player.update_hand(self.original, self.embed)
+                        self.embed = await self.player.update_hand(
+                            self.original, self.embed
+                        )
                         self.player.score = await self.calculate_score(self.player)
                         if self.player.is_winner:
                             self.player.is_turn = False
                             break
 
-                    elif choice in ['s', 'stay']:
+                    elif choice in ["s", "stay"]:
                         self.embed.add_field(
-                            name='\u200b',
+                            name="\u200b",
                             value="Bold strategy cotton, lets see how that plays out",
-                            inline=False
+                            inline=False,
                         )
                         self.embed.add_field(
                             name="Your next card would've been :\n",
                             value=str(self.deck.show_next()),
-                            inline=False
+                            inline=False,
                         )
                         await self.original.edit(embed=self.embed)
                         self.player.is_turn = False
@@ -248,17 +262,19 @@ class Blackjack:
                         if self.move_counter == 1:
                             self.embed.add_field(
                                 name="You cash out on your first move",
-                                value='\u200b', inline=False
+                                value="\u200b",
+                                inline=False,
                             )
                             await self.original.edit(embed=self.embed)
-                            self.winner = 'Draw'
+                            self.winner = "Draw"
                             self.player.is_turn = False
                             self.dealer.is_turn = True
                             break
                         else:
                             self.embed.add_field(
                                 name="You can only do this on your first move",
-                                value='\u200b', inline=False
+                                value="\u200b",
+                                inline=False,
                             )
                             await self.original.edit(embed=self.embed)
                             continue
@@ -277,9 +293,9 @@ class Blackjack:
 
             elif self.player.score > 21:
                 self.embed.add_field(
-                    name='\u200b',
+                    name="\u200b",
                     value=f"**Your last card, {str(self.player.hand[-1])}, put you over 21.**",
-                    inline=False
+                    inline=False,
                 )
                 self.embed = await self.player.update_hand(self.original, self.embed)
                 self.dealer.is_winner = True
@@ -302,7 +318,7 @@ class Blackjack:
 
             if self.dealer.score == 21:
                 if self.player.score == 21:
-                    self.winner = 'Draw'
+                    self.winner = "Draw"
                     self.player.is_winner = False
                     self.dealer.is_winner = False
                     break
@@ -326,18 +342,18 @@ class Blackjack:
         elif dealerwin and not playerwin and not draw:
             winner = self.dealer
         else:
-            winner = 'Draw'
+            winner = "Draw"
 
         self.embed.add_field(
             name=f"Winner : {getattr(winner, 'name', 'No one')}",
             value=f"Player score : {self.player.score} || Dealer score : {self.dealer.score}",
-            inline=False
+            inline=False,
         )
         self.embed.set_field_at(
             self.dealer_field,
             name="Dealer's hand :",
-            value='\n'.join([str(c) for c in self.dealer.hand]),
-            inline=True
+            value="\n".join([str(c) for c in self.dealer.hand]),
+            inline=True,
         )
         await self.original.edit(embed=self.embed)
 

@@ -22,24 +22,32 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-from discord.ext.menus import ListPageSource
-from utils.formatters import BetterEmbed
-from rule34 import Rule34Post
-from rule34 import Rule34 as BaseRule34
 from asyncio import AbstractEventLoop
+
 from aiohttp import ClientSession
+from discord.ext.menus import ListPageSource
+from rule34 import Rule34 as BaseRule34
+from rule34 import Rule34Post
 from utils.converters import to_human_datetime
+from utils.formatters import BetterEmbed
 
 
 class AioRule34(BaseRule34):
-    def __init__(self, *, session: ClientSession, timeout: int = 10,
-                 loop: AbstractEventLoop = None):
+    def __init__(
+        self,
+        *,
+        session: ClientSession,
+        timeout: int = 10,
+        loop: AbstractEventLoop = None,
+    ):
         """
         :param loop: the event loop
         :param timeout: how long requests are allowed to run until timing out
         """
         self.session = session
-        self.timeout = timeout  # it normally doesn't let us to use our own clientsession
+        self.timeout = (
+            timeout  # it normally doesn't let us to use our own clientsession
+        )
         self.loop = loop
 
 
@@ -50,11 +58,14 @@ class R34Source(ListPageSource):
 
     def format_page(self, menu, page: Rule34Post):
 
-        embed = BetterEmbed(title=f'Results for : {self.query}', url=page.file_url)
+        embed = BetterEmbed(title=f"Results for : {self.query}", url=page.file_url)
         fields = (
-            ('Size', f'{page.width}x{page.height}'),
-            ('Creator id', page.creator_ID),
-            ('Created at', to_human_datetime(page.created_at, "%a %b %d %H:%M:%S %z %Y")),
+            ("Size", f"{page.width}x{page.height}"),
+            ("Creator id", page.creator_ID),
+            (
+                "Created at",
+                to_human_datetime(page.created_at, "%a %b %d %H:%M:%S %z %Y"),
+            ),
         )
         embed.set_image(url=page.file_url)
 

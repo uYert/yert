@@ -21,17 +21,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from functools import lru_cache
+import itertools
 import traceback
 import typing
-import itertools
 from contextlib import suppress
+from functools import lru_cache
 
+import config
 import discord
 from discord import Message
 from discord.ext import commands
-
-import config
 from main import NewCtx
 from utils import formatters
 
@@ -42,35 +41,40 @@ class Events(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.webhook = self._webhook
-        self.ignored = [commands.CommandNotFound, ]
+        self.ignored = [
+            commands.CommandNotFound,
+        ]
         self.tracking = True
 
     @property
     def _webhook(self) -> discord.Webhook:
         wh_id, wh_token = config.WEBHOOK
         hook = discord.Webhook.partial(
-            id=wh_id, token=wh_token, adapter=discord.AsyncWebhookAdapter(self.bot.session))
+            id=wh_id,
+            token=wh_token,
+            adapter=discord.AsyncWebhookAdapter(self.bot.session),
+        )
         return hook
 
     @lru_cache(maxsize=15)
-    def tracy_beaker_fmt(self, error: Exception) -> typing.Tuple[str, str, typing.Tuple[str, str, str]]:
-        full_exc = traceback.format_exception(
-            type(error), error, error.__traceback__)
+    def tracy_beaker_fmt(
+        self, error: Exception
+    ) -> typing.Tuple[str, str, typing.Tuple[str, str, str]]:
+        full_exc = traceback.format_exception(type(error), error, error.__traceback__)
         listed_exc = full_exc[-2].split()
-        filename = listed_exc[1].replace('/', '\\')
-        filename = '\\'.join(filename.split('\\')[-3:])[:-1]
+        filename = listed_exc[1].replace("/", "\\")
+        filename = "\\".join(filename.split("\\")[-3:])[:-1]
         linenumber = str(listed_exc[3])[:-1]
         funcname = listed_exc[5]
         exc_info = (filename, linenumber, funcname)
         short_exc = full_exc[-1]
-        full_exc = [line.replace('/home/moogs', '', 1) for line in full_exc]
-        full_exc = [line.replace('C:\\Users\\aaron', '', 1)
-                    for line in full_exc]
-        output = '\n'.join(full_exc)
+        full_exc = [line.replace("/home/moogs", "", 1) for line in full_exc]
+        full_exc = [line.replace("C:\\Users\\aaron", "", 1) for line in full_exc]
+        output = "\n".join(full_exc)
         idx = 0
         while len(output) >= 1990:
             idx -= 1
-            output = '\n'.join(full_exc[:idx])
+            output = "\n".join(full_exc[:idx])
         output = f"```\n{output}```"
         return short_exc, output, exc_info
 
@@ -95,18 +99,20 @@ class Events(commands.Cog):
     @commands.is_owner()
     async def add(self, ctx: NewCtx, exc: str):
         """Adds an exception to the list of ignored exceptions"""
-        cmd_exc = getattr(commands, exc.casefold())
         self.ignored.append()
 
         if hasattr(commands, exc):
             if getattr(commands, exc) not in self.ignored:
                 self.ignored.append(getattr(commands, exc))
             else:
-                await ctx.webhook_send(f"commands.{exc} is already in the ignored exceptions.",
-                                       webhook=self.webhook)
+                await ctx.webhook_send(
+                    f"commands.{exc} is already in the ignored exceptions.",
+                    webhook=self.webhook,
+                )
         else:
             raise AttributeError(
-                "commands module has no attribute {0}, command aborted".format(exc))
+                "commands module has no attribute {0}, command aborted".format(exc)
+            )
 
     @_ignored.command(hidden=True)
     @commands.is_owner()
@@ -114,14 +120,16 @@ class Events(commands.Cog):
         """Removes an exception from the list of ingored exceptions"""
         if hasattr(commands, exc):
             try:
-                self.ignored.pop(self.ignored.index(
-                    getattr(commands, exc)))
+                self.ignored.pop(self.ignored.index(getattr(commands, exc)))
             except ValueError:
-                await ctx.webhook_send("{0} not in the ignored list of exceptions".format(exc),
-                                       webhook=self.webhook)
+                await ctx.webhook_send(
+                    "{0} not in the ignored list of exceptions".format(exc),
+                    webhook=self.webhook,
+                )
         else:
             raise AttributeError(
-                "commands module has no attribute {0}, command aborted".format(exc))
+                "commands module has no attribute {0}, command aborted".format(exc)
+            )
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -134,13 +142,17 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_command(self, ctx: NewCtx):
         """ On command invocation. """
-        if 'jishaku' in (qname := ctx.qname):
+        if "jishaku" in (qname := ctx.qname):
             return
 
-        embed = formatters.BetterEmbed(title=f'Command launched : {qname}',
-                                       description=f'{ctx.guild.name} / {ctx.channel.name} / {ctx.author}')
+        embed = formatters.BetterEmbed(
+            title=f"Command launched : {qname}",
+            description=f"{ctx.guild.name} / {ctx.channel.name} / {ctx.author}",
+        )
 
-        for key, value in itertools.zip_longest(ctx.command.clean_params.keys(), ctx.all_args):
+        for key, value in itertools.zip_longest(
+            ctx.command.clean_params.keys(), ctx.all_args
+        ):
             embed.add_field(name=key, value=value)
 
         await self.webhook.send(embed=embed)
@@ -148,13 +160,13 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx: NewCtx, error: Exception):
         """ On command errors. """
-        if hasattr(ctx.command, 'on_error'):
+        if hasattr(ctx.command, "on_error"):
             return
 
         if isinstance(error, tuple(self.ignored)):
             return
 
-        error = getattr(error, 'original', error)
+        error = getattr(error, "original", error)
 
         if isinstance(error, commands.CommandOnCooldown):
             if await self.bot.is_owner(ctx.author):
@@ -163,10 +175,6 @@ class Events(commands.Cog):
         short, full, exc_info = self.tracy_beaker_fmt(error)
 
         await ctx.webhook_send(short, full, exc_info, webhook=self.webhook)
-
-    @commands.Cog.listener()
-    async def on_command_completion(self, ctx: NewCtx):
-        """ On command completion. """
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
@@ -179,24 +187,24 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         embed = discord.Embed(title="New Guild", colour=discord.Colour.green())
-        embed.add_field(name='Name', value=guild.name)
-        embed.add_field(name='ID', value=guild.id)
-        embed.add_field(name='Shard ID', value=guild.shard_id or 'N/A')
-        embed.add_field(
-            name='Owner', value=f'{guild.owner} (ID: {guild.owner.id})')
+        embed.add_field(name="Name", value=guild.name)
+        embed.add_field(name="ID", value=guild.id)
+        embed.add_field(name="Shard ID", value=guild.shard_id or "N/A")
+        embed.add_field(name="Owner", value=f"{guild.owner} (ID: {guild.owner.id})")
 
         bots = sum(m.bot for m in guild.members)
         total = guild.member_count
         online = sum(m.status is discord.Status.online for m in guild.members)
-        embed.add_field(name='Members', value=str(total))
-        embed.add_field(name='Bots', value=f'{bots} ({bots/total:.2%})')
-        embed.add_field(name='Online', value=f'{online} ({online/total:.2%})')
+        embed.add_field(name="Members", value=str(total))
+        embed.add_field(name="Bots", value=f"{bots} ({bots/total:.2%})")
+        embed.add_field(name="Online", value=f"{online} ({online/total:.2%})")
 
         with suppress(discord.DiscordException):
             if action := discord.utils.get(
                 [a async for a in guild.audit_logs(limit=5)],
-                action=discord.AuditLogAction.member_update):
-                embed.add_field(name='Added By', value=action.user)
+                action=discord.AuditLogAction.member_update,
+            ):
+                embed.add_field(name="Added By", value=action.user)
 
         if guild.icon:
             embed.set_thumbnail(url=guild.icon_url)

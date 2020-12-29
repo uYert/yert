@@ -22,15 +22,24 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from __future__ import annotations
+
+import asyncio
 from datetime import timedelta
-from typing import Dict, Union
+from functools import partial
+from typing import TYPE_CHECKING, Dict, Union
 
-from aiogoogletrans import LANGCODES, LANGUAGES
-from aiogoogletrans import Translator as BaseTranslator
-from aiogoogletrans.client import Translated
+import aiohttp
 from discord.ext.commands import BadArgument
-
+from googletrans import LANGCODES, LANGUAGES
+from googletrans import Translator as BaseTranslator
+from googletrans.client import Translated
 from utils.formatters import BetterEmbed
+
+if TYPE_CHECKING:
+    from asyncio import AbstractEventLoop
+
+    from aiohttp import ClientSession
 
 
 # outside of the class to use it as a converter
@@ -52,9 +61,11 @@ def check_length(arg: str) -> str:
 
 class AioTranslator(BaseTranslator):
     """Translates stuff using google translate's api"""
+
     def __init__(self, *args, **kwargs):
+        self.session: ClientSession = kwargs.pop("session", aiohttp.ClientSession())
+        self.loop: AbstractEventLoop = kwargs.pop("loop", asyncio.get_event_loop())
         super().__init__(*args, **kwargs)
-        self.session = kwargs.pop('session', self.session)
 
     def format_resp(self, *, resp: Translated, text: str) -> BetterEmbed:
         """Formats the response into an embed"""
@@ -62,25 +73,27 @@ class AioTranslator(BaseTranslator):
         dest = LANGUAGES.get(resp.dest) or resp.dest
 
         conf = round(resp.confidence * 100, 1)
-        f_confidence = str(conf) + '%'
+        f_confidence = str(conf) + "%"
 
         if conf < 50.0:
-            f_confidence += ' (might be innacurate)'
+            f_confidence += " (might be innacurate)"
 
         embed = BetterEmbed(title="Translated something !")
 
         fields = (
-            ('original', text, False),
-            ('Translation', resp.text, False),
-            ('Confidence', f_confidence, True),
-            ('Languages', f'{src} -> {dest}', True)
+            ("original", text, False),
+            ("Translation", resp.text, False),
+            ("Confidence", f_confidence, True),
+            ("Languages", f"{src} -> {dest}", True),
         )
 
         return embed.add_fields(fields)
 
-    async def do_translation(self, *, ctx, text: str,
-                             translation_kwarg: Dict[str, str]) -> BetterEmbed:
+    async def do_translation(
+        self, *, ctx, text: str, translation_kwarg: Dict[str, str]
+    ) -> BetterEmbed:
         """Does the translation and formats it"""
-        resp = await self.translate(text, **translation_kwarg)
+        func = partial(self.translate, text, **translation_kwarg)
+        resp = await self.loop.run_in_executor(None, func)
         embed = self.format_resp(resp=resp, text=text)
         return ctx.add_to_cache(value=embed, timeout=timedelta(minutes=60))

@@ -23,15 +23,12 @@ SOFTWARE.
 """
 
 from datetime import timedelta
-from random import choice as rng_choice
-from typing import Union
 # no need to import the whole thing
-from functools import partial as funct_partial
+from random import choice as rng_choice
 
 import async_cleverbot as ac
 from aiohttp import ClientSession
-from discord import Member, Message, User
-
+from discord import Message
 from main import NewCtx
 from utils.checks import check_length
 
@@ -52,9 +49,9 @@ class AioCleverbot(ac.Cleverbot):
         if msg.author.bot or ctx.command or ctx.guild is None:
             return None
 
-        for mention in (ctx.bot.user.mention + ' ', f'<@!{ctx.bot.user.id}> '):
+        for mention in (ctx.bot.user.mention + " ", f"<@!{ctx.bot.user.id}> "):
             if content.startswith(mention):
-                cropped = content[len(mention):]  # removing the witespace
+                cropped = content[len(mention):]  # removing the whitespace
                 return cropped if check_length(cropped, min=3, max=60) else None
         else:
             return None
@@ -64,10 +61,13 @@ class AioCleverbot(ac.Cleverbot):
         if not (emotion := ctx.cached_data):
             emotion = rng_choice(self.emotions)
 
-        return ctx.add_to_cache(value=emotion,  # the timer is refreshed
-                                timeout=timedelta(minutes=30))
+        return ctx.add_to_cache(
+            value=emotion, timeout=timedelta(minutes=30)  # the timer is refreshed
+        )
 
-    def format_response(self, *, msg: Message, response: ac.Response, clean_txt: str) -> str:
+    def format_response(
+        self, *, msg: Message, response: ac.Response, clean_txt: str
+    ) -> str:
         """Formats the reponse depending on the context"""
         if msg.guild is None:
             return response.text

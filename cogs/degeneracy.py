@@ -25,13 +25,13 @@ SOFTWARE.
 import datetime
 import random
 import re
-from typing import Union, Tuple
-
-from discord.ext import commands, menus
+from typing import Tuple, Union
 
 import main
-from packages import r34, aionhentai
+from discord.ext import commands, menus
+from packages import aionhentai, r34
 from utils import formatters
+
 
 class Degeneracy(commands.Cog):
     def __init__(self, bot: main.Bot):
@@ -41,13 +41,14 @@ class Degeneracy(commands.Cog):
 
     async def _get_random_nhentai(self) -> Tuple[str, int]:
         """Returns a random nhentai doujin index"""
-        async with self.bot.session.head("https://nhentai.net/random",
-                                         allow_redirects=True) as resp:
+        async with self.bot.session.head(
+            "https://nhentai.net/random", allow_redirects=True
+        ) as resp:
             url = str(resp.url)
 
-        return url, int(re.findall(r'\d+', url)[0])
+        return url, int(re.findall(r"\d+", url)[0])
 
-    @commands.command(name='sixdigits')
+    @commands.command(name="sixdigits")
     async def sixdigits(self, ctx: main.NewCtx):
         """Provides you a magical six digits number"""
         url, digits = await self._get_random_nhentai()
@@ -57,7 +58,7 @@ class Degeneracy(commands.Cog):
 
         await ctx.send(digits)
 
-    @commands.command(name='nhentai', aliases=['doujin', 'doujins'])
+    @commands.command(name="nhentai", aliases=["doujin", "doujins"])
     @commands.is_nsfw()
     async def nhentai(self, ctx, doujin: Union[int, str] = None):
         """
@@ -71,15 +72,14 @@ class Degeneracy(commands.Cog):
                 doujin = [*self.aionhentai.filter_doujins(response)]
         else:
             response = await self.aionhentai.search(doujin)
-            doujin = [*self.aionhentai.filter_doujins(response)] or ['No results']
-        
+            doujin = [*self.aionhentai.filter_doujins(response)] or ["No results"]
+
         source = aionhentai.Source(doujin)
-        
+
         menu = aionhentai.Menu(source, delete_message_after=True)
         await menu.start(ctx)
 
-
-    @commands.command(name='r34', aliases=['rule34'])
+    @commands.command(name="r34", aliases=["rule34"])
     @commands.is_nsfw()
     @commands.cooldown(1, 10, commands.BucketType.user)
     async def r34(self, ctx: main.NewCtx, *, query: str, fuzzy: bool = False):
@@ -92,8 +92,6 @@ class Degeneracy(commands.Cog):
         source = r34.R34Source(results, query)
         menu = menus.MenuPages(source, delete_message_after=True)
         await menu.start(ctx)
-
-
 
 
 def setup(bot):

@@ -27,9 +27,8 @@ import datetime
 from typing import Union
 
 import discord
-from discord.ext import commands, menus
-
 from config import SAUCENAO_TOKEN
+from discord.ext import commands, menus
 from main import NewCtx
 from packages import aiojikan, aiosaucenao
 
@@ -37,15 +36,20 @@ from packages import aiojikan, aiosaucenao
 class Anime(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.aiosaucenao = aiosaucenao.Client(session=bot.session, api_key=SAUCENAO_TOKEN)
+        self.aiosaucenao = aiosaucenao.Client(
+            session=bot.session, api_key=SAUCENAO_TOKEN
+        )
         self.aiojikan = aiojikan.Client(session=bot.session)
         self.create_mal_commands()
 
-    @commands.command(name='saucenao')
+    @commands.command(name="saucenao")
     @commands.is_nsfw()
     @commands.cooldown(7, 30, commands.BucketType.default)
-    async def saucenao(self, ctx: NewCtx,
-                       target: Union[discord.Member, discord.User, discord.Message] = None):
+    async def saucenao(
+        self,
+        ctx: NewCtx,
+        target: Union[discord.Member, discord.User, discord.Message] = None,
+    ):
         """Provides informations about an image"""
         image = await self.aiosaucenao.select_image(ctx=ctx, target=target)
 
@@ -54,8 +58,10 @@ class Anime(commands.Cog):
         if not (source := ctx.cached_data):
 
             response = await self.aiosaucenao.search(image)
-            source = ctx.add_to_cache(value=aiosaucenao.Source(response.results),
-                                      timeout=datetime.timedelta(hours=24))
+            source = ctx.add_to_cache(
+                value=aiosaucenao.Source(response.results),
+                timeout=datetime.timedelta(hours=24),
+            )
 
         menu = menus.MenuPages(source, delete_message_after=True)
 
@@ -64,7 +70,7 @@ class Anime(commands.Cog):
 
         await menu.start(ctx)
 
-    @commands.group(name='mal', aliases=['myanimelist'], invoke_without_command=True)
+    @commands.group(name="mal", aliases=["myanimelist"], invoke_without_command=True)
     async def mal(self, ctx: NewCtx):
         """
         My anime list related commands,
@@ -108,14 +114,14 @@ class Anime(commands.Cog):
 
             await menu.start(ctx)
 
-        for name in ('anime', 'manga', 'person', 'character'):
+        for name in ("anime", "manga", "person", "character"):
             mal_command = template.copy()
             mal_command.name = name
 
-            article = 'a'
+            article = "a"
 
-            if name == 'anime':
-                article += 'n'
+            if name == "anime":
+                article += "n"
 
             mal_command.help = f"Searches {article} {name} on My Anime List"
             self.mal.add_command(mal_command)

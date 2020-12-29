@@ -25,15 +25,20 @@ SOFTWARE.
 import contextlib
 import inspect
 import itertools
+import json
+
 from datetime import datetime
 from time import perf_counter
 
 import config
 import discord
 from discord.ext import commands, menus
+
+import config
 from main import NewCtx
 from utils.converters import CommandConverter
 from utils.formatters import BetterEmbed
+from utils.converters import CommandConverter
 
 checked_perms = ["is_owner", "guild_only", "dm_only", "is_nsfw"]
 checked_perms.extend([p[0] for p in discord.Permissions()])
@@ -191,6 +196,22 @@ class Meta(commands.Cog):
         return self.git_cache[:-1]
 
     @commands.command()
+    async def notify(self, ctx: NewCtx):
+        """ Has the bot DM you when derek posts a cat picture, since they're determined to not do it"""
+        if ctx.author.id not in self.bot._cached_ids['catpost']:
+            self.bot._cached_ids['catpost'].append(ctx.author.id)
+            return
+        return await ctx.send("Your id has already been added to the list.")
+
+    @commands.command(name='stop')
+    async def _stop_catposts(self, ctx: NewCtx):
+        """ Stops the bot DM'ing you when a cat post detected"""
+        if ctx.author.id in self.bot._cached_ids['catpost']:
+            self.bot._cached_ids['catpost'].pop(ctx.author.id)
+            return
+        return await ctx.send("Your id wasn't in the list.")
+
+    @commands.command()
     async def about(self, ctx: NewCtx):
         """ This is the 'about the bot' command. """
         # Github id of the contributors and their corresponding discord id
@@ -214,11 +235,7 @@ class Meta(commands.Cog):
             contributors += f"{contributor['login']}({str(discord_profile)}): \
                             **{contributor['contributions']}** commits.\n"
 
-        uniq_mem_count = set()
-        for guild in self.bot.guilds:
-            for member in guild.members:
-                if not member.bot:
-                    uniq_mem_count.add(member)  # can't we just filter bot.users there ?
+        humans = sum([1 for user in self.bot.users if not user.bot])
 
         embed = BetterEmbed(title=f"About {ctx.guild.me.display_name}")
         embed.description = "A ~~shit~~ fun bot that was thrown together by a team of complete nincompoops."
@@ -237,6 +254,12 @@ class Meta(commands.Cog):
             value="https://github.com/uYert/yert",
             inline=False,
         )
+        embed.add_field(name="Current guilds",
+                        value=f'{len(self.bot.guilds):,}', inline=False)
+        embed.add_field(name="Total fleshy people being memed",
+                        value=f'{humans:,}', inline=False)
+        embed.add_field(name='Come check out our source at',
+                        value='https://github.com/uYert/yert', inline=False)
         await ctx.send(embed=embed)
 
     @commands.command()
@@ -249,6 +272,9 @@ class Meta(commands.Cog):
                 description=f"**API** {endocrine_title-sabertooth_tiger:.2f}s\n**WS** {self.bot.latency:.2f}s"
             )
         )
+        await m.edit(content='', embed=BetterEmbed(
+            description=f'**API** {endocrine_title-sabertooth_tiger:.2f}s\n**WS** {(self.bot.latency*2):.2f}s'
+        ))
 
     @commands.command()
     async def suggest(self, ctx: NewCtx, *, suggestion: str):

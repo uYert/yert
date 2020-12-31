@@ -28,17 +28,18 @@ from collections.abc import Hashable, MutableMapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from types import MappingProxyType, SimpleNamespace
-from typing import Any, Tuple, Union, Iterator
-
-from humanize import naturaldelta
+from typing import Any, Iterator, Tuple, Union
 
 from discord.utils import sleep_until
+from humanize import naturaldelta
+
 
 @dataclass
 class TimedValue:
     value: Any
     expires: datetime
     task: Task
+
 
 class TimedCache(MutableMapping):
     """
@@ -47,31 +48,39 @@ class TimedCache(MutableMapping):
 
     The timer is reset / updated if an item is inserted in the same slot
     """
-    def _make_delays(self, delay: Union[timedelta, datetime, int, None]) -> Tuple[int, datetime]:
+
+    def _make_delays(
+        self, delay: Union[timedelta, datetime, int, None]
+    ) -> Tuple[int, datetime]:
         """converts a delay into seconds"""
-        
+
         dt_now = datetime.now(tz=timezone.utc)
-        
+
         if isinstance(delay, timedelta):
             return delay.total_seconds(), (dt_now + delay)
-        
-        elif isinstance(delay, datetime):       
+
+        elif isinstance(delay, datetime):
             delta = dt_now - delay.replace(tzinfo=timezone.utc)
             return delta.total_seconds(), delay
-        
+
         elif isinstance(delay, int):
             final_delay = delay or self.timeout
             return final_delay, (dt_now + timedelta(seconds=final_delay))
-        
+
         elif delay is None:
             return self.timeout
-        
-        else:  # hardcoding ? don't know about what you mean 
-            raise TypeError(f"Expected (timedelta, datetime, int, None), got {delay.__class__.__name__}")
 
-    def __init__(self, *,
-                 timeout: Union[timedelta, datetime, int] = 600,
-                 loop: AbstractEventLoop = None):
+        else:  # hardcoding ? don't know about what you mean
+            raise TypeError(
+                f"Expected (timedelta, datetime, int, None), got {delay.__class__.__name__}"
+            )
+
+    def __init__(
+        self,
+        *,
+        timeout: Union[timedelta, datetime, int] = 600,
+        loop: AbstractEventLoop = None,
+    ):
         self.timeout = timeout  # funky way to use the default timeout in the init
         self.timeout, _ = self._make_delays(timeout)
         self.loop = loop or get_event_loop()
@@ -80,15 +89,15 @@ class TimedCache(MutableMapping):
     async def _timed_del(self, key: Hashable, timeout: int) -> None:
         """Deletes the item and the task associated with it"""
         self.storage.pop(await async_sleep(timeout or self.timeout, result=key))
-    
+
     def __setitem__(self, key: Hashable, value: Any, *, timeout: int = None) -> None:
         if old_val := self.storage.pop(key, None):
             old_val.task.cancel()
 
         timeout, final_time = self._make_delays(timeout)
         coro = self._timed_del(key, timeout=timeout)
-        task = self.loop.create_task(coro, name='Timed deletion')
-        
+        task = self.loop.create_task(coro, name="Timed deletion")
+
         self.storage[key] = TimedValue(value=value, expires=final_time, task=task)
 
     def __delitem__(self, key: Hashable) -> None:
@@ -98,10 +107,11 @@ class TimedCache(MutableMapping):
     def get(self, key: Hashable, default: Any = None) -> Any:
         """ Get a value from TimedCache. """
         timed_value = self.storage.get(key, default)
-        return getattr(timed_value, 'value', default)
+        return getattr(timed_value, "value", default)
 
-    def set(self, key: Hashable, value: Any,
-            timeout: Union[timedelta, datetime, int] = None) -> Any:
+    def set(
+        self, key: Hashable, value: Any, timeout: Union[timedelta, datetime, int] = None
+    ) -> Any:
         """ Set's the value into TimedCache. """
         self.__setitem__(key, value, timeout=timeout)
         return value
@@ -109,7 +119,7 @@ class TimedCache(MutableMapping):
     def __getitem__(self, key: Hashable) -> Any:
         return self.storage[key].value
 
-    def __iter__(self) -> iter: 
+    def __iter__(self) -> iter:
         return iter(self.storage)
 
     def __len__(self) -> int:
@@ -118,7 +128,10 @@ class TimedCache(MutableMapping):
     def _clean_data(self) -> Iterator[Tuple[Hashable, Tuple[Any, str]]]:
         dt_now = datetime.now(tz=timezone.utc)
         for key, timedvalue in self.storage.items():
-            yield key, (timedvalue.value, f'Expires in {naturaldelta(dt_now - timedvalue.expires)}')
+            yield key, (
+                timedvalue.value,
+                f"Expires in {naturaldelta(dt_now - timedvalue.expires)}",
+            )
 
     def __repr__(self) -> repr:
         return repr(self.storage)
@@ -128,15 +141,13 @@ class TimedCache(MutableMapping):
 
     def __eq__(self, value):
         return self.storage == value
-        
+
     def __bool__(self):
         return bool(self.storage)
-    
+
     def __del__(self):
         for key in self.storage.keys():
             del self.storage[key]
-    
-
 
 
 class NestedNamespace(SimpleNamespace):  # Thanks, cy
@@ -167,12 +178,16 @@ class NestedNamespace(SimpleNamespace):  # Thanks, cy
                             _k = list(item.keys())[0]
                             _v = list(item.values())[0]
                             setattr(attrs[key], _k, _v)
-        _attrs = attrs  # do this to avoid changing the size of the dict whilst iterating
+        _attrs = (
+            attrs  # do this to avoid changing the size of the dict whilst iterating
+        )
         return _attrs
 
     def __repr__(self) -> str:
-        attrs = ' '.join(f'{k}={v}' for k, v in self.__dict__.items() if not k.startswith('_'))
-        return f'<{self.__class__.__name__} {attrs}>'
+        attrs = " ".join(
+            f"{k}={v}" for k, v in self.__dict__.items() if not k.startswith("_")
+        )
+        return f"<{self.__class__.__name__} {attrs}>"
 
     def to_dict(self) -> MappingProxyType:
         """ Returns to a dict type. """

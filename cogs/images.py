@@ -85,8 +85,8 @@ class Images(commands.Cog):
             random_num = randint(0, len(i))
             low = randint(1, 15)
             high = randint(low, 30)
-            i[random_num // high: random_num // low] = i[
-                random_num // low: random_num // high
+            i[random_num // high : random_num // low] = i[
+                random_num // low : random_num // high
             ]
 
         new_red = Image.new("L", size)

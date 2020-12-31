@@ -23,7 +23,9 @@ SOFTWARE.
 """
 
 from typing import Iterable
+
 from discord.ext.commands import Command
 
+
 def check_length(item: Iterable, min: int, max: int):
-    return min <= len(item) <= max  
+    return min <= len(item) <= max

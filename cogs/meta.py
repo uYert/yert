@@ -25,20 +25,15 @@ SOFTWARE.
 import contextlib
 import inspect
 import itertools
-import json
-
 from datetime import datetime
 from time import perf_counter
 
 import config
 import discord
 from discord.ext import commands, menus
-
-import config
 from main import NewCtx
 from utils.converters import CommandConverter
 from utils.formatters import BetterEmbed
-from utils.converters import CommandConverter
 
 checked_perms = ["is_owner", "guild_only", "dm_only", "is_nsfw"]
 checked_perms.extend([p[0] for p in discord.Permissions()])
@@ -198,16 +193,16 @@ class Meta(commands.Cog):
     @commands.command()
     async def notify(self, ctx: NewCtx):
         """ Has the bot DM you when derek posts a cat picture, since they're determined to not do it"""
-        if ctx.author.id not in self.bot._cached_ids['catpost']:
-            self.bot._cached_ids['catpost'].append(ctx.author.id)
+        if ctx.author.id not in self.bot._cached_ids["catpost"]:
+            self.bot._cached_ids["catpost"].append(ctx.author.id)
             return
         return await ctx.send("Your id has already been added to the list.")
 
-    @commands.command(name='stop')
+    @commands.command(name="stop")
     async def _stop_catposts(self, ctx: NewCtx):
         """ Stops the bot DM'ing you when a cat post detected"""
-        if ctx.author.id in self.bot._cached_ids['catpost']:
-            self.bot._cached_ids['catpost'].pop(ctx.author.id)
+        if ctx.author.id in self.bot._cached_ids["catpost"]:
+            self.bot._cached_ids["catpost"].remove(ctx.author.id)
             return
         return await ctx.send("Your id wasn't in the list.")
 
@@ -246,7 +241,7 @@ class Meta(commands.Cog):
         )
         embed.add_field(
             name="Total fleshy people being memed",
-            value=f"{len(uniq_mem_count):,}",
+            value=f"{humans:,}",
             inline=False,
         )
         embed.add_field(
@@ -254,12 +249,6 @@ class Meta(commands.Cog):
             value="https://github.com/uYert/yert",
             inline=False,
         )
-        embed.add_field(name="Current guilds",
-                        value=f'{len(self.bot.guilds):,}', inline=False)
-        embed.add_field(name="Total fleshy people being memed",
-                        value=f'{humans:,}', inline=False)
-        embed.add_field(name='Come check out our source at',
-                        value='https://github.com/uYert/yert', inline=False)
         await ctx.send(embed=embed)
 
     @commands.command()
@@ -268,13 +257,11 @@ class Meta(commands.Cog):
         m = await ctx.send("_ _")
         endocrine_title = perf_counter()
         await m.edit(
+            content="",
             embed=BetterEmbed(
-                description=f"**API** {endocrine_title-sabertooth_tiger:.2f}s\n**WS** {self.bot.latency:.2f}s"
-            )
+                description=f"**API** {endocrine_title-sabertooth_tiger:.2f}s\n**WS** {(self.bot.latency*2):.2f}s"
+            ),
         )
-        await m.edit(content='', embed=BetterEmbed(
-            description=f'**API** {endocrine_title-sabertooth_tiger:.2f}s\n**WS** {(self.bot.latency*2):.2f}s'
-        ))
 
     @commands.command()
     async def suggest(self, ctx: NewCtx, *, suggestion: str):

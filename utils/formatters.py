@@ -25,7 +25,7 @@ SOFTWARE.
 from datetime import datetime
 from math import ceil
 from random import random, uniform
-from typing import Any, Iterator, Tuple, Optional, Union
+from typing import Any, Iterator, Optional, Tuple, Union
 
 from discord import Colour, Embed
 
@@ -38,7 +38,7 @@ def random_colour() -> Colour:
 def chunker(to_chunk: list, chunk_size: int = 5) -> Iterator:
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(to_chunk), chunk_size):
-        yield to_chunk[i:i + chunk_size]
+        yield to_chunk[i : i + chunk_size]
 
 
 def get_index(indexable, index: int, default=None) -> Any:
@@ -73,9 +73,9 @@ class BetterEmbed(Embed):
 
     def fill_fields(self):
         """Fill the remaining fields so they are lined up properly"""
-        inlines = len(self.fields[max(i for i, _ in enumerate(self.fields)):]) + 1
+        inlines = len(self.fields[max(i for i, _ in enumerate(self.fields)) :]) + 1
         for _ in range(ceil(inlines / 3) * 3 - inlines):
-            self.add_field(name='\u200b', value='\u200b')
+            self.add_field(name="\u200b", value="\u200b")
         return self
 
     # Useless super delegation. Commenting for now.
@@ -84,13 +84,18 @@ class BetterEmbed(Embed):
     #     return super().add_field(name=f"**{name}**", value=value, inline=inline)
 
     def add_field(self, *, name, value, inline=True):
-        return super().add_field(name=str(name) or self._empty_field,  # sends the embed anyways, but with a warn
-                                 value=str(value) or self._empty_field,  # a bit clearer than the missing field error
-                                 inline=inline)
+        return super().add_field(
+            name=str(name)
+            or self._empty_field,  # sends the embed anyways, but with a warn
+            value=str(value)
+            or self._empty_field,  # a bit clearer than the missing field error
+            inline=inline,
+        )
 
     def add_fields(self, fields: Iterator[Tuple[str, str, bool]]):
         """Adds all fields at once"""
         for field in fields:
-            self.add_field(name=field[0], value=field[1],
-                           inline=get_index(field, 2, True))
+            self.add_field(
+                name=field[0], value=field[1], inline=get_index(field, 2, True)
+            )
         return self

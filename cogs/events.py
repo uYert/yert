@@ -74,6 +74,8 @@ class Events(commands.Cog):
             user = self.bot.get_user(uid)
             try:
                 await user.send(content, embed=embed)
+            except discord.Forbidden:
+                pass
             except Exception as e:
                 await self.bot.get_user(273035520840564736).send(
                     "Failed to send a dm to {} for reason: \n{}\n{}".format(

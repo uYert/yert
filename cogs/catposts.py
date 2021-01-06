@@ -43,9 +43,10 @@ class Catpost(commands.Cog):
         self.bot = bot
         self.snake_pit_id = 448285120634421278
         self.derek_id = 230696474734755841
-        self.cat_re = re.compile("cat|kitt(en|y)?")
-        self.api_count_reset.start()
+        self.cat_re = re.compile(r"cat|kitt(en|y)?")
+        self.url_re = re.compile(r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")
         self.warned = False
+        self.api_count_reset.start()
         self.store_catposts.start()
 
     @commands.Cog.listener()
@@ -53,13 +54,14 @@ class Catpost(commands.Cog):
         """ Derek catposting detector """
         snake_pit_id = 448285120634421278
         derek_id = 230696474734755841
+        if message.author.id in self.bot._cached_ids['catpost']:
 
-        if message.channel.id == snake_pit_id and message.attachments:
-            if message.author.id == derek_id:
-                return await self.derekpost(message)
+            if message.channel.id == snake_pit_id:
+                if message.author.id == derek_id and message.attachments:
+                    return await self.derekpost(message)
 
-            else:
-                return await self.query_image(message)
+                elif not message.embeds and self.url_re.match(message.content.lower()):
+                    return await self.query_image(message)
 
     @commands.command()
     async def notify(self, ctx: NewCtx):

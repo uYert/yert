@@ -50,7 +50,7 @@ COGS = (
     "cogs.practical",
     "cogs.other",
     "cogs.stats",
-    "cogs.catpost"
+    "cogs.catposts"
 )
 
 

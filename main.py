@@ -22,7 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 """
 
 import asyncio
-import traceback
 from collections.abc import Hashable
 from datetime import datetime, timedelta, timezone
 import json
@@ -32,7 +31,6 @@ from typing import Any, Tuple, Union
 import discord
 from aiohttp import ClientSession
 from discord.ext import commands
-from discord.ext import commands, tasks
 
 import config
 from utils.containers import TimedCache
@@ -165,6 +163,7 @@ class Bot(commands.Bot):
 
     def __init__(self, **options):
         super().__init__(intents=discord.Intents.all(), **options)
+        self.warned = False
         with open('catpost.json') as file:
             self._cached_ids = json.load(file)
         if PSQL_DETAILS := getattr(config, 'PSQL_DETAILS', None):
@@ -209,7 +208,6 @@ class Bot(commands.Bot):
         with open('catpost.json') as file:
             data = json.load(file)
         self._cached_ids = data
-        self.store_catposts.start()
 
         return await super().connect(reconnect=reconnect)
 
@@ -270,16 +268,6 @@ class Bot(commands.Bot):
         with open('catpost.json', 'w') as file:
             json.dump(self._cached_ids, file, indent=4)
         await super().close()
-
-    @tasks.loop(hours=5)
-    async def store_catposts(self):
-        with open('catpost.json', 'w') as file:
-            json.dump(self._cached_ids, file, indent=4)
-
-    @store_catposts.before_loop
-    async def pre_store(self):
-        await self.wait_until_ready()
-
 
 
 if __name__ == "__main__":

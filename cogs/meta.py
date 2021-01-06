@@ -191,22 +191,6 @@ class Meta(commands.Cog):
         return self.git_cache[:-1]
 
     @commands.command()
-    async def notify(self, ctx: NewCtx):
-        """ Has the bot DM you when derek posts a cat picture, since they're determined to not do it"""
-        if ctx.author.id not in self.bot._cached_ids["catpost"]:
-            self.bot._cached_ids["catpost"].append(ctx.author.id)
-            return
-        return await ctx.send("Your id has already been added to the list.")
-
-    @commands.command(name="stop")
-    async def _stop_catposts(self, ctx: NewCtx):
-        """ Stops the bot DM'ing you when a cat post detected"""
-        if ctx.author.id in self.bot._cached_ids["catpost"]:
-            self.bot._cached_ids["catpost"].remove(ctx.author.id)
-            return
-        return await ctx.send("Your id wasn't in the list.")
-
-    @commands.command()
     async def about(self, ctx: NewCtx):
         """ This is the 'about the bot' command. """
         # Github id of the contributors and their corresponding discord id

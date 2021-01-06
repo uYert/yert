@@ -119,7 +119,7 @@ class Catpost(commands.Cog):
     async def derekpost(self, message: discord.Message):
         content, embed = self.prepare_embed(message)
         data = self.bot._cached_ids['catpost']
-        for uid in data["catpost"]:
+        for uid in data:
             user = self.bot.get_user(uid)
             try:
                 await user.send(content, embed=embed)

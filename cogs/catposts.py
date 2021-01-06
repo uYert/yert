@@ -97,7 +97,7 @@ class Catpost(commands.Cog):
         response = await response.json()
         if response['status']['type'] == 'error':
             await self.bot.get_user(273035520840564736).send(f"Error from the image api: {response['status']['text']}")
-        top_eighty = [res for res in response['results']['tags'][:10] if res['confidence'] >= 80.0]
+        top_eighty = [res for res in response['result']['tags'][:10] if res['confidence'] >= 80.0]
 
         if any(self.cat_re.match(res['tag']['en']) for res in top_eighty):
 

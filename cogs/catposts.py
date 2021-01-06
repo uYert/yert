@@ -91,13 +91,13 @@ class Catpost(commands.Cog):
         return "A cat post was detected, come have a look", ret
 
     async def query_image(self, message: discord.Message):
-        self.bot._cached_ids['api'][0] += 1
+        self.bot._cached_ids['api'] += 1
         data = self.bot._cached_ids
         response = await self.bot.session.get(config.IMG_BASE + message.attachments[0].url, auth=BasicAuth(*config.IMG_AUTH))
         response = await response.json()
         if response['status']['type'] == 'error':
             await self.bot.get_user(273035520840564736).send(f"Error from the image api: {response['status']['text']}")
-        top_eighty = [res for res in response['results']['tags'][:10] if res['confidence'] >= 80.0]
+        top_eighty = [res for res in response['result']['tags'][:10] if res['confidence'] >= 80.0]
 
         if any(self.cat_re.match(res['tag']['en']) for res in top_eighty):
 
@@ -134,7 +134,7 @@ class Catpost(commands.Cog):
 
     @tasks.loop(hours=5)
     async def store_catposts(self):
-        if not self.warned and self.bot._cached_ids['api'][0] >= 1500:
+        if not self.warned and self.bot._cached_ids['api'] >= 1500:
             await self.bot.get_user(273035520840564736).send("75%")
             self.warned = True
         with open('catpost.json', 'w') as file:

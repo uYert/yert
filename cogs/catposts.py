@@ -62,8 +62,8 @@ class Catpost(commands.Cog):
 
                 elif (
                     not message.embeds
-                    and self.url_re.match(message.content.lower())
-                    and message.attachments
+                    and (self.url_re.match(message.content.lower())
+                    or message.attachments)
                 ):
                     return await self.query_image(message)
 
@@ -96,9 +96,13 @@ class Catpost(commands.Cog):
 
     async def query_image(self, message: discord.Message):
         self.bot._cached_ids["api"] += 1
+        if match := (self.url_re.match(message.content.lower())):
+            url = match.group(0)
+        else:
+            url = message.attachments[0].url
         data = self.bot._cached_ids
         response = await self.bot.session.get(
-            config.IMG_BASE + message.attachments[0].url,
+            config.IMG_BASE + url,
             auth=BasicAuth(*config.IMG_AUTH),
         )
         response = await response.json()

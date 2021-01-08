@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 """
 
 
+import asyncio
 from io import StringIO
 import json
 import re
@@ -127,23 +128,27 @@ class Catpost(commands.Cog):
         await self._debug(response, matched=did_match)
 
         if did_match:
+            try:
+                await self.bot.wait_for('message', check=lambda m: m.channel.id == 448285120634421278 and 'catpost' in message.content.lower().split(), timeout=7.0)
 
-            for uid in data["catpost"]:
-                user = self.bot.get_user(uid)
-                _, embed = self.prepare_embed(message)
+                for uid in data["catpost"]:
+                    user = self.bot.get_user(uid)
+                    _, embed = self.prepare_embed(message)
 
-                try:
-                    await user.send(
-                        "I'm pretty sure sure i just saw a catpost", embed=embed
-                    )
-                except discord.Forbidden:
-                    pass
-                except Exception as e:
-                    await self.bot.get_user(273035520840564736).send(
-                        "Failed to send a dm to {} for reason: \n{}\n{}".format(
-                            user.name, type(e), e
+                    try:
+                        await user.send(
+                            "I'm pretty sure sure i just saw a catpost", embed=embed
                         )
-                    )
+                    except discord.Forbidden:
+                        pass
+                    except Exception as e:
+                        await self.bot.get_user(273035520840564736).send(
+                            "Failed to send a dm to {} for reason: \n{}\n{}".format(
+                                user.name, type(e), e
+                            )
+                        )
+            except asyncio.TimeoutError:
+                return
 
     async def derekpost(self, message: discord.Message):
         content, embed = self.prepare_embed(message)

@@ -97,7 +97,7 @@ class Catpost(commands.Cog):
     ) -> typing.Tuple[str, formatters.BetterEmbed]:
         ret = formatters.BetterEmbed(title="Catpost detected.")
         ret.add_field(
-            name="Derek catpost;",
+            name="Catpost;",
             value=f"[Jump!]({message.jump_url})",
             inline=False,
         )

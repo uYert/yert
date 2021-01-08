@@ -130,7 +130,8 @@ class Catpost(commands.Cog):
         if did_match:
             try:
                 await self.bot.wait_for('message', check=lambda m: m.channel.id == 448285120634421278 and 'catpost' in message.content.lower().split(), timeout=7.0)
-
+                return
+            except asyncio.TimeoutError:
                 for uid in data["catpost"]:
                     user = self.bot.get_user(uid)
                     _, embed = self.prepare_embed(message)
@@ -147,8 +148,6 @@ class Catpost(commands.Cog):
                                 user.name, type(e), e
                             )
                         )
-            except asyncio.TimeoutError:
-                return
 
     async def derekpost(self, message: discord.Message):
         content, embed = self.prepare_embed(message)

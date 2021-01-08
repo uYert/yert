@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 """
 
 
+from io import StringIO
 import json
 import re
 import typing
@@ -48,6 +49,14 @@ class Catpost(commands.Cog):
         self.warned = False
         self.api_count_reset.start()
         self.store_catposts.start()
+
+    async def _debug(self, data: dict, *, matched: bool = False) -> None:
+        private_channel = self.bot.get_channel(339480599217700865)
+        jsonfile = StringIO()
+        jsonfile.write(str(data))
+        jsonfile.seek(0)
+        await private_channel.send(f"Did regex match?: {matched}", file=discord.File(jsonfile, 'temp.json'))
+
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -111,10 +120,13 @@ class Catpost(commands.Cog):
                 f"Error from the image api: {response['status']['text']}"
             )
         top_eighty = [
-            res for res in response["result"]["tags"][:10] if res["confidence"] >= 80.0
+            res for res in response["result"]["tags"] if res["confidence"] >= 80.0
         ]
+        did_match = any(self.cat_re.match(res["tag"]["en"]) for res in top_eighty)
 
-        if any(self.cat_re.match(res["tag"]["en"]) for res in top_eighty):
+        await self._debug(response, matched=did_match)
+
+        if did_match:
 
             for uid in data["catpost"]:
                 user = self.bot.get_user(uid)

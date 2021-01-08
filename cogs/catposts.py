@@ -51,12 +51,12 @@ class Catpost(commands.Cog):
         self.api_count_reset.start()
         self.store_catposts.start()
 
-    async def _debug(self, data: dict, *, matched: bool = False) -> None:
+    async def _debug(self, cid: int, data: dict, *, matched: bool = False) -> None:
         private_channel = self.bot.get_channel(339480599217700865)
         jsonfile = StringIO()
         jsonfile.write(str(data))
         jsonfile.seek(0)
-        await private_channel.send(f"Did regex match?: {matched}", file=discord.File(jsonfile, 'temp.json'))
+        await private_channel.send(f"Message id: {448285120634421278} \nDid regex match?: {matched}", file=discord.File(jsonfile, 'temp.json'))
 
 
     @commands.Cog.listener()
@@ -125,7 +125,7 @@ class Catpost(commands.Cog):
         ]
         did_match = any(self.cat_re.match(res["tag"]["en"]) for res in top_eighty)
 
-        await self._debug(response, matched=did_match)
+        await self._debug(message.id, response, matched=did_match)
 
         if did_match:
             try:

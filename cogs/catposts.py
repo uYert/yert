@@ -72,6 +72,7 @@ class Catpost(commands.Cog):
 
                 elif (
                     not message.embeds
+                    and (not 'catpost' in message.content.lower())
                     and (self.url_re.match(message.content.lower())
                     or message.attachments)
                 ):

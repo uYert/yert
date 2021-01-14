@@ -56,7 +56,7 @@ class Memes(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         _reddit_session = aiohttp.ClientSession(headers={"User-Agent": "Yoink discord bot"})
-        self._reddit = Reddit.from_sub('memes', cs=_reddit_session)
+        self._reddit = Reddit.from_sub('aww', cs=_reddit_session)
 
     def _gen_embeds(self, requester: str, posts: List[Any]) -> List[Embed]:
         embeds = []

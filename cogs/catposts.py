@@ -130,7 +130,7 @@ class Catpost(commands.Cog):
 
         if did_match:
             try:
-                await self.bot.wait_for('message', check=lambda m: m.channel.id == 448285120634421278 and 'catpost' in message.content.lower().split(), timeout=7.0)
+                await self.bot.wait_for('message', check=lambda m: m.channel.id == 448285120634421278 and 'catpost' in m.content.lower().split(), timeout=7.0)
                 return
             except asyncio.TimeoutError:
                 for uid in data["catpost"]:

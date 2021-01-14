@@ -268,7 +268,12 @@ class Bot(commands.Bot):
     async def close(self):
         with open('catpost.json', 'w') as file:
             json.dump(self._cached_ids, file, indent=4)
-        await super().close()
+        try:
+            await self.bot.cogs['Memes']._reddit._cs.close()
+        except (KeyError, AttributeError):
+            print('Oopsy woopsy, umby made a fucky wucky')
+        finally:
+            await super().close()
 
 
 if __name__ == "__main__":

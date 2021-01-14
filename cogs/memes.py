@@ -104,9 +104,11 @@ class Memes(commands.Cog):
             await self._reddit.load(comments=comments)
 
         if not ctx.channel.is_nsfw():
-            return await ctx.send("Channel isn't nsfw, can't do that here")
+            posts = filter(lambda p: not p.over_18, self._reddit.posts)
+        else:
+            posts = self._reddit.posts
 
-        embeds = self._gen_embeds(ctx.author, self._reddit.posts)
+        embeds = self._gen_embeds(ctx.author, posts)
         pages = menus.MenuPages(PagedEmbedMenu(embeds))
         await pages.start(ctx)
 

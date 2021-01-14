@@ -22,18 +22,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import aiohttp
 import contextlib
 import random
 import string
-from collections import namedtuple
 from datetime import datetime
-from textwrap import shorten
 from typing import Any, List
 
 import discord
 from discord import Embed  # needs fix :tm:
 from discord.ext import commands, menus
 from main import NewCtx
+
+from reddit import Reddit
 
 random.seed(datetime.utcnow())
 
@@ -54,127 +55,54 @@ class Memes(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        _reddit_session = aiohttp.ClientSession(headers={"User-Agent": "Yoink discord bot"})
+        self._reddit = Reddit.from_sub('memes', cs=_reddit_session)
 
-    def _gen_embeds(self, requester: str, iterable: List[Any]) -> List[Embed]:
+    def _gen_embeds(self, requester: str, posts: List[Any]) -> List[Embed]:
         embeds = []
 
-        for item in iterable:
+        for post in posts:
             embed = Embed(
-                title=item.title,
-                description=item.self_text,
-                colour=random.randint(0, 0xFFFFFF),
-                url=item.url,
+                title = post.title,
+                description = post.selftext,
+                colour = random.randint(0, 0xffffff),
+                url = post.url
             )
-            embed.set_author(name=item.author)
+            embed.set_author(name=post.author)
 
-            if item.image_link:
-                embed.set_image(url=item.image_link)
-
-            if item.video_link:
+            if post.media or post.is_video:
+                embed.set_image(url=post.media.url)
                 embed.add_field(
                     name="Vidya!",
-                    value=f"[Click here!]({item.video_link})",
-                    inline=False,
+                    value=f"[Click here!]({post.media.url}",
+                    inline=False
                 )
-            embed.add_field(name="Updoots", value=item.upvotes, inline=True)
-            embed.add_field(
-                name="Total comments", value=item.comment_count, inline=True
-            )
-            page_counter = f"Result {iterable.index(item)+1} of {len(iterable)}"
-            embed.set_footer(
-                text=f"{page_counter} | {item.subreddit} | Requested by {requester}"
-            )
+
+            embed.add_field(name="Updoots", value=post.ups, inline=True)
+            embed.add_field(name="Total comments", value=post.num_comments, inline=True)
+            page = f"Result {posts.index(post) + 1} of {len(posts)}"
+            embed.set_footer(text=f"{page} | {post.subreddit} | Requested by {requester}")
 
             embeds.append(embed)
-
-        return embeds[:15]
+        return embeds
 
     @commands.command()
     @commands.max_concurrency(1, commands.BucketType.channel, wait=False)
-    async def reddit(self, ctx: NewCtx, sub: str = "memes", sort: str = "hot"):
-        """Gets the <sub>reddits <amount> of posts sorted by <method>"""
-        if sort.lower() not in ("top", "hot", "best", "controversial", "new", "rising"):
-            return await ctx.send("Not a valid sort-by type.")
+    async def reddit(self, ctx: NewCtx, sub: str = 'memes', sort: str = 'hot', timeframe: str = 'all', comments: bool = False):
+        """Gets the <sub>reddit's posts sorted by <sort> method within the <timeframe> with <comments> determining wether to fetch comments too"""
+        if not sort.lower() in ('hot', 'new', 'top', 'rising', 'controversial'):
+            return await ctx.send('Not a valid sort method')
 
-        PostObj = namedtuple(
-            "PostObj",
-            [
-                "title",
-                "self_text",
-                "url",
-                "author",
-                "image_link",
-                "video_link",
-                "upvotes",
-                "comment_count",
-                "subreddit",
-            ],
-        )
-
-        posts = set()
-
-        subr_url = f"https://www.reddit.com/r/{sub}/about.json"
-        base_url = f"https://www.reddit.com/r/{sub}/{sort}.json"
-
-        async with self.bot.session.get(
-            subr_url, headers={"User-Agent": "Yoink discord bot"}
-        ) as subr_resp:
-            subr_deets = await subr_resp.json()
-
-        if "data" not in subr_deets:
-            raise commands.BadArgument("Subreddit does not exist.")
-        if subr_deets["data"].get("over18", None) and not ctx.channel.is_nsfw():
-            raise commands.NSFWChannelRequired(ctx.channel)
-
-        async with self.bot.session.get(base_url) as res:
-            page_json = await res.json()
-
-        idx = 0
-        for post_data in page_json["data"]["children"]:
-            image_url = None
-            video_url = None
-
-            if idx == 20:
-                break
-
-            post = post_data["data"]
-            if post["stickied"] or (post["over_18"] and not ctx.channel.is_nsfw()):
-                idx += 1
-                continue
-
-            title = shorten(post["title"], width=250)
-            self_text = shorten(post["selftext"], width=1500)
-            url = f"https://www.reddit.com{post['permalink']}"
-            author = post["author"]
-            image_url = (
-                post["url"]
-                if post["url"].endswith((".jpg", ".png", ".jpeg", ".gif", ".webp"))
-                else None
-            )
-            if "v.redd.it" in post["url"]:
-                image_url = post["thumbnail"]
-                if post.get("media", None):
-                    video_url = post["url"]
-                else:
-                    continue
-            upvotes = post["score"]
-            comment_count = post["num_comments"]
-            subreddit = post["subreddit"]
-
-            _post = PostObj(
-                title=title,
-                self_text=self_text,
-                url=url,
-                author=author,
-                image_link=image_url,
-                video_link=video_url,
-                upvotes=upvotes,
-                comment_count=comment_count,
-                subreddit=subreddit,
-            )
-
-            posts.add(_post)
-        embeds = self._gen_embeds(ctx.author, list(posts))
+        if sub != self._reddit.sub:
+            self._reddit = await Reddit.from_sub(
+                sub,
+                method=sort,
+                timeframe=timeframe,
+                cs=self._reddit._cs
+            ).load(comments=comments)
+        else:
+            await self._reddit.load(comments=comments)
+        embeds = self._gen_embeds(ctx.author, self._reddit.posts)
         pages = menus.MenuPages(PagedEmbedMenu(embeds))
         await pages.start(ctx)
 

@@ -23,6 +23,7 @@ psutil = "*"
 rule34 = "*"
 Pillow = "*"
 googletrans = "3.1.0a0"
+RAPILite = {git = "https://github.com/sudosnok/RAPILite.git", rev = "master"}
 
 [tool.poetry.dev-dependencies]
 black = "*"

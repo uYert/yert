@@ -118,6 +118,8 @@ class Memes(commands.Cog):
                 "- Not a real subreddit.\n"
             )
             return await ctx.send(msg)
+        else:
+            raise error
 
     @commands.command(name="mock")
     async def _mock(self, ctx: NewCtx, *, message: str):

@@ -70,7 +70,7 @@ class Memes(commands.Cog):
             )
             embed.set_author(name=post.author)
 
-            if post.media or post.is_video:
+            if post.media:
                 embed.set_image(url=post.media.url)
                 embed.add_field(
                     name="Vidya!",
@@ -119,7 +119,7 @@ class Memes(commands.Cog):
             )
             return await ctx.send(msg)
         else:
-            raise error
+            await self.bot.dispatch('command_error', ctx, error)
 
     @commands.command(name="mock")
     async def _mock(self, ctx: NewCtx, *, message: str):

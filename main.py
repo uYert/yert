@@ -40,6 +40,7 @@ from utils.formatters import BetterEmbed
 COGS = (
     "jishaku",
     "cogs.anime",
+    "cogs.bottom",
     "cogs.events",
     "cogs.games",
     # "cogs.degeneracy",

@@ -23,7 +23,7 @@ SOFTWARE.
 """
 
 import bottom
-# import discord
+import discord
 from discord.ext import commands
 from main import NewCtx
 
@@ -38,13 +38,27 @@ class Bottom(commands.Cog):
         ...
 
     @bottom.command(name="encode")
-    async def bottom_encode(self, ctx: NewCtx, *, message: str):
+    async def bottom_encode(self, ctx: NewCtx, *, message: str = None):
         """Encodes a messsage."""
+        ref = ctx.message.reference
+        if message is None:
+            if isinstance(getattr(ref, 'resolved', None), discord.Message):
+                message = ref.resolved.content
+            else:
+                await ctx.send('No message to encode.')
+
         await ctx.send(bottom.encode(message))
 
     @bottom.command(name="decode")
-    async def bottom_decode(self, ctx: NewCtx, *, message: str):
+    async def bottom_decode(self, ctx: NewCtx, *, message: str = None):
         """Decodes a messsage."""
+        ref = ctx.message.reference
+        if message is None:
+            if isinstance(getattr(ref, 'resolved', None), discord.Message):
+                message = ref.resolved.content
+            else:
+                await ctx.send('No message to decode.')
+
         try:
             await ctx.send(bottom.decode(message))
         except ValueError:

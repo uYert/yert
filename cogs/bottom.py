@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+from typing import Union
+
 import bottom
 import discord
 from discord.ext import commands
@@ -38,7 +40,7 @@ class Bottom(commands.Cog):
         ...
 
     @bottom.command(name="encode")
-    async def bottom_encode(self, ctx: NewCtx, *, message: str = None):
+    async def bottom_encode(self, ctx: NewCtx, *, message: Union[discord.Message, str] = None):
         """Encodes a messsage."""
         ref = ctx.message.reference
         if message is None:
@@ -47,10 +49,13 @@ class Bottom(commands.Cog):
             else:
                 await ctx.send('No message to encode.')
 
+        if isinstance(message, discord.Message):
+            message = message.content
+
         await ctx.send(bottom.encode(message))
 
     @bottom.command(name="decode")
-    async def bottom_decode(self, ctx: NewCtx, *, message: str = None):
+    async def bottom_decode(self, ctx: NewCtx, *, message: Union[discord.Message, str] = None):
         """Decodes a messsage."""
         ref = ctx.message.reference
         if message is None:
@@ -58,6 +63,9 @@ class Bottom(commands.Cog):
                 message = ref.resolved.content
             else:
                 await ctx.send('No message to decode.')
+
+        if isinstance(message, discord.Message):
+            message = message.content
 
         try:
             await ctx.send(bottom.decode(message))

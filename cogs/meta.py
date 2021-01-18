@@ -181,7 +181,7 @@ class Meta(commands.Cog):
     async def get_profiles(self):
         # Because the endpoint gives data that is a few hours old, we will get it each 4 hours
         # so that it's somewhat correct
-        if self.git_cache is None or (datetime.now() - self.git_cache[-1]).hours >= 4:
+        if self.git_cache is None or (datetime.now() - self.git_cache[-1]).total_seconds() >= (4*3600):
             async with self.bot.session.get(
                 "https://api.github.com/repos/uYert/yert/contributors",
                 params={"anon": "true"},

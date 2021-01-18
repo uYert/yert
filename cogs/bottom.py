@@ -47,7 +47,7 @@ class Bottom(commands.Cog):
             if isinstance(getattr(ref, 'resolved', None), discord.Message):
                 message = ref.resolved.content
             else:
-                await ctx.send('No message to encode.')
+                return await ctx.send('No message to encode.')
 
         if isinstance(message, discord.Message):
             message = message.content
@@ -62,7 +62,7 @@ class Bottom(commands.Cog):
             if isinstance(getattr(ref, 'resolved', None), discord.Message):
                 message = ref.resolved.content
             else:
-                await ctx.send('No message to decode.')
+                return await ctx.send('No message to decode.')
 
         if isinstance(message, discord.Message):
             message = message.content

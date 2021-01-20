@@ -167,7 +167,7 @@ class Meta(commands.Cog):
         self.bot.help_command = self.old_help
 
     @commands.command(name="source", aliases=["src", "s"])
-    async def _source(self, ctx: NewCtx, target: CommandConverter = None):
+    async def _source(self, ctx: NewCtx, *, target: CommandConverter = None):
         """Shows the source code for a given command, or general information if a command name isn't provided"""
         if target:
             source_lines = inspect.getsource(target.callback)

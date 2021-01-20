@@ -83,7 +83,7 @@ optional = false
 python-versions = ">=3.5.0"
 
 [package.extras]
-dev = ["Cython (==0.29.20)", "pytest (>=3.6.0)", "Sphinx (>=1.7.3,<1.8.0)", "sphinxcontrib-asyncio (>=0.2.0,<0.3.0)", "sphinx-rtd-theme (>=0.2.4,<0.3.0)", "pycodestyle (>=2.5.0,<2.6.0)", "flake8 (>=3.7.9,<3.8.0)", "uvloop (>=0.14.0,<0.15.0)"]
+dev = ["Cython (0.29.20)", "pytest (>=3.6.0)", "Sphinx (>=1.7.3,<1.8.0)", "sphinxcontrib-asyncio (>=0.2.0,<0.3.0)", "sphinx-rtd-theme (>=0.2.4,<0.3.0)", "pycodestyle (>=2.5.0,<2.6.0)", "flake8 (>=3.7.9,<3.8.0)", "uvloop (>=0.14.0,<0.15.0)"]
 docs = ["Sphinx (>=1.7.3,<1.8.0)", "sphinxcontrib-asyncio (>=0.2.0,<0.3.0)", "sphinx-rtd-theme (>=0.2.4,<0.3.0)"]
 test = ["pycodestyle (>=2.5.0,<2.6.0)", "flake8 (>=3.7.9,<3.8.0)", "uvloop (>=0.14.0,<0.15.0)"]
 
@@ -139,6 +139,14 @@ colorama = ["colorama (>=0.4.3)"]
 d = ["aiohttp (>=3.3.2)", "aiohttp-cors"]
 
 [[package]]
+name = "bottomify"
+version = "1.0.1"
+description = ""
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "braceexpand"
 version = "0.1.6"
 description = "Bash-style brace expansion for Python"
@@ -188,7 +196,6 @@ description = "An extension module to make reaction based menus with discord.py"
 category = "main"
 optional = false
 python-versions = ">=3.5.3"
-develop = false
 
 [package.dependencies]
 "discord.py" = ">=1.2.5"
@@ -201,25 +208,24 @@ resolved_reference = "6f2b873bf0d28903eb752aa1166b3aac26dc9007"
 
 [[package]]
 name = "discord.py"
-version = "1.6.0"
+version = "1.7.0a2745+g050bf74"
 description = "A Python wrapper for the Discord API"
 category = "main"
 optional = false
 python-versions = ">=3.5.3"
-develop = false
 
 [package.dependencies]
 aiohttp = ">=3.6.0,<3.8.0"
 
 [package.extras]
-docs = ["sphinx (==3.0.3)", "sphinxcontrib-trio (==1.1.2)", "sphinxcontrib-websupport"]
+docs = ["sphinx (3.0.3)", "sphinxcontrib-trio (1.1.2)", "sphinxcontrib-websupport"]
 voice = ["PyNaCl (>=1.3.0,<1.5)"]
 
 [package.source]
 type = "git"
 url = "https://github.com/Rapptz/discord.py"
 reference = "master"
-resolved_reference = "ed2650f7864229464b3317c08abde4345959f191"
+resolved_reference = "050bf74f5db0046c0010c2b7c3ac0c5fd0a500f9"
 
 [[package]]
 name = "discord.py-stubs"
@@ -395,7 +401,6 @@ description = "A discord.py extension including useful tools for bot development
 category = "main"
 optional = false
 python-versions = ">=3.7.0"
-develop = false
 
 [package.dependencies]
 braceexpand = ">=0.1.5"
@@ -551,7 +556,6 @@ description = ""
 category = "main"
 optional = false
 python-versions = ">=3.6"
-develop = false
 
 [package.dependencies]
 aiohttp = ">=3.6.2"
@@ -560,7 +564,7 @@ aiohttp = ">=3.6.2"
 type = "git"
 url = "https://github.com/sudosnok/RAPILite.git"
 reference = "master"
-resolved_reference = "a4622fa91a638269e9949a9e3f67751a3f425e3d"
+resolved_reference = "6696137a3cfecbc3f36e791bec2a65ba9066ff9e"
 
 [[package]]
 name = "regex"
@@ -586,7 +590,7 @@ urllib3 = ">=1.21.1,<1.27"
 
 [package.extras]
 security = ["pyOpenSSL (>=0.14)", "cryptography (>=1.3.4)"]
-socks = ["PySocks (>=1.5.6,!=1.5.7)", "win-inet-pton"]
+socks = ["PySocks (>=1.5.6,<1.5.7 || >1.5.7)", "win-inet-pton"]
 
 [[package]]
 name = "rfc3986"
@@ -601,7 +605,7 @@ idna2008 = ["idna"]
 
 [[package]]
 name = "rule34"
-version = "1.7.4"
+version = "1.7.5"
 description = "An async API wrapper for rule34.xxx"
 category = "main"
 optional = false
@@ -678,7 +682,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4"
 [package.extras]
 brotli = ["brotlipy (>=0.6.0)"]
 secure = ["pyOpenSSL (>=0.14)", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "certifi", "ipaddress"]
-socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
+socks = ["PySocks (>=1.5.6,<1.5.7 || >1.5.7,<2.0)"]
 
 [[package]]
 name = "yarl"
@@ -695,7 +699,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "f9106ff616847d5f5d0eef223c64a1fb14e5371b330ad71568bc8b8eb2144a30"
+content-hash = "7b75e70d23a5658c42d014b6796e32bffdbeb3d23233d4c72ac858fc87f0691f"
 
 [metadata.files]
 aiohttp = [
@@ -799,6 +803,17 @@ beautifulsoup4 = [
 ]
 black = [
     {file = "black-20.8b1.tar.gz", hash = "sha256:1c02557aa099101b9d21496f8a914e9ed2222ef70336404eeeac8edba836fbea"},
+]
+bottomify = [
+    {file = "bottomify-1.0.1-cp36-cp36m-manylinux2010_x86_64.whl", hash = "sha256:5cc56ffba43aaffbcafe045b2bd9427cd37c55c391d079e243fc5b3662cf2573"},
+    {file = "bottomify-1.0.1-cp36-none-win_amd64.whl", hash = "sha256:db505b6adf3e9b857eeb403c2c027f9985aca44eda5638c3381e1ab18c9e762b"},
+    {file = "bottomify-1.0.1-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:69c0ab2c853381051eee71bea6dde6cfbfb7186f86e3073d775a5b21d0aeb271"},
+    {file = "bottomify-1.0.1-cp37-none-win_amd64.whl", hash = "sha256:b1f6642b81dd1a3ea7b0cee8a2ac5d193d6a0604232e6a281cea08293072254e"},
+    {file = "bottomify-1.0.1-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:13eff254d82013c894b7e918983d460501b04921f1ee1b1ea8ae4870a3f71554"},
+    {file = "bottomify-1.0.1-cp38-none-win_amd64.whl", hash = "sha256:0a6c740a3f25d2f9f59c37ac2e121c9f6a4747d98c991069f637a2c00ee7a60b"},
+    {file = "bottomify-1.0.1-cp39-cp39-macosx_10_7_x86_64.whl", hash = "sha256:8bd6b902c66ed63fb4bc05505b2aae971108643cef5bbc38089dccabe25b2649"},
+    {file = "bottomify-1.0.1-cp39-cp39-manylinux2010_x86_64.whl", hash = "sha256:b33072b3e643e1d48977919251b02281d8141c1cef45acbd01ee5b90d59de128"},
+    {file = "bottomify-1.0.1-cp39-none-win_amd64.whl", hash = "sha256:4172dc98f17097f1188784f264ef90767dbdc91ed2b2e7b93f27bdd7a8dd6526"},
 ]
 braceexpand = [
     {file = "braceexpand-0.1.6-py2.py3-none-any.whl", hash = "sha256:c37571ad130213247fac9921f3fd1032c81057490b9ca29be6884fd6d9dc1013"},
@@ -1155,8 +1170,8 @@ rfc3986 = [
     {file = "rfc3986-1.4.0.tar.gz", hash = "sha256:112398da31a3344dc25dbf477d8df6cb34f9278a94fee2625d89e4514be8bb9d"},
 ]
 rule34 = [
-    {file = "rule34-1.7.4-py3-none-any.whl", hash = "sha256:ffb0894fae7358178165a026841e019969d5cbb5d442491197e0ffd2c07a1dfa"},
-    {file = "rule34-1.7.4.tar.gz", hash = "sha256:60806da29ef5925c854ae5bc761c705a33914f1d88b2582ac6a4a1b4f65e92da"},
+    {file = "rule34-1.7.5-py3-none-any.whl", hash = "sha256:be780c55180bd189f45fd644f1488fa6ffb8e4c8c08895e78deeab82675edcc3"},
+    {file = "rule34-1.7.5.tar.gz", hash = "sha256:573d988074bcec0428c9131a05181bb5c3086c7b37ab794ba0965813a0a93e1e"},
 ]
 simplejson = [
     {file = "simplejson-3.17.2-cp27-cp27m-macosx_10_13_x86_64.whl", hash = "sha256:2d3eab2c3fe52007d703a26f71cf649a8c771fcdd949a3ae73041ba6797cfcf8"},

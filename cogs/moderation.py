@@ -52,6 +52,7 @@ class Moderation(commands.Cog):
         days = days or self.def_days
         reason = reason or self.def_reason
         await ctx.guild.ban(target, delete_message_days=days, reason=reason)
+        await ctx.send(f"Banned {target} for {reason}")
 
     @commands.command()
     @commands.has_permissions(kick_members=True)
@@ -62,6 +63,7 @@ class Moderation(commands.Cog):
         """Kicks the given target for a reason"""
         reason = reason or self.def_reason
         await target.kick(reason=reason)
+        await ctx.send(f"Kicked {target} for {reason}")
 
     @commands.command()
     @commands.has_permissions(ban_members=True)
@@ -72,6 +74,7 @@ class Moderation(commands.Cog):
         """Unbans the given target"""
         reason = reason or self.def_reason
         await ctx.guild.unban(discord.Object(id=target), reason=reason)
+        await ctx.send(f"Unbanned {discord.Object(id=target)} for {reason}")
 
     @commands.command()
     @commands.has_guild_permissions(mute_members=True)
@@ -82,6 +85,7 @@ class Moderation(commands.Cog):
         """Mutes the given target with a reason"""
         reason = reason or self.def_reason
         await target.edit(mute=True, reason=reason)
+        await ctx.send(f"Muted {target} for {reason}")
 
     @commands.command()
     @commands.has_guild_permissions(mute_members=True)
@@ -92,6 +96,7 @@ class Moderation(commands.Cog):
         """ Unmutes the given target with optional reason. """
         reason = reason or self.def_reason
         await target.edit(mute=False, reason=reason)
+        await ctx.send(f"Unmuted {target} for {reason}")
 
     @commands.group(invoke_without_command=True)
     @commands.has_permissions(manage_roles=True)

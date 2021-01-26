@@ -13,6 +13,7 @@ jishaku = {git = "https://github.com/Gorialis/jishaku/", rev = "master"}
 asyncpg = "*"
 async_cleverbot = "*"
 async_cse = "*"
+bottomify = "*"
 bs4 = "*"
 fuzzywuzzy = "*"
 jikanpy = "*"
@@ -24,7 +25,6 @@ rule34 = "*"
 Pillow = "*"
 googletrans = "3.1.0a0"
 RAPILite = {git = "https://github.com/sudosnok/RAPILite.git", rev = "master"}
-bottom-py = {git = "https://github.com/uyert/bottom-py.git", rev = "master"}
 
 [tool.poetry.dev-dependencies]
 black = "*"

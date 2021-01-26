@@ -272,7 +272,7 @@ class Bot(commands.Bot):
         try:
             await self.bot.cogs['Memes']._reddit._cs.close()
         except (KeyError, AttributeError):
-            print('Oopsy woopsy, umby made a fucky wucky')
+            pass
         finally:
             await super().close()
 

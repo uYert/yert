@@ -33,7 +33,8 @@ from typing import Any, Iterable, Mapping
 import discord
 from discord.ext import commands
 from humanize import naturaldate
-import numpy as np
+
+from utils.containers import DieEval
 
 BetterUser = namedtuple("BetterUser", ["obj", "http_dict"])
 u_conv = commands.UserConverter()
@@ -141,37 +142,6 @@ class CommandConverter(commands.Converter):
         if cmd:
             return cmd
         raise commands.BadArgument("Command name/alias not found")
-
-class DieEval:
-    def __init__(self, num, die, op, mod):
-        self.ops = {'-': lambda l, r: l - r, '+': lambda l, r: l + r}
-        self.num = int(num)
-        self.die = int(die)
-        self.op = op
-        self.mod = int(mod)
-        self.value = 0
-        self.eval()
-
-    def eval(self):
-        self.rolls = [np.random.randint(1, self.die) for _ in range(self.num)]
-        self.total = self.ops[self.op](sum(self.rolls), self.mod)
-
-    def __repr__(self):
-        num = self.num
-        die = self.die
-        op = self.op
-        mod = self.mod
-        if mod != 0:
-            return f"<class DieEval; total={self.total}, {num}d{die}{op}{mod}>"
-        return f"<class DieEval; total={self.total}, {num}d{die}>"
-
-    def __int__(self): return self.total
-
-    def __add__(self, other):
-        return self.total + int(other)
-
-    def __sub__(self, other):
-        return self.total - int(other)
 
 
 class Dice:

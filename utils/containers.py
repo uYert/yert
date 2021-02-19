@@ -30,8 +30,8 @@ from datetime import datetime, timedelta, timezone
 from types import MappingProxyType, SimpleNamespace
 from typing import Any, Iterator, Tuple, Union
 
-from discord.utils import sleep_until
 from humanize import naturaldelta
+import numpy as np
 
 
 @dataclass
@@ -192,3 +192,71 @@ class NestedNamespace(SimpleNamespace):  # Thanks, cy
     def to_dict(self) -> MappingProxyType:
         """ Returns to a dict type. """
         return MappingProxyType(self.__attrs)
+
+class DieEval:
+    value = 0
+    average = 0
+
+    def __init__(self, num, die, op, mod):
+        self.ops = {'-': lambda l, r: l - r, '+': lambda l, r: l + r}
+        self.num = int(num)
+        self.die = int(die)
+        self.op = op
+        self.mod = int(mod)
+        self.eval()
+
+    def eval(self):
+        self.rolls = [np.random.randint(1, self.die) for _ in range(self.num)]
+        self.averate = sum(self.rolls) / len(self.rolls)
+        self.total = self.ops[self.op](sum(self.rolls), self.mod)
+
+    @classmethod
+    def generate(cls, **kwargs):
+        """Makes a random die object, but you can pass each param as a kwarg if you want"""
+        num_min = kwargs.pop('num_min', None) or 1
+        num_max = kwargs.pop('num_max', None) or 20
+        num_min, num_max = min(num_min, num_max), max(num_min, num_max) #sanity checks
+
+        size_min = kwargs.pop('size_min', None) or 2
+        size_max = kwargs.pop('size_max', None) or 20
+        size_min, size_max = min(size_min, size_max), max(size_min, size_max)
+
+        op = kwargs.pop('op', None) or np.random.choice(['+', '-'])
+
+        mod_min = kwargs.pop('mod_min', None) or 0
+        mod_max = kwargs.pop('mod_max', None) or 10
+        mod_min, mod_max = min(mod_min, mod_max), max(mod_min, mod_max)
+
+        num = np.random.randint(num_min, num_max)
+        size = np.random.choice(np.arange(size_min, size_max, 2))
+        mod = np.random.randint(mod_min, mod_max)
+
+        return cls(num, size, op, mod)
+
+    def __str__(self):
+        if self.mod != 0:
+            return f"{self.num}d{self.die}{self.op}{self.mod}"
+        return f"{self.num}d{self.die}"
+
+    def __repr__(self):
+        num = self.num
+        die = self.die
+        op = self.op
+        mod = self.mod
+        if mod != 0:
+            return f"<class DieEval; total={self.total}, {num}d{die}{op}{mod}>"
+        return f"<class DieEval; total={self.total}, {num}d{die}>"
+
+    def __int__(self): return self.total
+
+    def __add__(self, other):
+        return self.total + int(other)
+
+    def __sub__(self, other):
+        return self.total - int(other)
+
+    def print(self):
+        out = f"{self} -> {self.total}\nRolls: "
+        out += ', '.join(map(str, sorted(self.rolls, reverse=True)))
+        out += f"\nAverage roll: {self.average:.2f}"
+        return out

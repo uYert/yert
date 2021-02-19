@@ -33,6 +33,7 @@ from typing import Any, Iterable, Mapping
 import discord
 from discord.ext import commands
 from humanize import naturaldate
+import numpy as np
 
 BetterUser = namedtuple("BetterUser", ["obj", "http_dict"])
 u_conv = commands.UserConverter()
@@ -140,6 +141,54 @@ class CommandConverter(commands.Converter):
         if cmd:
             return cmd
         raise commands.BadArgument("Command name/alias not found")
+
+class DieEval:
+    def __init__(self, num, die, op, mod):
+        self.ops = {'-': lambda l, r: l - r, '+': lambda l, r: l + r}
+        self.num = int(num)
+        self.die = int(die)
+        self.op = op
+        self.mod = int(mod)
+        self.value = 0
+        self.eval()
+
+    def eval(self):
+        self.rolls = [np.random.randint(1, self.die) for _ in range(self.num)]
+        self.total = self.ops[self.op](sum(self.rolls), self.mod)
+
+    def __repr__(self):
+        num = self.num
+        die = self.die
+        op = self.op
+        mod = self.mod
+        if mod != 0:
+            return f"<class DieEval; total={self.total}, {num}d{die}{op}{mod}>"
+        return f"<class DieEval; total={self.total}, {num}d{die}>"
+
+    def __int__(self): return self.total
+
+    def __add__(self, other):
+        return self.total + int(other)
+
+    def __sub__(self, other):
+        return self.total - int(other)
+
+
+class Dice:
+    die_re = re.compile(r"(\d+)d(\d+)")
+    die_mod_re = re.compile(r"(\d+)d(\d+)(\+|\-)(\d+)")
+
+    async def convert(self, ctx, argument):
+        argument = argument.lower()
+        is_die_with_mod = self.die_mod_re.match(argument.replace(' ', ''))
+        if is_die_with_mod:
+            num, die, op, mod = is_die_with_mod.groups()
+            return DieEval(num, die, op, mod)
+        is_die = self.die_re.match(argument.replace(' ', ''))
+        if is_die:
+            num, die = is_die.groups()
+            return DieEval(num, die, '+', 0)
+        raise commands.BadArgument(f"Argument {argument} is not a valid die format")
 
 
 def try_unpack_class(*, class_: object, iterable: Iterable[Mapping]):

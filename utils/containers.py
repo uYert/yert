@@ -207,7 +207,7 @@ class DieEval:
 
     def eval(self):
         self.rolls = [np.random.randint(1, self.die) for _ in range(self.num)]
-        self.averate = sum(self.rolls) / len(self.rolls)
+        self.average = sum(self.rolls) / len(self.rolls)
         self.total = self.ops[self.op](sum(self.rolls), self.mod)
 
     @classmethod

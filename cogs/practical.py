@@ -23,15 +23,35 @@ SOFTWARE.
 """
 
 import datetime
-from typing import Optional
+from typing import Optional, List, Tuple
 
 import config
 import main
 from discord.ext import commands, menus
 from packages import aiogooglesearch, aiomagmachain, aiotranslator, aioweather
+from utils import converters
+from utils.containers import DieEval
+
+class DiceListMenu(menus.ListPageSource):
+    def __init__(self, die):
+        self.die = die
+        super().__init__(self.die, per_page=5)
+
+    async def format_page(self, menu, page):
+        offset = menu.current_page * self.per_page
+        return '\n'.join(f"{count} : {item}" for count, item in enumerate(page, start=offset))
 
 
 class Practical(commands.Cog):
+    settings = {
+        'num_min' : 1,
+        'num_max' : 20,
+        'size_min' : 2,
+        'size_max' : 20,
+        'mod_min' : 0,
+        'mod_max' : 20
+    }
+
     def __init__(self, bot):
         self.bot = bot
         self.aioweather = aioweather.AioWeather(
@@ -44,6 +64,13 @@ class Practical(commands.Cog):
         self.aioscreen = aiomagmachain.AioMagmaChain(
             session=bot.session, google_client=self.aiogoogle
         )
+
+    def make_dice(self, iters, *args) -> List[str]:
+        out = ''
+        for _ in range(iters):
+            die = converters.DieEval(*args)
+
+
 
     @commands.command(name="weather")
     @commands.cooldown(1, 30, type=commands.BucketType.channel)
@@ -132,6 +159,38 @@ class Practical(commands.Cog):
             ctx.add_to_cache(embed, timeout=datetime.timedelta(minutes=5))
 
         await ctx.send(embed=embed)
+
+    @commands.group(invoke_without_command=True, aliases=['d'])
+    async def dice(self, ctx, *dice: converters.Dice):
+        """Takes the typical die+/-mod format to output the results"""
+        results = [die.print() for die in dice]
+        die_menu = menus.MenuPages(source=DiceListMenu(results), clear_reactions_after=True)
+        await die_menu.start()
+
+    @dice.command(aliases=['make', 'generate'])
+    async def gen_rand(self, ctx, number: int):
+        """Generates <number> of die and rolls them"""
+        if 1 <= number <= 25:
+            res = [DieEval.generate(**self.settings) for _ in range(number)]
+            out = [die.print() for die in res]
+            die_menu = menus.MenuPages(source=DiceListMenu(out), clear_reactions_after=True)
+            return await die_menu.start()
+        raise commands.BadArgument('Number of different die formats to roll must be between 1 and 25 inclusive')
+
+    @commands.is_owner()
+    @dice.command(aliases=['settings', 'bounds'])
+    async def _setting(self, ctx, settings: commands.Greedy[int], *names):
+        """Owner only way to toggle the generator settings for die, to make them lower or higher"""
+        if len(settings) == len(names):
+            new = {k: v for k in names for v in settings}
+            try:
+                self.settings.update(new)
+            except (KeyError,):
+                return await ctx.send('Snek messed up, bug him, issa KeyError though')
+            except Exception as exc:
+                raise exc
+            return await ctx.send('\n'.join([f'{k} set to {v}' for k, v in new.items()]))
+        raise commands.BadArgument("Number of settings and number of names don't match.")
 
 
 def setup(bot):

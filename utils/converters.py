@@ -144,7 +144,7 @@ class CommandConverter(commands.Converter):
         raise commands.BadArgument("Command name/alias not found")
 
 
-class Dice:
+class Dice(commands.Converter):
     die_re = re.compile(r"(\d+)d(\d+)")
     die_mod_re = re.compile(r"(\d+)d(\d+)(\+|\-)(\d+)")
 

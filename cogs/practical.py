@@ -165,7 +165,7 @@ class Practical(commands.Cog):
         """Takes the typical die+/-mod format to output the results"""
         results = [die.print() for die in dice]
         die_menu = menus.MenuPages(source=DiceListMenu(results), clear_reactions_after=True)
-        await die_menu.start()
+        await die_menu.start(ctx)
 
     @dice.command(aliases=['make', 'generate'])
     async def gen_rand(self, ctx, number: int):
@@ -174,7 +174,7 @@ class Practical(commands.Cog):
             res = [DieEval.generate(**self.settings) for _ in range(number)]
             out = [die.print() for die in res]
             die_menu = menus.MenuPages(source=DiceListMenu(out), clear_reactions_after=True)
-            return await die_menu.start()
+            return await die_menu.start(ctx)
         raise commands.BadArgument('Number of different die formats to roll must be between 1 and 25 inclusive')
 
     @commands.is_owner()

@@ -73,8 +73,9 @@ class Moderation(commands.Cog):
     ) -> None:
         """Unbans the given target"""
         reason = reason or self.def_reason
-        await ctx.guild.unban(discord.Object(id=target), reason=reason)
-        await ctx.send(f"Unbanned {discord.Object(id=target)} for {reason}")
+        target = discord.Object(id=target)
+        await ctx.guild.unban(target, reason=reason)
+        await ctx.send(f"Unbanned {target} for {reason}")
 
     @commands.command()
     @commands.has_guild_permissions(mute_members=True)
